@@ -1,5 +1,6 @@
-(() => {
+(async () => {
   'use strict';
+  const authorization=await window.TieJieAuthorization.ready;
   const W=window.TieJieViewport?.width||1280,H=window.TieJieViewport?.height||720,WORLD_W=8600,SURFACE_WORLD_W=6200,WORLD_BOTTOM=1320,GROUND_Y=570,UNDER_Y=1460,GROUND_MIN_Y=490,GROUND_MAX_Y=760,BUNKER_ROOM_MODULE_W=1280,BUNKER_DEPTH=200,BUNKER_FLOOR_SKEW=1.12, canvas=document.querySelector('#game'), g=canvas.getContext('2d');
   const {
     heroKickSheet,heroKick1Sheet,heroKick2Sheet,heroKick3Sheet,heroJumpKickSheet,heroJumpKickChainSheet,
@@ -755,7 +756,7 @@
   const pendingGrowthUpgrades={hp:0,atk:0,def:0};
   const defaultProgress={gold:0,chicken:0,fruit:0,hpLv:0,atkLv:0,defLv:0,spdLv:0,ascend:0,bestStage:0,currentStage:1,unlockedRecruits:[],tempRecruit:null,unlockedSkills:[]};
   let progress=loadProgress();
-  const isTestBuild=window.TieJieAdConfig?.testBuild===true;
+  const isTestBuild=authorization.mode==='test';
   function loadProgress(){try{const saved=JSON.parse(localStorage.getItem('tiejie-progress')||'{}'),next={...defaultProgress,...saved};next.bestStage=Math.max(0,Math.floor(Number(next.bestStage)||0));next.currentStage=Math.max(1,Math.floor(Number(next.currentStage)||next.bestStage||1));next.unlockedRecruits=Array.isArray(next.unlockedRecruits)?[...new Set(next.unlockedRecruits.filter(type=>typeof type==='string'))]:[];next.unlockedSkills=Array.isArray(next.unlockedSkills)?[...new Set(next.unlockedSkills.filter(id=>typeof id==='string').map(id=>id==='airRisingPunch'?'lifeSteal':id))]:[];if(!next.tempRecruit||typeof next.tempRecruit.type!=='string'||Number(next.tempRecruit.remaining)<=0)next.tempRecruit=null;return next}catch(e){return{...defaultProgress,unlockedRecruits:[],unlockedSkills:[]}}}
   function saveProgress(){try{localStorage.setItem('tiejie-progress',JSON.stringify(progress))}catch(e){}}
   const skillCatalog=[
@@ -772,13 +773,15 @@
     {id:'invincibleGrapple',branch:'擒拿分支',icon:'御',name:'无敌擒拿',cost:3,requires:'grapple',desc:'成功抓住敌人的持续阶段处于无敌状态；抓取尝试、失败、松手和挣脱后不无敌。',release:'点亮后被动生效；成功抓住敌人即进入无敌阶段。',story:''},
     {id:'starAbsorb',branch:'擒拿分支',icon:'聚',name:'聚势之握',cost:2,requires:'grapple',desc:'主角每次对敌人造成有效命中积累 1 点，20 点充能后可进行一次远距离吸附擒拿。',release:'进度达到 20/20 后按“抓”，消耗全部充能；将前方 70°、350px 扇形内最近的一名可抓敌人用 0.5 秒吸到手上。即使范围内没有目标也会消耗充能。',story:''}
   ];
+  const skillIconPositions={basicPunch:[0,0],risingPunch:[1,0],lifeSteal:[2,0],downRisingPunch:[3,0],blueFlame:[0,1],legArts:[1,1],legFlame:[2,1],launchKick:[3,1],launchKickChain:[0,2],grapple:[1,2],invincibleGrapple:[2,2],starAbsorb:[3,2]};
+  function applySkillIcon(node,skill){const position=skillIconPositions[skill.id]||[0,0];node.textContent='';node.dataset.skillIcon=skill.id;node.style.setProperty('--skill-icon-x',`${position[0]*100/3}%`);node.style.setProperty('--skill-icon-y',`${position[1]*50}%`)}
   let selectedSkillId='basicPunch';
   function hasSkill(id){return id==='basicPunch'||isTestBuild||progress.unlockedSkills.includes(id)}
   function unlockSkill(id){const skill=skillCatalog.find(item=>item.id===id);if(!skill||hasSkill(id))return false;if(skill.requires&&!hasSkill(skill.requires)){refreshSkillPanel(`需要先点亮${skillCatalog.find(item=>item.id===skill.requires)?.name||'前置技能'}`);return false}if(progress.fruit<skill.cost){refreshSkillPanel(`神奇果实不足，需要 ${skill.cost} 个`);return false}progress.fruit-=skill.cost;progress.unlockedSkills.push(id);progress.unlockedSkills=[...new Set(progress.unlockedSkills)];saveProgress();refreshSkillPanel(`${skill.name}已点亮`);refreshSkillControls();return true}
   function refreshSkillControls(){const kick=[...document.querySelectorAll('[data-action]')].find(item=>item.dataset.action==='kick');if(kick)kick.hidden=!hasSkill('legArts');window.TieJieSkillState={legArts:hasSkill('legArts')}}
   function selectSkill(id){if(skillCatalog.some(skill=>skill.id===id)){selectedSkillId=id;refreshSkillPanel()}}
-  function refreshSkillDetail(){const skill=skillCatalog.find(item=>item.id===selectedSkillId)||skillCatalog[0],unlocked=hasSkill(skill.id),available=!skill.requires||hasSkill(skill.requires),requires=skill.requires?skillCatalog.find(item=>item.id===skill.requires)?.name:'';const set=(id,text)=>{const node=document.querySelector(`#${id}`);if(node)node.textContent=text};set('skill-detail-icon',skill.icon);set('skill-detail-path',skill.branch);set('skill-detail-name',skill.name);set('skill-detail-desc',skill.desc);set('skill-detail-release',skill.release);set('skill-detail-story',skill.story||'相关故事尚未确定。');set('skill-detail-requirement',skill.cost===0?'初始技能 · 无需神奇果实':`前置：${requires||'无'} · 消耗：${skill.cost} 个神奇果实`);const action=document.querySelector('#skill-unlock');if(action){action.disabled=unlocked||!available;action.textContent=unlocked?'已点亮':available?`消耗 ${skill.cost} 个果实点亮`:`需要先点亮${requires}`;action.onclick=()=>unlockSkill(skill.id)}}
-  function refreshSkillPanel(status=''){const fruit=document.querySelector('#skill-fruit'),box=document.querySelector('#skill-tree'),state=document.querySelector('#skill-status');if(fruit)fruit.textContent=`果实 ${progress.fruit}`;if(!box)return;box.innerHTML='';if(Array.isArray(box.children))box.children.length=0;box.skillNodes=[];const appendNode=(parent,skill)=>{const unlocked=hasSkill(skill.id),available=!skill.requires||hasSkill(skill.requires),button=document.createElement('button');button.className=`skill-node ${unlocked?'unlocked':available?'available':'locked'} ${selectedSkillId===skill.id?'selected':''}`;button.dataset.skill=skill.id;const icon=document.createElement('span');icon.className='skill-icon';icon.textContent=skill.icon;button.appendChild(icon);const name=document.createElement('span');name.className='skill-name';name.textContent=skill.name;button.appendChild(name);const detail=document.createElement('small');detail.textContent=unlocked?'已点亮':available?`${skill.cost} 果实`:`需 ${skillCatalog.find(item=>item.id===skill.requires)?.name}`;button.appendChild(detail);button.onclick=()=>selectSkill(skill.id);parent.appendChild(button);box.skillNodes.push(button)};const punch=document.createElement('section');punch.className='skill-branch';punch.dataset.title='拳击分支';appendNode(punch,skillCatalog.find(skill=>skill.id==='basicPunch'));const punchMiddle=document.createElement('div');punchMiddle.className='skill-split';for(const id of['risingPunch','blueFlame'])appendNode(punchMiddle,skillCatalog.find(skill=>skill.id===id));punch.appendChild(punchMiddle);const split=document.createElement('div');split.className='skill-split';for(const id of['lifeSteal','downRisingPunch'])appendNode(split,skillCatalog.find(skill=>skill.id===id));punch.appendChild(split);box.appendChild(punch);const leg=document.createElement('section');leg.className='skill-branch';leg.dataset.title='腿法分支';for(const id of['legArts','legFlame','launchKick','launchKickChain'])appendNode(leg,skillCatalog.find(skill=>skill.id===id));box.appendChild(leg);const grapple=document.createElement('section');grapple.className='skill-branch';grapple.dataset.title='擒拿分支';appendNode(grapple,skillCatalog.find(skill=>skill.id==='grapple'));const grappleSplit=document.createElement('div');grappleSplit.className='skill-split';for(const id of['invincibleGrapple','starAbsorb'])appendNode(grappleSplit,skillCatalog.find(skill=>skill.id===id));grapple.appendChild(grappleSplit);box.appendChild(grapple);refreshSkillDetail();if(state)state.textContent=status||(isTestBuild?'测试版已自动点亮全部技能':'点击技能图标查看详情，再决定是否点亮')}
+  function refreshSkillDetail(){const skill=skillCatalog.find(item=>item.id===selectedSkillId)||skillCatalog[0],unlocked=hasSkill(skill.id),available=!skill.requires||hasSkill(skill.requires),requires=skill.requires?skillCatalog.find(item=>item.id===skill.requires)?.name:'';const set=(id,text)=>{const node=document.querySelector(`#${id}`);if(node)node.textContent=text};const detailIcon=document.querySelector('#skill-detail-icon');if(detailIcon)applySkillIcon(detailIcon,skill);set('skill-detail-path',skill.branch);set('skill-detail-name',skill.name);set('skill-detail-desc',skill.desc);set('skill-detail-release',skill.release);set('skill-detail-story',skill.story||'相关故事尚未确定。');set('skill-detail-requirement',skill.cost===0?'初始技能 · 无需神奇果实':`前置：${requires||'无'} · 消耗：${skill.cost} 个神奇果实`);const action=document.querySelector('#skill-unlock');if(action){action.disabled=unlocked||!available;action.textContent=unlocked?'已点亮':available?`消耗 ${skill.cost} 个果实点亮`:`需要先点亮${requires}`;action.onclick=()=>unlockSkill(skill.id)}}
+  function refreshSkillPanel(status=''){const fruit=document.querySelector('#skill-fruit'),box=document.querySelector('#skill-tree'),state=document.querySelector('#skill-status');if(fruit)fruit.textContent=`果实 ${progress.fruit}`;if(!box)return;box.innerHTML='';if(Array.isArray(box.children))box.children.length=0;box.skillNodes=[];const appendNode=(parent,skill)=>{const unlocked=hasSkill(skill.id),available=!skill.requires||hasSkill(skill.requires),button=document.createElement('button');button.className=`skill-node ${unlocked?'unlocked':available?'available':'locked'} ${selectedSkillId===skill.id?'selected':''}`;button.dataset.skill=skill.id;const icon=document.createElement('span');icon.className='skill-icon';applySkillIcon(icon,skill);button.appendChild(icon);const name=document.createElement('span');name.className='skill-name';name.textContent=skill.name;button.appendChild(name);const detail=document.createElement('small');detail.textContent=unlocked?'已点亮':available?`${skill.cost} 果实`:`需 ${skillCatalog.find(item=>item.id===skill.requires)?.name}`;button.appendChild(detail);button.onclick=()=>selectSkill(skill.id);parent.appendChild(button);box.skillNodes.push(button)};const punch=document.createElement('section');punch.className='skill-branch';punch.dataset.title='拳击分支';appendNode(punch,skillCatalog.find(skill=>skill.id==='basicPunch'));const punchMiddle=document.createElement('div');punchMiddle.className='skill-split';for(const id of['risingPunch','blueFlame'])appendNode(punchMiddle,skillCatalog.find(skill=>skill.id===id));punch.appendChild(punchMiddle);const split=document.createElement('div');split.className='skill-split';for(const id of['lifeSteal','downRisingPunch'])appendNode(split,skillCatalog.find(skill=>skill.id===id));punch.appendChild(split);box.appendChild(punch);const leg=document.createElement('section');leg.className='skill-branch';leg.dataset.title='腿法分支';for(const id of['legArts','legFlame','launchKick','launchKickChain'])appendNode(leg,skillCatalog.find(skill=>skill.id===id));box.appendChild(leg);const grapple=document.createElement('section');grapple.className='skill-branch';grapple.dataset.title='擒拿分支';appendNode(grapple,skillCatalog.find(skill=>skill.id==='grapple'));const grappleSplit=document.createElement('div');grappleSplit.className='skill-split';for(const id of['invincibleGrapple','starAbsorb'])appendNode(grappleSplit,skillCatalog.find(skill=>skill.id===id));grapple.appendChild(grappleSplit);box.appendChild(grapple);refreshSkillDetail();if(state)state.textContent=status||(isTestBuild?'测试版已自动点亮全部技能':'点击技能图标查看详情，再决定是否点亮')}
   function vitalityStat(){return 10+progress.hpLv+progress.ascend}
   function strengthStat(){return 10+progress.atkLv+progress.ascend}
   function defenseStat(){return 10+progress.defLv+progress.ascend}
@@ -789,7 +792,7 @@
   function stageChickenReward(){const expected=(vitalityStat()+strengthStat()+defenseStat())*.08,whole=Math.floor(expected);return Math.max(1,whole+(Math.random()<expected-whole?1:0))}
   function playerAttackSpeedMul(){return Math.min(2,1+(player.attackSpeedTier||0)*.1)}
   function legAttackRange(range){return hasSkill('legFlame')?range*1.3:range}
-  const LAUNCH_KICK_CHAIN_FRAME_DURATIONS=[.05,.1,.05,.1],LAUNCH_KICK_CHAIN_DURATION=.3,LAUNCH_KICK_CHAIN_MAX_HITS=10,LAUNCH_KICK_CHAIN_FORWARD_SPEEDS=[480,520,520,560],LAUNCH_KICK_CHAIN_LIFTS=[3,3,3,3];
+  const LAUNCH_KICK_CHAIN_FRAME_DURATIONS=[.05,.1,.05,.1],LAUNCH_KICK_CHAIN_DURATION=.3,LAUNCH_KICK_CHAIN_MAX_HITS=10,LAUNCH_KICK_CHAIN_ACTIVE_FRAMES=[1,3],LAUNCH_KICK_CHAIN_FORWARD_SPEEDS=[480,520,520,560],LAUNCH_KICK_CHAIN_LIFTS=[3,3,3,3];
   function launchKickChainFrameAt(elapsed){let boundary=0;for(let frame=0;frame<LAUNCH_KICK_CHAIN_FRAME_DURATIONS.length;frame++){boundary+=LAUNCH_KICK_CHAIN_FRAME_DURATIONS[frame];if(elapsed<boundary)return frame}return LAUNCH_KICK_CHAIN_FRAME_DURATIONS.length-1}
   function resetLaunchKickChain(){player.launchKickChainCount=0;player.launchKickChainQueued=0;player.launchKickChainHitCount=0;player.launchKickChainFace=0;player.launchKickChainMotionFrame=-1}
   function updateLaunchKickChainMotion(dt){
@@ -819,8 +822,8 @@
     player.launchKickChainQueued=Math.max(0,(player.launchKickChainQueued||0)-1)
     player.launchKickChainCount=1
     player.state='airBackKick'
-    const chainSpeed=playerAttackSpeedMul(),completed=player.launchKickChainHitCount||0,segmentFrames=Math.min(4,LAUNCH_KICK_CHAIN_MAX_HITS-completed),segmentDuration=LAUNCH_KICK_CHAIN_FRAME_DURATIONS.slice(0,segmentFrames).reduce((total,value)=>total+value,0)
-    player.launchKickChainHitCount=completed+segmentFrames
+    const chainSpeed=playerAttackSpeedMul(),completed=player.launchKickChainHitCount||0,segmentHits=Math.min(LAUNCH_KICK_CHAIN_ACTIVE_FRAMES.length,LAUNCH_KICK_CHAIN_MAX_HITS-completed),lastActiveFrame=LAUNCH_KICK_CHAIN_ACTIVE_FRAMES[segmentHits-1],segmentFrames=lastActiveFrame+1,segmentDuration=LAUNCH_KICK_CHAIN_FRAME_DURATIONS.slice(0,segmentFrames).reduce((total,value)=>total+value,0)
+    player.launchKickChainHitCount=completed+segmentHits
     player.launchKickChainDuration=segmentDuration*chainSpeed
     player.timer=player.launchKickChainDuration
     player.launchKickChainFace=player.launchKickChainFace||player.face||1
@@ -829,8 +832,8 @@
     player.vz=Math.max(player.vz||0,continuing?140:280)
     player.knockVx=0
     updateLaunchKickChainMotion(0)
-    const strikes=[{range:148,damage:7,force:430,delay:40,launchVz:430,juggle:300},{range:156,damage:7,force:520,delay:130,launchVz:440,juggle:310},{range:150,damage:7,force:470,delay:190,launchVz:430,juggle:300},{range:164,damage:7,force:740,delay:280,launchVz:460,juggle:330}]
-    for(let index=0;index<segmentFrames;index++){const strike=strikes[index];attack(legAttackRange(strike.range),strike.damage,strike.force,strike.delay*chainSpeed,{knockdown:true,launchVz:strike.launchVz,airJuggleVz:strike.juggle,zReach:165,kneeChain:true})}
+    const strikes={1:{range:156,damage:7,force:520,delay:130,launchVz:440,juggle:310},3:{range:164,damage:7,force:740,delay:280,launchVz:460,juggle:330}}
+    for(const frame of LAUNCH_KICK_CHAIN_ACTIVE_FRAMES.slice(0,segmentHits)){const strike=strikes[frame];attack(legAttackRange(strike.range),strike.damage,strike.force,strike.delay*chainSpeed,{knockdown:true,launchVz:strike.launchVz,airJuggleVz:strike.juggle,zReach:165,kneeChain:true})}
     message=`高低连环鞭腿 ${player.launchKickChainHitCount}/${LAUNCH_KICK_CHAIN_MAX_HITS}`
     messageT=.4
   }
@@ -954,7 +957,7 @@
     clearPendingGrowth();running=false;testRunMode=false;window.TieJieAudio?.pause();rewardResumeRunning=false;battleMenuResumeRunning=false;pendingGrowthAdvance=false;failureHandled=false;failurePopupT=0;partyDefeatPending=false;stageSettlementOpen=false;stageRewardDoubled=false;stageRewardTotals={gold:0,chicken:0,fruit:0};pendingReward=null;
     for(const k of Object.keys(keys))keys[k]=false;
     const modal=document.querySelector('#reward-modal'),battleMenu=document.querySelector('#battle-menu'),menuToggle=document.querySelector('#battle-menu-toggle'),growthToggle=document.querySelector('#growth-toggle'),growth=document.querySelector('#growth-panel'),growthClose=document.querySelector('#growth-close'),startCard=document.querySelector('#start-card');
-    if(modal)modal.hidden=true;if(battleMenu)battleMenu.hidden=true;if(menuToggle)menuToggle.hidden=true;if(growthToggle)growthToggle.hidden=false;if(growth)growth.hidden=true;if(growthClose){growthClose.textContent='×';growthClose.classList.remove('advance')}if(startCard)startCard.style.display='';document.querySelector('#touch-ui')?.classList.remove('active');
+    if(modal)modal.hidden=true;if(battleMenu)battleMenu.hidden=true;if(menuToggle)menuToggle.hidden=true;if(growthToggle)growthToggle.hidden=false;if(growth)growth.hidden=true;if(growthClose){growthClose.textContent='×';growthClose.classList.remove('advance')}if(startCard)startCard.style.display='';document.querySelectorAll('.menu-page').forEach(page=>page.hidden=true);const skillPanel=document.querySelector('#skill-panel');if(skillPanel)skillPanel.hidden=true;document.querySelector('#touch-ui')?.classList.remove('active');
     enemies=[];companions=[];projectiles=[];hitFx=[];blastFx=[];resourceFx=[];eliteArmorFx=[];starAbsorbFx=[];player.starAbsorbHits=0;message='';messageT=0;refreshStartStageLabel()
   }
   function handleRunFailure(){
@@ -3635,7 +3638,7 @@
   function actionButtonAt(x,y){for(const button of actionPad?.querySelectorAll('[data-action]:not([hidden])')||[]){const r=button.getBoundingClientRect();if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom)return button}return null}
   function triggerTouchAction(button,gesture){
     if(!button||gesture.values.has(button.dataset.action))return;
-    gesture.values.add(button.dataset.action);gesture.buttons.add(button);button.classList.add('pressed');
+    gesture.values.add(button.dataset.action);gesture.buttons.add(button);button.classList.add('pressed');haptic(12);
     if(failurePopupT>0)return;const a=button.dataset.action;if(wave===2&&a==='grab'){if(gauntletMode)startGauntlet();else reset()}else if(player.hp>0)act(a)
   }
   function releaseTouchActions(e){const gesture=actionGestures.get(e.pointerId);if(!gesture)return;for(const button of gesture.buttons)button.classList.remove('pressed');actionGestures.delete(e.pointerId)}
@@ -3655,7 +3658,7 @@
       return
     }
     if(!prepareRecruitment()){battleStarting=false;return}
-    window.TieJieAudio?.unlock();clearPendingGrowth();testRunMode=isTestBuild&&testMode;freeTourMode=allowFreeTour&&isTestBuild&&!!document.querySelector('#free-tour')?.checked;rankedRunEligible=rankedRun&&!freeTourMode&&!testRunMode;document.querySelector('#start-card').style.display='none';document.querySelector('#growth-panel').hidden=true;document.querySelector('#growth-toggle').hidden=true;document.querySelector('#touch-ui').classList.add('active');document.querySelector('#battle-menu-toggle').hidden=false;document.querySelector('#battle-menu').hidden=true;starter();running=true;battleStarting=false
+    window.TieJieAudio?.unlock();clearPendingGrowth();testRunMode=isTestBuild&&testMode;freeTourMode=allowFreeTour&&isTestBuild&&!!document.querySelector('#free-tour')?.checked;rankedRunEligible=rankedRun&&!freeTourMode&&!testRunMode;document.querySelector('#start-card').style.display='none';document.querySelectorAll('.menu-page').forEach(page=>page.hidden=true);document.querySelector('#skill-panel').hidden=true;document.querySelector('#growth-panel').hidden=true;document.querySelector('#growth-toggle').hidden=true;document.querySelector('#touch-ui').classList.add('active');document.querySelector('#battle-menu-toggle').hidden=false;document.querySelector('#battle-menu').hidden=true;starter();running=true;battleStarting=false
   }
   function refreshStartStageLabel(){const start=document.querySelector('#start');if(start)start.textContent=`继续第 ${progress.currentStage} 关`}
   refreshStartStageLabel();
@@ -3669,7 +3672,9 @@
   document.querySelector('#quick-stage-start')?.addEventListener('click',()=>{const stage=normalizeQuickStage();beginFromMenu(()=>{player.kills=0;setStagePosition(stage,!testRunMode,testRunMode);loadMap(mapIndex)},true,!isTestBuild,isTestBuild)});
   let stageSelectPage=Math.floor((progress.currentStage-1)/trialMaps.length);
   function refreshStageSelect(page=stageSelectPage){const maxStage=maxSelectableStage(),maxPage=Math.floor((maxStage-1)/trialMaps.length);stageSelectPage=clamp(Math.floor(page)||0,0,maxPage);const first=stageSelectPage*trialMaps.length+1,buttons=[...document.querySelectorAll('[data-map]')];buttons.forEach((b,i)=>{const stage=first+i,map=trialMaps[(stage-1)%trialMaps.length];b.dataset.stage=String(stage);b.textContent=stage<=maxStage?`第 ${stage} 关 · ${map.name}`:'尚未解锁';b.disabled=stage>maxStage});const label=document.querySelector('#stage-page-label');if(label)label.textContent=`第 ${first}–${Math.min(first+trialMaps.length-1,maxStage)} 关 · 当前 ${progress.currentStage}`;const prev=document.querySelector('#stage-prev-page'),next=document.querySelector('#stage-next-page');if(prev)prev.disabled=stageSelectPage<=0;if(next)next.disabled=stageSelectPage>=maxPage}
-  document.querySelector('#level-select').onclick=()=>{const p=document.querySelector('#level-panel'),gp=document.querySelector('#gauntlet-panel'),rp=document.querySelector('#recruit-panel'),sp=document.querySelector('#skill-panel');gp.hidden=true;rp.hidden=true;sp.hidden=true;p.hidden=!p.hidden;if(!p.hidden)refreshStageSelect(Math.floor((progress.currentStage-1)/trialMaps.length))};
+  function closeMenuPages(){document.querySelectorAll('.menu-page').forEach(page=>page.hidden=true);document.querySelector('#skill-panel').hidden=true}
+  document.querySelector('#level-select').onclick=()=>{closeMenuPages();const panel=document.querySelector('#level-panel');panel.hidden=false;refreshStageSelect(Math.floor((progress.currentStage-1)/trialMaps.length))};
+  document.querySelector('#level-back').onclick=()=>{document.querySelector('#level-panel').hidden=true};
   document.querySelector('#stage-prev-page').onclick=()=>refreshStageSelect(stageSelectPage-1);
   document.querySelector('#stage-next-page').onclick=()=>refreshStageSelect(stageSelectPage+1);
   document.querySelector('#stage-current').onclick=()=>refreshStageSelect(Math.floor((progress.currentStage-1)/trialMaps.length));
@@ -3689,8 +3694,8 @@
   })();
   document.querySelector('#gauntlet-btn').onclick=()=>{
     if(!isTestBuild)return;
-    const gp=document.querySelector('#gauntlet-panel'),lp=document.querySelector('#level-panel'),rp=document.querySelector('#recruit-panel');
-    lp.hidden=true;rp.hidden=true;gp.hidden=!gp.hidden};
+    closeMenuPages();document.querySelector('#gauntlet-panel').hidden=false};
+  document.querySelector('#gauntlet-back').onclick=()=>{document.querySelector('#gauntlet-panel').hidden=true};
   document.querySelector('#gauntlet-start').onclick=()=>{
     if(gauntletSelected.size===0)return;
     gauntletEliteMode=!!document.querySelector('#gauntlet-elite')?.checked;
@@ -3714,8 +3719,9 @@
     button.disabled=true;refreshRecruitPanel('正在准备临时招募广告……');
     try{const result=await window.TieJiePlatform?.ads?.showRewarded('temporaryRecruit');if(result?.ok){progress.tempRecruit={type,remaining:info.tempSeconds,pending:true,activeStage:null};pendingRecruitType=null;saveProgress();refreshRecruitPanel(`${enemyCatalog[type].name} 已临时招募，将在下一关出现 ${info.tempSeconds} 秒`)}else refreshRecruitPanel(result?.reason==='not-completed'?'广告未完整观看，临时招募未生效':'广告暂时无法播放，请稍后再试')}catch{refreshRecruitPanel('广告暂时无法播放，请稍后再试')}finally{button.disabled=false}
   };
-  document.querySelector('#recruit-btn').onclick=()=>{const rp=document.querySelector('#recruit-panel'),lp=document.querySelector('#level-panel'),gp=document.querySelector('#gauntlet-panel'),sp=document.querySelector('#skill-panel');lp.hidden=true;gp.hidden=true;sp.hidden=true;rp.hidden=!rp.hidden;refreshRecruitPanel()};
-  document.querySelector('#skill-btn').onclick=()=>{const sp=document.querySelector('#skill-panel'),lp=document.querySelector('#level-panel'),gp=document.querySelector('#gauntlet-panel'),rp=document.querySelector('#recruit-panel');lp.hidden=true;gp.hidden=true;rp.hidden=true;sp.hidden=false;refreshSkillPanel()};
+  document.querySelector('#recruit-btn').onclick=()=>{closeMenuPages();document.querySelector('#recruit-panel').hidden=false;refreshRecruitPanel()};
+  document.querySelector('#recruit-back').onclick=()=>{document.querySelector('#recruit-panel').hidden=true};
+  document.querySelector('#skill-btn').onclick=()=>{closeMenuPages();document.querySelector('#skill-panel').hidden=false;refreshSkillPanel()};
   document.querySelector('#skill-back').onclick=()=>{document.querySelector('#skill-panel').hidden=true};
   document.querySelector('#rank-btn').onclick=async()=>{const result=await window.TieJiePlatform?.rank?.open?.();if(!result?.ok&&result?.reason!=='unsupported'){message='排行榜暂时无法打开，请稍后重试';messageT=1.8}};
   document.querySelector('#feedback-btn').onclick=async()=>{const result=await window.TieJiePlatform?.support?.openFeedback?.();if(!result?.ok&&result?.reason!=='unsupported'){message='反馈入口暂时无法打开，请稍后重试';messageT=1.8}};
@@ -3723,6 +3729,13 @@
   document.querySelector('#reward-confirm').addEventListener('click',()=>{if(pendingReward?.mode==='stage-settlement')doubleStageRewardsWithAd();else if(pendingReward)claimRewardedResource(pendingReward.kind,pendingReward.mode)});
   document.querySelector('#reward-cancel').addEventListener('click',()=>{if(pendingReward?.mode==='stage-settlement')continueAfterStageSettlement();else if(pendingReward?.mode==='defeat')revivePartyFull();else closeRewardModal()});
   document.querySelector('#reward-exit').addEventListener('click',abandonDropsAndReturn);
+  let vibrationEnabled=true,lastHapticAt=0;
+  try{vibrationEnabled=localStorage.getItem('tiejie-vibration-enabled')!=='0'}catch{}
+  function haptic(duration=14){const now=performance.now();if(!vibrationEnabled||now-lastHapticAt<45||typeof navigator.vibrate!=='function')return;lastHapticAt=now;navigator.vibrate(Math.max(8,Math.min(45,duration)))}
+  const vibrationToggle=document.querySelector('#vibration-toggle');
+  function refreshVibrationToggle(){const state=vibrationToggle?.querySelector('b');if(state)state.textContent=vibrationEnabled?'开':'关';vibrationToggle?.classList.toggle('muted',!vibrationEnabled);vibrationToggle?.setAttribute('aria-label',vibrationEnabled?'关闭震动':'开启震动')}
+  vibrationToggle?.addEventListener('click',()=>{vibrationEnabled=!vibrationEnabled;try{localStorage.setItem('tiejie-vibration-enabled',vibrationEnabled?'1':'0')}catch{}refreshVibrationToggle();if(vibrationEnabled)haptic(24)});refreshVibrationToggle();
+  document.addEventListener('pointerdown',event=>{if(event.target.closest('button')&&!event.target.closest('#touch-ui'))haptic(11)},{capture:true});
   document.querySelector('#battle-menu-toggle').addEventListener('click',()=>{const panel=document.querySelector('#battle-menu');if(panel.hidden){battleMenuResumeRunning=running;running=false;window.TieJieAudio?.pause();panel.hidden=false}else{panel.hidden=true;running=battleMenuResumeRunning;battleMenuResumeRunning=false;if(running)window.TieJieAudio?.resume()}});
   document.querySelector('#battle-menu-resume').addEventListener('click',()=>{document.querySelector('#battle-menu').hidden=true;running=battleMenuResumeRunning;battleMenuResumeRunning=false;if(running)window.TieJieAudio?.resume()});
   document.querySelector('#battle-menu-end').addEventListener('click',()=>returnToStart());
@@ -3730,7 +3743,7 @@
   document.querySelector('#growth-confirm').addEventListener('click',confirmGrowthUpgrades);
   document.querySelector('#growth-close').addEventListener('click',closeGrowthPanel);
   const audioToggle=document.querySelector('#audio-toggle');
-  function refreshAudioToggle(){const on=window.TieJieAudio?.isEnabled?.()!==false;audioToggle.textContent=on?'声音：开':'声音：关';audioToggle.classList.toggle('muted',!on);audioToggle.setAttribute('aria-label',on?'关闭音乐和音效':'开启音乐和音效')}
+  function refreshAudioToggle(){const on=window.TieJieAudio?.isEnabled?.()!==false,state=audioToggle.querySelector('b');if(state)state.textContent=on?'开':'关';audioToggle.classList.toggle('muted',!on);audioToggle.setAttribute('aria-label',on?'关闭音乐和音效':'开启音乐和音效')}
   audioToggle.addEventListener('click',()=>{window.TieJieAudio?.unlock();window.TieJieAudio?.setEnabled(!window.TieJieAudio?.isEnabled?.());refreshAudioToggle()});refreshAudioToggle();
   document.querySelectorAll('[data-upgrade]').forEach(button=>button.addEventListener('click',()=>tryUpgrade(button.dataset.upgrade)));
   document.querySelectorAll('[data-downgrade]').forEach(button=>button.addEventListener('click',()=>undoPendingUpgrade(button.dataset.downgrade)));

@@ -10,7 +10,7 @@
   function showRewarded(kind){
     if(adBusy)return Promise.resolve({ok:false,reason:'busy'});
     const adUnitId=config()[placementKey[kind]]||'';
-    if(!isDouyin())return new Promise(resolve=>setTimeout(()=>resolve({ok:true,mock:true}),450));
+    if(!isDouyin())return window.TieJieAuthorization?.mode==='test'?new Promise(resolve=>setTimeout(()=>resolve({ok:true,mock:true}),450)):Promise.resolve({ok:false,reason:'unsupported'});
     if(!adUnitId)return Promise.resolve({ok:false,reason:'missing-ad-unit'});
     adBusy=true;root.TieJieAudio?.pause?.();
     return new Promise(resolve=>{

@@ -7,6 +7,22 @@
   <link rel="stylesheet" href="style.css?v=2.2">
 </head>
 <body>
+  <section id="auth-gate" aria-label="测试授权">
+    <div class="auth-card">
+      <strong>铁街测试通行证</strong>
+      <p id="auth-status">正在验证测试资格……</p>
+      <form id="auth-form" hidden autocomplete="off">
+        <input id="auth-username" type="text" inputmode="text" autocapitalize="none" spellcheck="false" minlength="3" maxlength="24" placeholder="用户名（3–24位）" aria-label="用户名">
+        <input id="auth-password" type="password" minlength="8" maxlength="64" placeholder="密码（至少8位）" aria-label="密码">
+        <div class="auth-actions">
+          <button id="auth-login" type="button">登录</button>
+          <button id="auth-register" type="submit">注册并进入</button>
+        </div>
+      </form>
+      <button id="auth-retry" type="button" hidden>重新验证</button>
+      <small>测试期间开放注册；正式上线后测试账号会统一清除</small>
+    </div>
+  </section>
   <main id="game-wrap">
     <canvas id="game" width="1280" height="720" tabindex="0" aria-label="铁街格斗战斗试玩"></canvas>
     <div id="resource-ad-bar" aria-label="资源栏">
@@ -23,13 +39,18 @@
         <b id="top-fruit">0</b><button data-reward-ad="fruit" aria-label="补充果实"></button>
       </div>
       <button id="growth-toggle" type="button"><span aria-hidden="true">◆</span>强化</button>
-      <button id="audio-toggle" type="button" aria-label="关闭音乐和音效">声音：开</button>
     </div>
     <button id="battle-menu-toggle" type="button" hidden aria-label="打开战斗菜单"><span>☰</span>菜单</button>
     <section id="battle-menu" hidden aria-label="战斗菜单">
-      <strong>战斗菜单</strong>
-      <button id="battle-menu-resume" type="button">继续战斗</button>
-      <button id="battle-menu-end" type="button">结束战斗</button>
+      <div class="battle-menu-card">
+        <header><small>PAUSED</small><strong>战斗菜单</strong></header>
+        <button id="battle-menu-resume" type="button">继续战斗</button>
+        <div class="battle-menu-settings" aria-label="声音与震动设置">
+          <button id="audio-toggle" type="button" aria-label="关闭音乐和音效"><span>音乐与音效</span><b>开</b></button>
+          <button id="vibration-toggle" type="button" aria-label="关闭震动"><span>震动反馈</span><b>开</b></button>
+        </div>
+        <button id="battle-menu-end" type="button">结束本局</button>
+      </div>
     </section>
     <section id="growth-panel" hidden aria-label="人物成长">
       <header><strong>人物成长</strong><button id="growth-close" type="button" aria-label="关闭">×</button></header>
@@ -56,54 +77,65 @@
       </div>
     </div>
     <section id="start-card">
+      <img class="brand-icon" src="assets/ui/tiejie-app-icon.png" alt="" aria-hidden="true">
       <div class="badge">位图敌人与经典镜头锁定 7.7</div>
       <h1>铁街格斗</h1>
       <p>先试手感，再决定长线内容。</p>
       <div class="menu-actions">
         <button id="start">进入黑钢城</button>
-        <button id="level-select" hidden>选择关卡</button>
+        <button id="level-select">选择关卡</button>
         <button id="gauntlet-btn" hidden>轮番战</button>
         <button id="recruit-btn">招募队友</button>
         <button id="skill-btn">技能</button>
         <button id="rank-btn">闯关排行榜</button>
         <button id="feedback-btn">意见反馈</button>
       </div>
-      <section id="quick-stage-select" aria-label="数字选关">
-        <button id="quick-stage-prev" type="button">前一关</button>
-        <label><span>第</span><input id="quick-stage-number" type="number" min="1" step="1" inputmode="numeric" value="1"><span>关</span></label>
-        <button id="quick-stage-next" type="button">后一关</button>
-        <button id="quick-stage-start" type="button">进入此关</button>
-      </section>
-      <section id="test-tools" hidden aria-label="测试包工具">
-        <label class="test-toggle"><input id="free-tour" type="checkbox"><span>无敌人干扰</span></label>
-      </section>
-      <div id="level-panel" hidden>
-        <button data-map="0">1 街区</button>
-        <button data-map="1">2 沙漠</button>
-        <button data-map="2">3 长城</button>
-        <button data-map="3">4 高楼</button>
-        <button data-map="4">5 室内</button>
-        <button data-map="5">6 古战场</button>
+    </section>
+    <section id="level-panel" class="menu-page" hidden aria-label="选择关卡">
+      <div class="menu-page-shell">
+        <header class="menu-page-head"><button id="level-back" type="button">← 返回</button><div><strong>选择关卡</strong><small>选择区域或直接输入关卡</small></div><span>STAGE</span></header>
+        <div class="map-grid">
+          <button data-map="0">1 街区</button>
+          <button data-map="1">2 沙漠</button>
+          <button data-map="2">3 长城</button>
+          <button data-map="3">4 高楼</button>
+          <button data-map="4">5 室内</button>
+          <button data-map="5">6 古战场</button>
+        </div>
         <div id="stage-page-controls">
           <button id="stage-prev-page" type="button">上一组</button>
           <span id="stage-page-label">第 1–6 关</span>
           <button id="stage-current" type="button">回到当前关</button>
           <button id="stage-next-page" type="button">下一组</button>
         </div>
+        <section id="quick-stage-select" aria-label="数字选关">
+          <button id="quick-stage-prev" type="button">前一关</button>
+          <label><span>第</span><input id="quick-stage-number" type="number" min="1" step="1" inputmode="numeric" value="1"><span>关</span></label>
+          <button id="quick-stage-next" type="button">后一关</button>
+          <button id="quick-stage-start" type="button">进入此关</button>
+        </section>
+        <section id="test-tools" hidden aria-label="测试包工具">
+          <label class="test-toggle"><input id="free-tour" type="checkbox"><span>无敌人干扰</span></label>
+        </section>
       </div>
-      <div id="gauntlet-panel" hidden>
+    </section>
+    <section id="gauntlet-panel" class="menu-page" hidden aria-label="轮番战">
+      <div class="menu-page-shell">
+        <header class="menu-page-head"><button id="gauntlet-back" type="button">← 返回</button><div><strong>轮番战</strong><small>选择本轮出战对手</small></div><span>GAUNTLET</span></header>
         <div class="gauntlet-title">选择出战对手（点击切换）</div>
         <div id="gauntlet-enemies"></div>
         <label class="gauntlet-elite-toggle"><input id="gauntlet-elite" type="checkbox"><span>精英敌人</span><small>全部对手获得精英体型、生命和攻击强化</small></label>
         <button id="gauntlet-start" disabled>至少选一个对手</button>
       </div>
-      <div id="recruit-panel" hidden>
-        <div class="recruit-head"><span>永久解锁或广告临时招募 · 一次只能带一名队友</span><strong id="recruit-gold">金币 0</strong></div>
+    </section>
+    <section id="recruit-panel" class="menu-page" hidden aria-label="招募队友">
+      <div class="menu-page-shell">
+        <header class="menu-page-head"><button id="recruit-back" type="button">← 返回</button><div><strong>招募队友</strong><small>永久解锁或广告临时招募</small></div><span id="recruit-gold">金币 0</span></header>
+        <div class="recruit-head"><span>一次只能带一名队友进入战斗</span></div>
         <div id="recruit-enemies"></div>
         <div id="recruit-status">尚未选择队友</div>
         <button id="recruit-action" type="button" hidden>解锁队友</button>
       </div>
-      <small>键盘：WASD / 方向键移动，连续按 J：左直拳→右直拳→上勾拳，K 腿，L 抓/拾取，空格跳</small>
     </section>
     <section id="skill-panel" hidden aria-label="主角技能页">
       <header class="skill-page-head">
@@ -140,7 +172,9 @@
       </div>
     </div>
   </main>
-  <script src="ad-config.js?v=1.2"></script>
+  <script src="auth-config.js?v=1.0"></script>
+  <script src="authorization.js?v=1.0"></script>
+  <script src="ad-config.js?v=1.3"></script>
   <script src="platform.js?v=1.2"></script>
   <script src="audio.js?v=1.2"></script>
   <script src="game-assets.js?v=8.5"></script>

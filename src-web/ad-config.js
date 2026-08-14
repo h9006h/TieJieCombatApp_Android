@@ -1,5 +1,5 @@
 window.TieJieAdConfig={
-  testBuild:true,
+  testBuild:false,
   rewardedGold:'',
   rewardedChicken:'',
   rewardedFruit:'',

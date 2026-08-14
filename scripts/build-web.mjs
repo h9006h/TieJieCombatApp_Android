@@ -1,13 +1,17 @@
 import { cp, mkdir, readFile, rm, unlink, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { join } from 'node:path';
+import { basename, extname, relative, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { minify } from 'terser';
 
 const root = new URL('../', import.meta.url);
 const sourceDir = new URL('src-web/', root);
 const outputDir = new URL('www/', root);
+const sourcePath = fileURLToPath(sourceDir);
 const sourceFiles = [
   'app-bootstrap.js',
+  'auth-config.js',
+  'authorization.js',
   'ad-config.js',
   'platform.js',
   'audio.js',
@@ -16,11 +20,28 @@ const sourceFiles = [
   'game.js',
 ];
 
+const excludedDirectories = new Set(['backups', '__tests__', 'test', 'tests']);
+const excludedExtensions = new Set(['.map', '.md']);
+const excludedFilePatterns = [
+  /(?:^|\.)test\.[cm]?[jt]sx?$/i,
+  /(?:^|\.)spec\.[cm]?[jt]sx?$/i,
+];
+
+function shouldCopy(source) {
+  const sourceRelativePath = relative(sourcePath, source);
+  const pathParts = sourceRelativePath.split(sep);
+  const fileName = basename(source);
+  if (pathParts.some(part => excludedDirectories.has(part))) return false;
+  if (fileName === '.DS_Store') return false;
+  if (excludedExtensions.has(extname(fileName).toLowerCase())) return false;
+  return !excludedFilePatterns.some(pattern => pattern.test(fileName));
+}
+
 await rm(outputDir, { recursive: true, force: true });
 await mkdir(outputDir, { recursive: true });
 await cp(sourceDir, outputDir, {
   recursive: true,
-  filter: source => !source.endsWith('/.DS_Store') && !source.endsWith('.md'),
+  filter: shouldCopy,
 });
 
 const sources = await Promise.all(
