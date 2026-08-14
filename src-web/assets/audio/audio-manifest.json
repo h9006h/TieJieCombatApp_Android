@@ -1,0 +1,303 @@
+{
+  "generator": "tools/generate_original_audio.py",
+  "generatorVersion": 5,
+  "musicDirection": "Stereo wuxia MMORPG score: bowed ensemble, guzheng/pipa-like strings, dizi/xiao, war drums, bronze gong and generated hall ambience",
+  "sustainedBeds": "Overlapping two-bar evolving harmonic beds for every stage",
+  "arrangement": "12 bars: intro, main, variation, breakdown, build, climax",
+  "sampleRate": 22050,
+  "copyrightNote": "Original sample-free procedural synthesis. No third-party recordings, loops, melodies, or sound libraries were used.",
+  "files": [
+    {
+      "path": "web/assets/audio/music/01-iron-alley.wav",
+      "seconds": 27.692,
+      "channels": 2,
+      "sha256": "21e44ef6eb674190de180480fe1f959994a9acb7015d4defb551fa4671d19dc4",
+      "kind": "music",
+      "title": "铁街旧巷",
+      "bpm": 104
+    },
+    {
+      "path": "web/assets/audio/music/02-dunhuang-wall.wav",
+      "seconds": 31.304,
+      "channels": 2,
+      "sha256": "c6d4065d14d603ba054d9dd67ba8d444ee2adb29a18a13fda36eba5e8cf2a646",
+      "kind": "music",
+      "title": "敦煌荒壁",
+      "bpm": 92
+    },
+    {
+      "path": "web/assets/audio/music/03-beacon-wall.wav",
+      "seconds": 25.714,
+      "channels": 2,
+      "sha256": "daea4554a5baa8128e5dd4af3d95b2384beda0f4dec70341c5ba8843b50225e4",
+      "kind": "music",
+      "title": "长城烽燧",
+      "bpm": 112
+    },
+    {
+      "path": "web/assets/audio/music/04-highrise-pulse.wav",
+      "seconds": 22.857,
+      "channels": 2,
+      "sha256": "75feb01c012630b68fdb6f5d126a489d7481041b2ba58269577bb167cba69f2e",
+      "kind": "music",
+      "title": "高楼脚手架",
+      "bpm": 126
+    },
+    {
+      "path": "web/assets/audio/music/05-close-quarters.wav",
+      "seconds": 26.667,
+      "channels": 2,
+      "sha256": "e3da49634bccaa8b7a687f1fa6b019583389b837fe04fd31296416c9725615a2",
+      "kind": "music",
+      "title": "室内拳馆",
+      "bpm": 108
+    },
+    {
+      "path": "web/assets/audio/music/06-ancient-battle.wav",
+      "seconds": 30.0,
+      "channels": 2,
+      "sha256": "45a4004f4ff1efdb1e85c392f4110c127961df86fb7aa60d746eb2d6505359c6",
+      "kind": "music",
+      "title": "烽火古战场",
+      "bpm": 96
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-skinny-1.wav",
+      "seconds": 0.241,
+      "channels": 1,
+      "sha256": "a50d7e5a32136701ac4550f35b581dff8ae8ff130d11567bde989bbe8ace5aba",
+      "kind": "sfx",
+      "enemyType": "skinny",
+      "variant": 1
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-skinny-2.wav",
+      "seconds": 0.241,
+      "channels": 1,
+      "sha256": "5a94691986f847f7367ae05310751aa6fdef4b89c41c884cf275582f18796952",
+      "kind": "sfx",
+      "enemyType": "skinny",
+      "variant": 2
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-heavy-1.wav",
+      "seconds": 0.293,
+      "channels": 1,
+      "sha256": "da79aca47b399d92966746f52f25871a87dfadde38a77aa3fb21de50104aa57a",
+      "kind": "sfx",
+      "enemyType": "heavy",
+      "variant": 1
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-heavy-2.wav",
+      "seconds": 0.293,
+      "channels": 1,
+      "sha256": "1afa7436128c88e714c6564f860070dcefd193cd4dbb80c3a13eeed1077b3058",
+      "kind": "sfx",
+      "enemyType": "heavy",
+      "variant": 2
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-spinner-1.wav",
+      "seconds": 0.251,
+      "channels": 1,
+      "sha256": "1c0558384fa3d739184d80e30f9bbaf9f7a0e635ad987600557fe21068394155",
+      "kind": "sfx",
+      "enemyType": "spinner",
+      "variant": 1
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-spinner-2.wav",
+      "seconds": 0.251,
+      "channels": 1,
+      "sha256": "e45f95299a8d2a5fdba9fcc9aa5bb4bb6a38b7e7936cbeffa3227fc575aba97b",
+      "kind": "sfx",
+      "enemyType": "spinner",
+      "variant": 2
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-grappler-1.wav",
+      "seconds": 0.269,
+      "channels": 1,
+      "sha256": "6ec6bf758a09b31c8bd6083e5e77c064ae7f38440433e98887436040265cfb73",
+      "kind": "sfx",
+      "enemyType": "grappler",
+      "variant": 1
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-grappler-2.wav",
+      "seconds": 0.269,
+      "channels": 1,
+      "sha256": "bf406b4b828cc862257670189f209c6cb3d95c8ac5b915fe565742c7eca2feb0",
+      "kind": "sfx",
+      "enemyType": "grappler",
+      "variant": 2
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-axe-1.wav",
+      "seconds": 0.265,
+      "channels": 1,
+      "sha256": "77ea25b254a51e240db3f433e1ea11f1050311c1b69b3df9ead7447a688b7956",
+      "kind": "sfx",
+      "enemyType": "axe",
+      "variant": 1
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-axe-2.wav",
+      "seconds": 0.265,
+      "channels": 1,
+      "sha256": "f4bc4ea439265cd42dd5db41d77503b49a3135505b10738afa7dd930ed48a8ea",
+      "kind": "sfx",
+      "enemyType": "axe",
+      "variant": 2
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-assassin-1.wav",
+      "seconds": 0.238,
+      "channels": 1,
+      "sha256": "31abcc52bd1d6f3ebaacc352317d137358a8b1e041b621b4972ab8dd85dc9eba",
+      "kind": "sfx",
+      "enemyType": "assassin",
+      "variant": 1
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-assassin-2.wav",
+      "seconds": 0.238,
+      "channels": 1,
+      "sha256": "672fc0c9450b7fad23b9282e28f1faf3938d9691b519af0b877a7af06187e5ef",
+      "kind": "sfx",
+      "enemyType": "assassin",
+      "variant": 2
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-suit-1.wav",
+      "seconds": 0.254,
+      "channels": 1,
+      "sha256": "b244194a1ff5a31fc7d4d36203fcb4264df6f58e47a04cf0cc21fd7efc8e9c24",
+      "kind": "sfx",
+      "enemyType": "suit",
+      "variant": 1
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-suit-2.wav",
+      "seconds": 0.254,
+      "channels": 1,
+      "sha256": "bef1c18bc40ffa736599b0b3de72ed4a4206162fa3edd6bbeb2cb9113758de83",
+      "kind": "sfx",
+      "enemyType": "suit",
+      "variant": 2
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-breaker-1.wav",
+      "seconds": 0.248,
+      "channels": 1,
+      "sha256": "19860a298f2c88c2889dd770d0afcf01b138fbbfde0e1e2944f59e79b13da194",
+      "kind": "sfx",
+      "enemyType": "breaker",
+      "variant": 1
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-breaker-2.wav",
+      "seconds": 0.248,
+      "channels": 1,
+      "sha256": "79e6488137d7c5ac3526914982a71b762ce63bfa62f6fbcd563a8095f8bfe9f8",
+      "kind": "sfx",
+      "enemyType": "breaker",
+      "variant": 2
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-whip-1.wav",
+      "seconds": 0.244,
+      "channels": 1,
+      "sha256": "0877282dbb989ccdd7f97061d0d2aea8fa03f6d69ed9b92c6b499f0b3c07be10",
+      "kind": "sfx",
+      "enemyType": "whip",
+      "variant": 1
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-whip-2.wav",
+      "seconds": 0.244,
+      "channels": 1,
+      "sha256": "8b1342514eab29b2ac3e053e3c324c4da3c36ce7d2594355363835f81078a484",
+      "kind": "sfx",
+      "enemyType": "whip",
+      "variant": 2
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-barbarian-1.wav",
+      "seconds": 0.304,
+      "channels": 1,
+      "sha256": "da067cc59f5f17c6b5464afa362459620bb8d7298431242d3808e1d9aa614a14",
+      "kind": "sfx",
+      "enemyType": "barbarian",
+      "variant": 1
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-barbarian-2.wav",
+      "seconds": 0.304,
+      "channels": 1,
+      "sha256": "ca918fe9f1b0d6c35b5eac016744d731d78b713987df9bf4c2a38fb5a0c35de2",
+      "kind": "sfx",
+      "enemyType": "barbarian",
+      "variant": 2
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-player-1.wav",
+      "seconds": 0.28,
+      "channels": 1,
+      "sha256": "7233d73cf70a6bb88e48d10495870b18acfa7a72a3780b57dfc4363e4d9548b3",
+      "kind": "sfx",
+      "target": "player",
+      "variant": 1
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-player-2.wav",
+      "seconds": 0.28,
+      "channels": 1,
+      "sha256": "b76778bbe74bb58973d3d93cc587e3e226c0f42f749be6498054f5200b8f620f",
+      "kind": "sfx",
+      "target": "player",
+      "variant": 2
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-player-axe-1.wav",
+      "seconds": 0.34,
+      "channels": 1,
+      "sha256": "17937bd0de779306f89acad3ad63db14a73ce5e2ddc7bfd0ef7ae739c4decbbc",
+      "kind": "sfx",
+      "target": "player",
+      "attacker": "axe",
+      "variant": 1
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-player-axe-2.wav",
+      "seconds": 0.34,
+      "channels": 1,
+      "sha256": "98e29a97d8b21b75c77f79747ef9d4dba4ac4116e335c387ade69ea11fd08525",
+      "kind": "sfx",
+      "target": "player",
+      "attacker": "axe",
+      "variant": 2
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-player-assassin-1.wav",
+      "seconds": 0.22,
+      "channels": 1,
+      "sha256": "f330680f37eef1e439e5354218fc551c40ae968c11061891444a0c988dcc13cd",
+      "kind": "sfx",
+      "target": "player",
+      "attacker": "assassin",
+      "variant": 1
+    },
+    {
+      "path": "web/assets/audio/sfx/hit-player-assassin-2.wav",
+      "seconds": 0.22,
+      "channels": 1,
+      "sha256": "f500f368052c8d61a908647865c657420655be7d3cc2a9c4ec5e3c48248f3c90",
+      "kind": "sfx",
+      "target": "player",
+      "attacker": "assassin",
+      "variant": 2
+    }
+  ]
+}

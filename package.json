@@ -1,0 +1,30 @@
+{
+  "name": "tiejiecombatapp",
+  "version": "1.0.0",
+  "description": "铁街格斗 Android/iOS Capacitor app",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:web": "node scripts/build-web.mjs",
+    "sync:android": "npm run build:web && npx cap sync android",
+    "open:android": "npx cap open android",
+    "sync:ios": "npm run build:web && npx cap sync ios",
+    "open:ios": "npx cap open ios",
+    "check": "npm run build:web && npx cap doctor"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
+    "terser": "^5.44.1"
+  },
+  "private": "true"
+}

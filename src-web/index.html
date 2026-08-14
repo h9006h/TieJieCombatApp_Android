@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <title>铁街格斗 · 战斗试玩</title>
+  <link rel="stylesheet" href="style.css?v=2.2">
+</head>
+<body>
+  <main id="game-wrap">
+    <canvas id="game" width="1280" height="720" tabindex="0" aria-label="铁街格斗战斗试玩"></canvas>
+    <div id="resource-ad-bar" aria-label="资源栏">
+      <div class="resource-chip" data-resource="gold" title="金币">
+        <svg class="resource-icon" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12"/><circle class="icon-detail" cx="16" cy="16" r="7"/><path class="icon-cut" d="M13 13h6v6h-6z"/></svg>
+        <b id="top-gold">0</b><button data-reward-ad="gold" aria-label="补充金币"></button>
+      </div>
+      <div class="resource-chip" data-resource="chicken" title="鸡腿">
+        <svg class="resource-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M21.8 5.7c4.4 3.3 4.4 9.8.6 13.6-3.5 3.5-8.9 3.8-12.4.5-3.3-3.2-2.8-8.5.8-12 3.1-3 7.7-4.4 11-2.1Z"/><path class="icon-bone" d="m10.3 19.2-4.1 4.1m.5-.5-2.3-.2-1.2 1.2 2.3 2.3 1.2-1.2-.2-2.3m1.1.7 1.6 1.6 1.2-1.2-.2-2.3"/></svg>
+        <b id="top-chicken">0</b><button data-reward-ad="chicken" aria-label="补充鸡腿"></button>
+      </div>
+      <div class="resource-chip" data-resource="fruit" title="果实">
+        <svg class="resource-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 10.2c-2.6-3.3-8-1.7-9.4 2.4-2.3 6.8 3.2 14.3 9.4 14.3s11.7-7.5 9.4-14.3c-1.4-4.1-6.8-5.7-9.4-2.4Z"/><path class="icon-leaf" d="M16.2 10.5C18 5.6 21.7 3.7 26.3 5c-1.7 4.4-5.6 6.1-10.1 5.5Z"/><path class="icon-stem" d="M16 10.4c-.1-2.8-.8-4.8-2.2-6.2"/></svg>
+        <b id="top-fruit">0</b><button data-reward-ad="fruit" aria-label="补充果实"></button>
+      </div>
+      <button id="growth-toggle" type="button"><span aria-hidden="true">◆</span>强化</button>
+      <button id="audio-toggle" type="button" aria-label="关闭音乐和音效">声音：开</button>
+    </div>
+    <button id="battle-menu-toggle" type="button" hidden aria-label="打开战斗菜单"><span>☰</span>菜单</button>
+    <section id="battle-menu" hidden aria-label="战斗菜单">
+      <strong>战斗菜单</strong>
+      <button id="battle-menu-resume" type="button">继续战斗</button>
+      <button id="battle-menu-end" type="button">结束战斗</button>
+    </section>
+    <section id="growth-panel" hidden aria-label="人物成长">
+      <header><strong>人物成长</strong><button id="growth-close" type="button" aria-label="关闭">×</button></header>
+      <div class="growth-row"><span>血量 <b id="growth-hp">0</b></span><div class="growth-stepper"><button data-downgrade="hp" disabled>撤回 −1</button><button data-upgrade="hp">加点 +1</button></div></div>
+      <div class="growth-row"><span>力量 <b id="growth-atk">0</b></span><div class="growth-stepper"><button data-downgrade="atk" disabled>撤回 −1</button><button data-upgrade="atk">加点 +1</button></div></div>
+      <div class="growth-row"><span>防御 <b id="growth-def">0</b></span><div class="growth-stepper"><button data-downgrade="def" disabled>撤回 −1</button><button data-upgrade="def">加点 +1</button></div></div>
+      <button id="growth-confirm" type="button" disabled>保存强化</button>
+      <small id="growth-tip">加点会先进入预览；撤回只能减少本次未保存的点数，已保存属性不能降低。</small>
+    </section>
+    <div id="reward-modal" hidden role="dialog" aria-modal="true" aria-labelledby="reward-modal-title">
+      <div class="modal-card">
+        <h2 id="reward-modal-title">资源补给</h2>
+        <p id="reward-modal-desc"></p>
+        <div id="stage-settlement-summary" hidden>
+          <span>金币<strong id="settlement-gold">0</strong></span>
+          <span>鸡腿<strong id="settlement-chicken">0</strong></span>
+          <span>果实<strong id="settlement-fruit">0</strong></span>
+        </div>
+        <div class="modal-actions">
+          <button id="reward-confirm" type="button">观看视频并领取</button>
+          <button id="reward-cancel" type="button">取消</button>
+          <button id="reward-exit" type="button" hidden>放弃掉落并返回初始页</button>
+        </div>
+      </div>
+    </div>
+    <section id="start-card">
+      <div class="badge">位图敌人与经典镜头锁定 7.7</div>
+      <h1>铁街格斗</h1>
+      <p>先试手感，再决定长线内容。</p>
+      <div class="menu-actions">
+        <button id="start">进入黑钢城</button>
+        <button id="level-select" hidden>选择关卡</button>
+        <button id="gauntlet-btn" hidden>轮番战</button>
+        <button id="recruit-btn">招募队友</button>
+        <button id="skill-btn">技能</button>
+        <button id="rank-btn">闯关排行榜</button>
+        <button id="feedback-btn">意见反馈</button>
+      </div>
+      <section id="quick-stage-select" aria-label="数字选关">
+        <button id="quick-stage-prev" type="button">前一关</button>
+        <label><span>第</span><input id="quick-stage-number" type="number" min="1" step="1" inputmode="numeric" value="1"><span>关</span></label>
+        <button id="quick-stage-next" type="button">后一关</button>
+        <button id="quick-stage-start" type="button">进入此关</button>
+      </section>
+      <section id="test-tools" hidden aria-label="测试包工具">
+        <label class="test-toggle"><input id="free-tour" type="checkbox"><span>无敌人干扰</span></label>
+      </section>
+      <div id="level-panel" hidden>
+        <button data-map="0">1 街区</button>
+        <button data-map="1">2 沙漠</button>
+        <button data-map="2">3 长城</button>
+        <button data-map="3">4 高楼</button>
+        <button data-map="4">5 室内</button>
+        <button data-map="5">6 古战场</button>
+        <div id="stage-page-controls">
+          <button id="stage-prev-page" type="button">上一组</button>
+          <span id="stage-page-label">第 1–6 关</span>
+          <button id="stage-current" type="button">回到当前关</button>
+          <button id="stage-next-page" type="button">下一组</button>
+        </div>
+      </div>
+      <div id="gauntlet-panel" hidden>
+        <div class="gauntlet-title">选择出战对手（点击切换）</div>
+        <div id="gauntlet-enemies"></div>
+        <label class="gauntlet-elite-toggle"><input id="gauntlet-elite" type="checkbox"><span>精英敌人</span><small>全部对手获得精英体型、生命和攻击强化</small></label>
+        <button id="gauntlet-start" disabled>至少选一个对手</button>
+      </div>
+      <div id="recruit-panel" hidden>
+        <div class="recruit-head"><span>永久解锁或广告临时招募 · 一次只能带一名队友</span><strong id="recruit-gold">金币 0</strong></div>
+        <div id="recruit-enemies"></div>
+        <div id="recruit-status">尚未选择队友</div>
+        <button id="recruit-action" type="button" hidden>解锁队友</button>
+      </div>
+      <small>键盘：WASD / 方向键移动，连续按 J：左直拳→右直拳→上勾拳，K 腿，L 抓/拾取，空格跳</small>
+    </section>
+    <section id="skill-panel" hidden aria-label="主角技能页">
+      <header class="skill-page-head">
+        <button id="skill-back" type="button" aria-label="返回主菜单">← 返回</button>
+        <div><strong>神奇果实技能树</strong><small>只能在关卡外点亮技能</small></div>
+        <span id="skill-fruit">果实 0</span>
+      </header>
+      <div class="skill-page-body">
+        <div id="skill-tree" aria-label="树状技能分支"></div>
+        <article id="skill-detail">
+          <div id="skill-detail-icon" aria-hidden="true">拳</div>
+          <p id="skill-detail-path">拳击分支</p>
+          <h2 id="skill-detail-name">普通三段拳</h2>
+          <section><h3>技能说明</h3><p id="skill-detail-desc"></p></section>
+          <section><h3>释放方式</h3><p id="skill-detail-release"></p></section>
+          <section><h3>相关故事</h3><p id="skill-detail-story"></p></section>
+          <div id="skill-detail-requirement"></div>
+          <button id="skill-unlock" type="button">初始拥有</button>
+        </article>
+      </div>
+      <div id="skill-status" role="status">技能只能在关卡外点亮</div>
+    </section>
+    <div id="touch-ui" aria-hidden="true">
+      <div class="dpad" aria-label="滑动摇杆">
+        <span class="joystick-knob" aria-hidden="true"></span>
+        <button data-hold="up" tabindex="-1" aria-hidden="true"></button>
+        <button data-hold="left" tabindex="-1" aria-hidden="true"></button>
+        <button data-hold="down" tabindex="-1" aria-hidden="true"></button>
+        <button data-hold="right" tabindex="-1" aria-hidden="true"></button>
+      </div>
+      <div class="actions">
+        <button class="hand" data-action="punch">拳</button><button data-action="grab">抓</button>
+        <button data-action="jump">跳</button><button class="leg" data-action="kick">腿</button>
+      </div>
+    </div>
+  </main>
+  <script src="ad-config.js?v=1.2"></script>
+  <script src="platform.js?v=1.2"></script>
+  <script src="audio.js?v=1.2"></script>
+  <script src="game-assets.js?v=8.5"></script>
+  <script src="game-enemies.js?v=4.5"></script>
+  <script src="game.js?v=23.9"></script>
+</body>
+</html>

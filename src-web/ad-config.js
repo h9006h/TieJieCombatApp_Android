@@ -1,0 +1,10 @@
+window.TieJieAdConfig={
+  testBuild:true,
+  rewardedGold:'',
+  rewardedChicken:'',
+  rewardedFruit:'',
+  rewardedRevive:'',
+  rewardedStageDouble:'',
+  rewardedTemporaryRecruit:'',
+  interstitialStage:''
+};
