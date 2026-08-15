@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tiejie-access",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-14",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tiejie-access",
+      "database_id": "ce815199-33a7-4a44-83cb-4bbcd933fac0"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "tiejie-access-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "schema:remote": "wrangler d1 execute tiejie-access --remote --file schema.sql",
+    "manage": "node manage-access.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.30.0"
+  }
+}
