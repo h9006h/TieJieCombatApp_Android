@@ -74,7 +74,7 @@ for (const file of sourceFiles) {
 
 const indexUrl = new URL('index.html', outputDir);
 let html = await readFile(indexUrl, 'utf8');
-for (const file of sourceFiles.filter(file => file !== 'app-bootstrap.js')) {
+for (const file of sourceFiles) {
   const escaped = file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   html = html.replace(new RegExp(`\\s*<script\\s+src=["']${escaped}(?:\\?[^"']*)?["']\\s*><\\/script>`, 'g'), '');
 }
