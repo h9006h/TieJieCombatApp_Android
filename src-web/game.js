@@ -752,8 +752,8 @@
   }
   function blackoutActive(){return currentStageTheme==='高楼'&&powerSwitch&&!powerSwitch.on}
   const dist=(a,b)=>Math.hypot(a.x-b.x,(a.y-b.y)*1.35);
-  const PLAYER_MOVE_SPEED_X=320,PLAYER_MOVE_SPEED_Y=206,ENEMY_MOVE_SPEED_MUL=3,ENEMY_ALERT_X=450,ENEMY_ALERT_Y=180;
-  const player={x:270,y:566,z:0,vz:0,knockVx:0,level:0,face:1,hp:160,maxHp:160,state:'idle',timer:0,combo:0,comboT:0,kickCombo:0,kickComboT:0,cleanHits:0,attackSpeedTier:0,starAbsorbHits:0,starAbsorbPull:null,grab:null,grabTarget:null,grabT:0,grabEscapeT:0,grabKickQueue:0,grabKickTotal:0,risingQueued:false,risingCooldown:0,risingAirInv:false,risingInvT:0,held:null,heldUses:0,inv:0,kills:0,inputQueue:[],climb:null,fallDamage:0,fallFromLevel:null,fallStartY:null,subPit:null,pitSafeT:0,launchKickChainCount:0,launchKickChainQueued:0};
+  const PLAYER_MOVE_SPEED_X=320,PLAYER_MOVE_SPEED_Y=206,ENEMY_MOVE_SPEED_MUL=3,ENEMY_ALERT_X=675,ENEMY_ALERT_Y=270,SKILL_CHARGE_MAX=12;
+  const player={x:270,y:566,z:0,vz:0,knockVx:0,level:0,face:1,hp:160,maxHp:160,state:'idle',timer:0,combo:0,comboT:0,kickCombo:0,kickComboT:0,cleanHits:0,attackSpeedTier:0,starAbsorbHits:0,launchKickChargeHits:0,starAbsorbPull:null,comboLinkT:0,airFallTime:0,grab:null,grabTarget:null,grabT:0,grabEscapeT:0,grabKickQueue:0,grabKickTotal:0,risingQueued:false,risingCooldown:0,risingAirInv:false,risingInvT:0,held:null,heldUses:0,inv:0,kills:0,inputQueue:[],climb:null,fallDamage:0,fallFromLevel:null,fallStartY:null,subPit:null,pitSafeT:0,launchKickChainCount:0,launchKickChainQueued:0};
   let enemies=[],companions=[],pickups=[],projectiles=[],forestHives=[];
   const pendingGrowthUpgrades={hp:0,atk:0,def:0};
   const defaultProgress={gold:0,chicken:0,fruit:0,hpLv:0,atkLv:0,defLv:0,spdLv:0,ascend:0,bestStage:0,currentStage:1,unlockedRecruits:[],tempRecruit:null,unlockedSkills:[]};
@@ -763,17 +763,17 @@
   function saveProgress(){try{localStorage.setItem('tiejie-progress',JSON.stringify(progress))}catch(e){}}
   const skillCatalog=[
     {id:'basicPunch',branch:'拳击分支',icon:'拳',name:'普通三段拳',cost:0,requires:null,desc:'连续普通拳形成三段攻击，也是升龙拳和拳焰的根节点。',release:'连续按“拳”：左直拳→右直拳→上勾拳。',story:'主角机缘巧合下获得了能让拳头力大无穷的神器果实，从此掌握普通三段拳。'},
-    {id:'risingPunch',branch:'拳击分支',icon:'升',name:'升龙拳',cost:1,requires:'basicPunch',desc:'起飞后的前 0.34 秒处于无敌状态，可以穿过敌人的攻击；下蹲蓄力阶段没有无敌。',release:'在地面进入跳跃下蹲时按“拳”，完成蓄力后自动起飞出拳；技能冷却 1 秒。',story:''},
+    {id:'risingPunch',branch:'拳击分支',icon:'升',name:'升龙拳',cost:1,requires:'basicPunch',desc:'击飞高度提高为原来的两倍；起飞后的前 0.34 秒处于无敌状态，可以穿过敌人的攻击。',release:'在地面进入跳跃下蹲时按“拳”，或在聚势之握结束时自动衔接；技能冷却 1 秒。',story:''},
     {id:'lifeSteal',branch:'拳击分支',icon:'血',name:'吸血',cost:3,requires:'risingPunch',desc:'主角造成伤害时，将敌人实际损失生命的 10% 转化为自己的生命。',release:'点亮后被动生效；主角的拳脚、擒拿、摔投和投掷道具造成伤害时均可吸血。',story:''},
     {id:'downRisingPunch',branch:'拳击分支',icon:'躺',name:'地躺升龙拳',cost:3,requires:'risingPunch',desc:'被击倒且已经落地时，可以瞬间用升龙拳反击。',release:'主角倒地并接触地面后按“拳”；仍在空中被击飞时无效。',story:''},
     {id:'blueFlame',branch:'拳击分支',icon:'拳焰',name:'拳焰',cost:3,requires:'basicPunch',desc:'每次拳击额外造成 10 点基础伤害；无伤期间每有效命中 5 次，攻击速度提高 20%，最高达到 2 倍。受到伤害会失去全部攻速加成。',release:'点亮后被动生效。连续命中并避免受伤，才能维持攻速增益。',story:''},
     {id:'legArts',branch:'腿法分支',icon:'腿',name:'腿法',cost:1,requires:null,desc:'开放主角的普通腿法和战斗界面的“腿”按键。',release:'按“腿”发动普通腿法。',story:''},
     {id:'legFlame',branch:'腿法分支',icon:'腿焰',name:'腿焰',cost:2,requires:'legArts',desc:'为所有腿技附加腿部火焰，并将腿技的攻击距离提升为原来的 1.3 倍。',release:'点亮后被动生效；普通踢腿、空中踢和弹射飞踢均获得腿焰与 1.3 倍攻击距离。',story:''},
     {id:'launchKick',branch:'腿法分支',icon:'飞',name:'弹射飞踢',cost:3,requires:'legFlame',desc:'在跳跃起势阶段高速向前弹射飞踢；命中后仍保持横向弹射，并带动敌人进入空中追击距离。',release:'跳跃下蹲阶段按“腿”；命中后继续点腿可接弹射飞连腿。',story:''},
-    {id:'launchKickChain',branch:'腿法分支',icon:'连',name:'弹射飞连腿',cost:4,requires:'launchKick',desc:'弹射飞踢途中持续点腿可续踢，整套最多六次有效命中；停止输入或打满六次后立即收招下落。',release:'保持空中连续点“腿”维持飞连腿，有效命中次数上限为六次。',story:''},
-    {id:'grapple',branch:'擒拿分支',icon:'抓',name:'擒拿',cost:1,requires:null,desc:'开放主动抓取敌人。未点亮时，“抓”仍可用于推门和拾取。',release:'靠近可抓取的敌人后按“抓”。',story:''},
+    {id:'launchKickChain',branch:'腿法分支',icon:'连',name:'弹射飞连腿',cost:4,requires:'launchKick',desc:'每次有效命中为技能独立充能，积满 12 次后可释放一整套；整套最多六次有效命中。',release:'充满后先发动弹射飞踢，再持续点“腿”维持飞连腿；起手消耗全部充能。',story:''},
+    {id:'grapple',branch:'擒拿分支',icon:'抓',name:'擒拿',cost:1,requires:null,desc:'开放主动抓取敌人。未点亮时，“抓”仍可用于拾取道具；暗坑石门使用独立的“开门”按键。',release:'靠近可抓取的敌人后按“抓”。',story:''},
     {id:'invincibleGrapple',branch:'擒拿分支',icon:'御',name:'无敌擒拿',cost:3,requires:'grapple',desc:'成功抓住敌人的持续阶段处于无敌状态；抓取尝试、失败、松手和挣脱后不无敌。',release:'点亮后被动生效；成功抓住敌人即进入无敌阶段。',story:''},
-    {id:'starAbsorb',branch:'擒拿分支',icon:'聚',name:'聚势之握',cost:2,requires:'grapple',desc:'主角每次对敌人造成有效命中积累 1 点，20 点充能后可进行一次远距离吸附擒拿。',release:'进度达到 20/20 后按“抓”，消耗全部充能；将前方 70°、350px 扇形内最近的一名可抓敌人用 0.5 秒吸到手上。即使范围内没有目标也会消耗充能。',story:''}
+    {id:'starAbsorb',branch:'擒拿分支',icon:'聚',name:'聚势之握',cost:2,requires:'grapple',desc:'每次有效命中独立充能，积满 12 次后可吸引前方扇形内所有敌人；吸收阶段没有伤害。',release:'充满后长按“抓”触发，最长持续 2 秒；松手或到时后立即衔接升龙拳。只有被敌人擒拿才能打断。',story:''}
   ];
   const skillIconPositions={basicPunch:[0,0],risingPunch:[1,0],lifeSteal:[2,0],downRisingPunch:[3,0],blueFlame:[0,1],legArts:[1,1],legFlame:[2,1],launchKick:[3,1],launchKickChain:[0,2],grapple:[1,2],invincibleGrapple:[2,2],starAbsorb:[3,2]};
   function applySkillIcon(node,skill){const position=skillIconPositions[skill.id]||[0,0];node.textContent='';node.dataset.skillIcon=skill.id;node.style.setProperty('--skill-icon-x',`${position[0]*100/3}%`);node.style.setProperty('--skill-icon-y',`${position[1]*50}%`)}
@@ -808,6 +808,7 @@
   function queueLaunchKickChain(){
     if(!hasSkill('launchKickChain'))return false
     if(!(player.state==='airBackKick'&&(player.launchKick||player.launchKickChainCount>0)&&player.z>0))return false
+    if((player.launchKickChainCount||0)<=0&&(player.launchKickChargeHits||0)<SKILL_CHARGE_MAX){message=`空中飞连踢尚未充满 ${(player.launchKickChargeHits||0)}/${SKILL_CHARGE_MAX}`;messageT=.75;return true}
     if((player.launchKickChainHitCount||0)>=LAUNCH_KICK_CHAIN_MAX_HITS){player.launchKickChainQueued=0;message=`飞连腿${LAUNCH_KICK_CHAIN_MAX_HITS}下已满`;messageT=.35;return true}
     player.launchKickChainQueued=1
     message='持续点腿，飞连腿就不会停'
@@ -817,6 +818,7 @@
   function startLaunchKickChainSegment(){
     resetPlayerHitStreak()
     const continuing=player.launchKickChainCount>0
+    if(!continuing)player.launchKickChargeHits=0
     player.launchKick=false
     player.launchKickTime=0
     player.launchKickSpeed=0
@@ -839,7 +841,7 @@
     message=`高低连环鞭腿 ${player.launchKickChainHitCount}/${LAUNCH_KICK_CHAIN_MAX_HITS}`
     messageT=.4
   }
-  function registerPlayerHit(){if(hasSkill('starAbsorb')&&(player.starAbsorbHits||0)<20){player.starAbsorbHits=Math.min(20,(player.starAbsorbHits||0)+1);if(player.starAbsorbHits===20){message='聚势之握已充满——按“抓”吸附敌人';messageT=1.5}}if(!hasSkill('blueFlame'))return;player.cleanHits=(player.cleanHits||0)+1;if(player.cleanHits%5===0&&player.attackSpeedTier<5){player.attackSpeedTier++;message=`无伤连击 ${player.cleanHits} 次 · 攻速 ×${playerAttackSpeedMul().toFixed(1)}`;messageT=1.1}}
+  function registerPlayerHit(){player.comboLinkT=.46;if(hasSkill('starAbsorb')&&(player.starAbsorbHits||0)<SKILL_CHARGE_MAX){player.starAbsorbHits=Math.min(SKILL_CHARGE_MAX,(player.starAbsorbHits||0)+1);if(player.starAbsorbHits===SKILL_CHARGE_MAX){message='聚势之握已充满——长按“抓”释放';messageT=1.5}}if(hasSkill('launchKickChain')&&(player.launchKickChargeHits||0)<SKILL_CHARGE_MAX){player.launchKickChargeHits=Math.min(SKILL_CHARGE_MAX,(player.launchKickChargeHits||0)+1);if(player.launchKickChargeHits===SKILL_CHARGE_MAX){message='空中飞连踢已充满';messageT=1.3}}if(!hasSkill('blueFlame'))return;player.cleanHits=(player.cleanHits||0)+1;if(player.cleanHits%5===0&&player.attackSpeedTier<5){player.attackSpeedTier++;message=`无伤连击 ${player.cleanHits} 次 · 攻速 ×${playerAttackSpeedMul().toFixed(1)}`;messageT=1.1}}
   function healPlayerFromDamage(target,previousHp){
     if(!hasSkill('lifeSteal')||player.hp<=0||player.hp>=player.maxHp)return 0;
     const actualDamage=Math.max(0,Math.min(Math.max(0,previousHp),Math.max(0,previousHp-target.hp)));if(actualDamage<=0)return 0;
@@ -944,7 +946,7 @@
   }
   function revivePartyFull(){
     lostResources=null;failureHandled=false;failurePopupT=0;partyDefeatPending=false;
-    player.hp=player.maxHp;Object.assign(player,{state:'idle',timer:0,z:0,vz:0,knockVx:0,throwVx:0,airLaunch:false,cleanHits:0,attackSpeedTier:0,starAbsorbHits:0,starAbsorbPull:null,inv:2,grab:null,grabTarget:null,grabbed:false,grappleHolder:null,grappleInvincible:false});starAbsorbFx=[];
+    player.hp=player.maxHp;Object.assign(player,{state:'idle',timer:0,z:0,vz:0,airFallTime:0,knockVx:0,throwVx:0,airLaunch:false,cleanHits:0,attackSpeedTier:0,starAbsorbHits:0,launchKickChargeHits:0,comboLinkT:0,starAbsorbPull:null,inv:2,grab:null,grabTarget:null,grabbed:false,grappleHolder:null,grappleInvincible:false});starAbsorbFx=[];
     for(const c of companions){syncCompanionStats(c);Object.assign(c,{hp:c.maxHp,dead:false,state:'idle',timer:0,z:0,vz:0,knockVx:0,throwVx:0,airLaunch:false,inv:2,grabbed:false,grabVictim:null,grappleHolder:null,grappleInvincible:false,revived:false,rage:false})}
     for(const e of enemies){clearGrapplerHold(e);e.grappleHolder=null;e.grabbed=false;if(enemyAttackStates.has(e.state)){e.state='idle';e.timer=0;e.specialHit=false}}
     closeRewardModal(false);running=true;message='全队满血复活，继续此关！';messageT=1.8
@@ -960,13 +962,13 @@
     for(const k of Object.keys(keys))keys[k]=false;
     const modal=document.querySelector('#reward-modal'),battleMenu=document.querySelector('#battle-menu'),menuToggle=document.querySelector('#battle-menu-toggle'),growthToggle=document.querySelector('#growth-toggle'),growth=document.querySelector('#growth-panel'),growthClose=document.querySelector('#growth-close'),startCard=document.querySelector('#start-card');
     if(modal)modal.hidden=true;if(battleMenu)battleMenu.hidden=true;if(menuToggle)menuToggle.hidden=true;if(growthToggle)growthToggle.hidden=false;if(growth)growth.hidden=true;if(growthClose){growthClose.textContent='×';growthClose.classList.remove('advance')}if(startCard)startCard.style.display='';document.querySelectorAll('.menu-page').forEach(page=>page.hidden=true);const skillPanel=document.querySelector('#skill-panel');if(skillPanel)skillPanel.hidden=true;document.querySelector('#touch-ui')?.classList.remove('active');
-    enemies=[];companions=[];projectiles=[];hitFx=[];blastFx=[];resourceFx=[];eliteArmorFx=[];starAbsorbFx=[];player.starAbsorbHits=0;message='';messageT=0;refreshStartStageLabel()
+    enemies=[];companions=[];projectiles=[];hitFx=[];blastFx=[];resourceFx=[];eliteArmorFx=[];starAbsorbFx=[];player.starAbsorbHits=0;player.launchKickChargeHits=0;player.comboLinkT=0;message='';messageT=0;refreshStartStageLabel()
   }
   function handleRunFailure(){
     if(failureHandled)return;failureHandled=true;lostResources={gold:progress.gold,chicken:progress.chicken,fruit:progress.fruit};progress.gold=0;progress.chicken=0;progress.fruit=0;saveProgress();
     const growthPanel=document.querySelector('#growth-panel'),battleMenu=document.querySelector('#battle-menu');if(growthPanel)growthPanel.hidden=true;if(battleMenu)battleMenu.hidden=true;openRewardModal('gold','', 'defeat')
   }
-  function queueRunFailure(){player.starAbsorbHits=0;starAbsorbFx=[];const growthPanel=document.querySelector('#growth-panel');if(growthPanel)growthPanel.hidden=true}
+  function queueRunFailure(){player.starAbsorbHits=0;player.launchKickChargeHits=0;player.comboLinkT=0;starAbsorbFx=[];const growthPanel=document.querySelector('#growth-panel');if(growthPanel)growthPanel.hidden=true}
   function updatePartyFailure(dt){
     const defeated=player.hp<=0&&companions.every(c=>c.dead||c.hp<=0);
     if(!defeated){failurePopupT=0;partyDefeatPending=false;return}
@@ -990,7 +992,7 @@
   function enemyName(type,seed,elite=false){const n=enemyNames[type]||[enemyCatalog[type]?.name||'打手'];return elite?`${n[seed%n.length]}·头目`:n[seed%n.length]}
   let currentStageTheme=trialMaps[0].theme;
 
-  function enemy(x,y,type='skinny',name,elite=false,rank=1){const meta=enemyCatalog[type]||enemyCatalog.skinny,difficulty=gauntletMode?1+Math.max(0,rank-1)*.075:stageDifficulty(rank),baseHp=Math.round(meta.hp*difficulty),hp=baseHp*(elite?2:1);return{x,y,z:0,vz:0,level:levelAtPoint(x,y),face:-1,faceHold:0,hp,maxHp:hp,type,rank,difficulty,damage:Math.round(meta.dmg*difficulty*(elite?1.25:1)),speed:meta.spd*ENEMY_MOVE_SPEED_MUL*(1+Math.min(1.5,(difficulty-1)*.03)),state:'idle',timer:0,inv:0,attackT:1+Math.random()*1.3,slamT:type==='heavy'?.9+Math.random()*1.4:99,slideT:type==='skinny'?1.1+Math.random()*1.2:99,specialT:type==='barbarian'?2.8+Math.random()*1.8:.8+Math.random()*1.4,slamTargetX:x,slamHit:false,slideHit:false,name:name||meta.name,elite,dead:false,grabbed:false,revived:false,rage:false,eliteAware:false,eliteArmorCheckT:4,eliteArmorT:0}}
+  function enemy(x,y,type='skinny',name,elite=false,rank=1){const meta=enemyCatalog[type]||enemyCatalog.skinny,difficulty=gauntletMode?1+Math.max(0,rank-1)*.075:stageDifficulty(rank),baseHp=Math.round(meta.hp*difficulty),hp=baseHp*(elite?2:1);return{x,y,z:0,vz:0,airFallTime:0,level:levelAtPoint(x,y),face:-1,faceHold:0,hp,maxHp:hp,type,rank,difficulty,damage:Math.round(meta.dmg*difficulty*(elite?1.25:1)),speed:meta.spd*ENEMY_MOVE_SPEED_MUL*(1+Math.min(1.5,(difficulty-1)*.03)),state:'idle',timer:0,inv:0,attackT:1+Math.random()*1.3,slamT:type==='heavy'?.9+Math.random()*1.4:99,slideT:type==='skinny'?1.1+Math.random()*1.2:99,specialT:type==='barbarian'?2.8+Math.random()*1.8:.8+Math.random()*1.4,slamTargetX:x,slamHit:false,slideHit:false,homeX:x,homeY:y,wanderT:Math.random()*1.4,alertMemory:0,chasePatternT:0,name:name||meta.name,elite,dead:false,grabbed:false,revived:false,rage:false,eliteAware:false,eliteArmorCheckT:4,eliteArmorT:0}}
   function syncCompanionStats(c){
     const nextMax=playerMaxHp(),oldMax=c.maxHp||nextMax;
     if(nextMax!==oldMax)c.hp=Math.min(nextMax,Math.max(1,c.hp+nextMax-oldMax));
@@ -1043,6 +1045,7 @@
   }
   function pinGrappleVictim(holder,victim,trip=false){
     if(!holder||!canBeGrappled(victim))return false;
+    if(victim===player&&player.starAbsorbPull)cancelStarAbsorbPull(false);
     holder.grabVictim=victim;holder.grappleInvincible=true;holder.inv=Math.max(holder.inv||0,.12);
     victim.grabbed=true;victim.grappleHolder=holder;victim.state=grappleVictimState(victim);victim.timer=Math.max(victim.timer||0,.18);victim.face=-holder.face;victim.level=holder.level;
     victim.x=holder.x+holder.face*(trip?27:42);victim.y=holder.y+(trip?12:0);victim.z=trip?4:0;victim.vz=0;victim.knockVx=0;victim.throwVx=0;return true
@@ -1073,8 +1076,8 @@
     actor.x=clamp(actor.x+(actor.throwVx||0)*dt,bounds.left,bounds.right);
     for(const target of targets)hitGrappleThrownTarget(actor,target);
     if(actor.state==='grappleThrown'){
-      actor.z+=(actor.vz||0)*dt;actor.vz=(actor.vz||0)-1450*dt;
-      if(actor.z<=0&&actor.vz<0){actor.z=0;actor.vz=0;actor.airLaunch=false;actor.state='grappleSlide';actor.timer=.72;actor.throwVx*=.78;impact(actor.x,actor.y-18,actor.throwDamage||18,actor===player,-actor.throwVx*.35);shake=Math.max(shake,10)}
+      actor.z+=(actor.vz||0)*dt;applyAcceleratingGravity(actor,dt,1450);
+      if(actor.z<=0&&actor.vz<0){actor.z=0;actor.vz=0;actor.airFallTime=0;actor.airLaunch=false;actor.state='grappleSlide';actor.timer=.72;actor.throwVx*=.78;impact(actor.x,actor.y-18,actor.throwDamage||18,actor===player,-actor.throwVx*.35);shake=Math.max(shake,10)}
     }else{
       actor.z=0;actor.vz=0;actor.throwVx*=Math.pow(.045,dt);
       if(actor.timer<=0||Math.abs(actor.throwVx)<24){actor.throwVx=0;actor.airLaunch=false;if(actor.reviveAfterGrappleThrow){actor.reviveAfterGrappleThrow=false;actor.state='barbarianDown';actor.timer=3;actor.inv=3}else{actor.state='down';actor.timer=actor.dead?2.2:1.05}}
@@ -1201,7 +1204,7 @@
   function loadMap(index){
     forestHives=[];player.swampDepth=0;player.swampDead=false;player.swampEscaped=false;
     gauntletMode=false;failureHandled=false;failurePopupT=0;partyDefeatPending=false;lostResources=null;jumpSourcePlatform=null;jumpPlatformCleared=false;closeRewardModal(false);
-    const maxHp=playerMaxHp();mapIndex=index;if(!testRunMode){progress.currentStage=currentStageNumber();saveProgress()}stageRewardTotals={gold:0,chicken:0,fruit:0};stageChickenBudget=stageChickenReward();stageChickenDropped=0;stageSettlementOpen=false;stageRewardDoubled=false;window.TieJieAudio?.playMusic(mapIndex);gateIndex=0;gatePhase='combat';stageLockX=70;stageRightX=1050;cameraLockX=0;cameraX=0;currentStageTheme=trialMaps[mapIndex].theme;generatedTerrain=generateFreshTerrain(currentStageTheme,mapIndex);Object.assign(player,{x:220,y:566,z:0,vz:0,knockVx:0,throwVx:0,airLaunch:false,level:0,face:1,hp:maxHp,maxHp,state:'idle',timer:0,combo:0,comboT:0,kickCombo:0,kickComboT:0,cleanHits:0,attackSpeedTier:0,starAbsorbHits:0,starAbsorbPull:null,grab:null,grabTarget:null,grabbed:false,grappleHolder:null,grappleInvincible:false,grabT:0,grabEscapeT:0,grabKickQueue:0,grabKickTotal:0,risingQueued:false,risingCooldown:0,risingAirInv:false,risingInvT:0,held:null,heldUses:0,inv:0,kills:player.kills||0,inputQueue:[],climb:null,fallDamage:0,fallFromLevel:null,fallStartY:null,subPit:null,pitSafeT:0,launchKickChainCount:0,launchKickChainQueued:0});
+    const maxHp=playerMaxHp();mapIndex=index;if(!testRunMode){progress.currentStage=currentStageNumber();saveProgress()}stageRewardTotals={gold:0,chicken:0,fruit:0};stageChickenBudget=stageChickenReward();stageChickenDropped=0;stageSettlementOpen=false;stageRewardDoubled=false;window.TieJieAudio?.playMusic(mapIndex);gateIndex=0;gatePhase='combat';stageLockX=70;stageRightX=1050;cameraLockX=0;cameraX=0;currentStageTheme=trialMaps[mapIndex].theme;generatedTerrain=generateFreshTerrain(currentStageTheme,mapIndex);Object.assign(player,{x:220,y:566,z:0,vz:0,airFallTime:0,knockVx:0,throwVx:0,airLaunch:false,level:0,face:1,hp:maxHp,maxHp,state:'idle',timer:0,combo:0,comboT:0,kickCombo:0,kickComboT:0,cleanHits:0,attackSpeedTier:0,starAbsorbHits:0,launchKickChargeHits:0,comboLinkT:0,starAbsorbPull:null,grab:null,grabTarget:null,grabbed:false,grappleHolder:null,grappleInvincible:false,grabT:0,grabEscapeT:0,grabKickQueue:0,grabKickTotal:0,risingQueued:false,risingCooldown:0,risingAirInv:false,risingInvT:0,held:null,heldUses:0,inv:0,kills:player.kills||0,inputQueue:[],climb:null,fallDamage:0,fallFromLevel:null,fallStartY:null,subPit:null,pitSafeT:0,launchKickChainCount:0,launchKickChainQueued:0});
     spawnSelectedCompanions();pickups=freeTourMode?[]:[{type:'grenade',x:620,y:570,level:0,active:true},{type:'hammer',x:860,y:570,level:0,active:true,throwsLeft:2},{type:'grenade',x:2350,y:575,level:0,active:true},{type:'hammer',x:3920,y:570,level:0,active:true,throwsLeft:2},{type:'grenade',x:5200,y:570,level:0,active:true}];projectiles=[];hitFx=[];blastFx=[];resourceFx=[];eliteArmorFx=[];starAbsorbFx=[];screenTint=0;wave=1;spawnGate();updateCamera()
   }
   function reset(){player.kills=0;setStagePosition(progress.currentStage,false);loadMap(mapIndex)}
@@ -1218,10 +1221,13 @@
   }
   function startGauntlet(){
     gauntletMode=true;failureHandled=false;failurePopupT=0;partyDefeatPending=false;lostResources=null;stageRewardTotals={gold:0,chicken:0,fruit:0};stageSettlementOpen=false;stageRewardDoubled=false;jumpSourcePlatform=null;jumpPlatformCleared=false;closeRewardModal(false);gauntletIndex=0;wave=1;mapCycle=0;mapIndex=1;window.TieJieAudio?.playMusic(mapIndex);gateIndex=0;gatePhase='combat';stageLockX=70;stageRightX=1860;cameraLockX=0;currentStageTheme='沙漠';generatedTerrain=generateThemeTerrain(currentStageTheme,0x7eed1234);generatedTerrain.pits=[normalizePit({x:1460,w:118,name:'测试暗坑'},'沙漠',Math.random)];desertPits=generatedTerrain.pits;
-    const maxHp=playerMaxHp();Object.assign(player,{x:220,y:566,z:0,vz:0,knockVx:0,throwVx:0,airLaunch:false,level:0,face:1,hp:maxHp,maxHp,state:'idle',timer:0,combo:0,comboT:0,kickCombo:0,kickComboT:0,cleanHits:0,attackSpeedTier:0,starAbsorbHits:0,starAbsorbPull:null,grab:null,grabTarget:null,grabbed:false,grappleHolder:null,grappleInvincible:false,grabT:0,grabEscapeT:0,grabKickQueue:0,grabKickTotal:0,risingQueued:false,risingCooldown:0,risingAirInv:false,risingInvT:0,held:null,heldUses:0,inv:.35,kills:0,inputQueue:[],climb:null,fallDamage:0,fallFromLevel:null,fallStartY:null,subPit:null,pitSafeT:0,launchKickChainCount:0,launchKickChainQueued:0});
+    const maxHp=playerMaxHp();Object.assign(player,{x:220,y:566,z:0,vz:0,airFallTime:0,knockVx:0,throwVx:0,airLaunch:false,level:0,face:1,hp:maxHp,maxHp,state:'idle',timer:0,combo:0,comboT:0,kickCombo:0,kickComboT:0,cleanHits:0,attackSpeedTier:0,starAbsorbHits:0,launchKickChargeHits:0,comboLinkT:0,starAbsorbPull:null,grab:null,grabTarget:null,grabbed:false,grappleHolder:null,grappleInvincible:false,grabT:0,grabEscapeT:0,grabKickQueue:0,grabKickTotal:0,risingQueued:false,risingCooldown:0,risingAirInv:false,risingInvT:0,held:null,heldUses:0,inv:.35,kills:0,inputQueue:[],climb:null,fallDamage:0,fallFromLevel:null,fallStartY:null,subPit:null,pitSafeT:0,launchKickChainCount:0,launchKickChainQueued:0});
     spawnSelectedCompanions();pickups=[{type:'hammer',x:520,y:570,level:0,active:true,throwsLeft:2},{type:'grenade',x:650,y:570,level:0,active:true}];projectiles=[];hitFx=[];blastFx=[];resourceFx=[];eliteArmorFx=[];starAbsorbFx=[];screenTint=0;spawnGauntletEnemy();updateCamera()
   }
+  const hitLinkStates=new Set(['punch1','punch2','punch3','kick1','kick2','backKick','airBackKick','risingPunch','grabKnee','overChestThrow','throwItem','throw','grabRelease']);
+  function consumeHitLink(name){if((player.comboLinkT||0)<=0||!['punch','kick','grab','jump'].includes(name)||!hitLinkStates.has(player.state))return false;player.comboLinkT=0;player.inputQueue.length=0;player.grabTarget=null;if(player.grab){const held=player.grab;held.grabbed=false;held.overChestThrow=false;held.overChestContact=false;held.overChestAngle=0;held.state=held.hp>0?'hurt':'down';held.timer=held.hp>0?.24:1;clearGrab()}if(player.state==='airBackKick'){player.launchKick=false;player.launchKickTime=0;player.launchKickSpeed=0;resetLaunchKickChain()}player.state=(player.z||0)>0?'jump':'idle';player.timer=0;return true}
   function act(name,fromQueue=false){if(!running||player.hp<=0||player.climb)return;if(player.state==='starAbsorbPull')return;if(player.state==='down'&&player.z===0&&name==='punch'&&hasSkill('downRisingPunch')){startRisingPunch('down');return}if(player.state==='hurt'||player.state==='down'||player.state==='fall')return;
+    const linked=consumeHitLink(name);
     if(player.state==='overChestThrow'&&player.timer>0){player.inputQueue.length=0;return}
     if(player.state==='grabKnee'&&player.timer>0){if(player.grab&&name==='kick')queueKneeStrike();return}
     if(player.grab&&name==='punch'){overChestThrow();return}
@@ -1234,14 +1240,13 @@
     if(name==='jump'){if(player.z===0&&!player.grab){const standingPlatform=player.level>0?platformForLevel(player.level):null;jumpSourcePlatform=standingPlatform&&insidePlatform(player.x,player.y,0,standingPlatform)?standingPlatform:null;jumpPlatformCleared=false;player.vz=0;player.airOrigin='self';player.risingQueued=false;player.risingAirInv=false;player.risingInvT=0;player.state='jumpCrouch';player.timer=.14}return}
     if(name==='grab'){
       if(player.grab){message='抓稳了……出拳过胸摔，出腿膝撞';messageT=.9;return}
-      if(hasSkill('starAbsorb')&&(player.starAbsorbHits||0)>=20){useStarAbsorb();return}
       if(player.held){message='手里已经有家伙了……先扔出去';messageT=1;return}
       let item=null,itemDist=76;for(const p of pickups){if(!p.active||['coin','chicken','fruit'].includes(p.type)||p.level!==player.level)continue;const d=Math.hypot(player.x-p.x,player.y-p.y);if(d<itemDist){item=p;itemDist=d}}if(item){item.active=false;player.held=item.type;player.heldUses=item.type==='hammer'?(item.throwsLeft??2):1;player.state='pickup';player.timer=.48;player.inputQueue.length=0;message=item.type==='grenade'?'蹲下捡起手榴弹……近点扔':`蹲下捡起战锤……还能投 ${player.heldUses} 次`;messageT=1.7;return}
       if(!hasSkill('grapple')){message='我的手劲不够';messageT=1.1;return}
-      const ungrab=nearestUngrabbable(90);player.grabTarget=nearest(82);player.state='grabAttempt';player.timer=.48;player.inputQueue.length=0;message=player.grabTarget?'抓住他！':ungrab?`这家伙不好抓……硬来要吃亏`:'抓空了……破绽太大';messageT=.7;return
+      const ungrab=nearestUngrabbable(90);player.grabTarget=nearest(player.z>0?112:82);player.state='grabAttempt';player.timer=.48;player.inputQueue.length=0;message=player.grabTarget?((player.grabTarget.z||0)>0?'空中也能抓住他！':'抓住他！'):ungrab?`这家伙不好抓……硬来要吃亏`:'抓空了……破绽太大';messageT=.7;return
     }
     if(name==='punch'){
-      if(player.state==='jump'||player.z>0)return;
+      if(player.state==='jump'||player.z>0){if(linked&&hasSkill('risingPunch'))startRisingPunch('air');return}
       player.combo=player.comboT>0?(player.combo%3)+1:1;player.comboT=.72;player.state='punch'+player.combo;
       const punches=[null,{timer:.28,range:78,damage:11,force:145,delay:95,lunge:12},{timer:.31,range:78,damage:14,force:185,delay:115,lunge:15},{timer:.43,range:78,damage:24,force:540,delay:215,lunge:20,knockdown:true,launchVz:520}];
       const punch=punches[player.combo],blueFlame=hasSkill('blueFlame');player.timer=punch.timer;combatAttack(punch.range,punch.damage,punch.force,punch.delay,punch.lunge,{knockdown:punch.knockdown,launchVz:punch.launchVz,blueFistFlame:blueFlame,bonusDamage:blueFlame?BLUE_FIST_FLAME_BONUS:0});if(player.combo===3){message='下巴露出来了！';messageT=.9}return
@@ -1271,12 +1276,13 @@
     resetLaunchKickChain();player.risingQueued=false;player.inputQueue.length=0;player.launchKick=true;player.launchKickTime=.5;player.launchKickSpeed=1000;player.launchKickFace=player.face;player.state='airBackKick';player.timer=.5;player.vz=300;player.knockVx=0;
     combatAttack(legAttackRange(136),15,640,200*playerAttackSpeedMul(),0,{knockdown:true,launchVz:420,zReach:128,launchKickCarry:780});message='蹬地弹射——飞踢！';messageT=.95
   }
-  function startRisingPunch(mode='ground'){player.risingQueued=false;player.risingCooldown=1;player.risingAirInv=true;player.risingInvT=.34;player.airOrigin='self';player.state='risingPunch';player.timer=.56;player.vz=560;player.inv=Math.max(player.inv,.34);combatAttack(122,30,610,95,12,{knockdown:true,launchVz:760});message=mode==='down'?'倒地也能还这一拳！':'就是现在，冲上去！';messageT=.7}
+  function startRisingPunch(mode='ground'){const launchVz=Math.round(760*Math.SQRT2);player.risingQueued=false;player.risingCooldown=1;player.risingAirInv=true;player.risingInvT=.34;player.airOrigin='self';player.state='risingPunch';player.timer=.56;player.vz=Math.max(player.vz||0,560);player.airFallTime=0;player.inv=Math.max(player.inv,.34);combatAttack(122,30,610,95,12,{knockdown:true,launchVz});message=mode==='down'?'倒地也能还这一拳！':mode==='absorb'?'聚势收拳——升龙！':'就是现在，冲上去！';messageT=.7}
   const counterGrabTypes=new Set(['heavy','grappler']);
   const axeArmorStates=new Set(['axeWindup','axeSlash']);
   const defeatedReviveStates=new Set(['barbarianDown','barbarianRevive']);
   function canGrabEnemy(e){return !!(e&&e.hp>0&&!e.dead&&enemyCatalog[e.type]?.grab)&&!defeatedReviveStates.has(e.state)&&!(e.eliteArmorT>0)&&!e.grappleInvincible&&!e.grabVictim&&!(e.type==='axe'&&axeArmorStates.has(e.state))}
   function zReach(a,b,reach=96){const az=a.z||0,bz=b.z||0;return Math.abs(az-bz)<=reach||(az===0&&bz<=reach)||(bz===0&&az<=reach)}
+  function applyAcceleratingGravity(actor,dt,baseGravity){actor.airFallTime=(actor.vz||0)<0?(actor.airFallTime||0)+dt:0;const gravity=baseGravity*(1+Math.min(1.25,(actor.airFallTime||0)*1.15));actor.vz=(actor.vz||0)-gravity*dt}
   function triggerCounterGrab(e){
     clearGrapplerHold(e);player.grabTarget=null;e.grabbed=false;e.state='counterGrab';e.timer=.64;e.attackT=Math.max(e.attackT||0,.9);e.inv=Math.max(e.inv||0,.64);setEnemyFace(e,player.x-e.x,true);
     const technical=e.type==='grappler',damage=technical?12:9,push=e.face*(technical?34:42);
@@ -1286,44 +1292,27 @@
   function beginPlayerGrab(e){
     player.grab=e;player.grabTarget=null;player.grabT=0;player.grabEscapeT=GRAB_MAX_DURATION;player.grabKickQueue=0;player.grabKickTotal=0;player.grappleInvincible=hasSkill('invincibleGrapple');player.risingAirInv=player.grappleInvincible;e.grabbed=true;e.state='grabbed';e.z=player.z||0;e.vz=player.vz||0;player.state='grab';player.timer=.15;hitStop(.06)
   }
-  function nearestInStarAbsorbCone(range=350){
-    const coneSlope=Math.tan(35*Math.PI/180);let best=null,bestDistance=range;
-    for(const e of enemies){
-      if(!canGrabEnemy(e)||e.dead||e.grabbed||e.state==='down'||e.state==='knockdown'||e.state==='slamAir'||e.state==='thrown'||e.level!==player.level||!zReach(player,e,108))continue;
-      const forward=(e.x-player.x)*player.face,lateral=(e.y-player.y)*1.35,distance=Math.hypot(forward,lateral);
-      if(forward<=0||distance>range||Math.abs(lateral)>forward*coneSlope||distance>=bestDistance)continue;
-      best=e;bestDistance=distance
-    }
-    return best
-  }
+  function enemiesInStarAbsorbCone(range=350){const coneSlope=Math.tan(35*Math.PI/180);return enemies.filter(e=>{if(e.dead||e.hp<=0||e.grabbed||e.level!==player.level||defeatedReviveStates.has(e.state))return false;const forward=(e.x-player.x)*player.face,lateral=(e.y-player.y)*1.35,distance=Math.hypot(forward,lateral);return forward>0&&distance<=range&&Math.abs(lateral)<=forward*coneSlope})}
   function useStarAbsorb(){
-    player.starAbsorbHits=0;player.inputQueue.length=0;
-    const e=nearestInStarAbsorbCone(350),fromX=e?.x??player.x+player.face*350,fromY=e?.y??player.y;
-    const handX=player.x+player.face*36,handY=player.y-player.z-88;
-    starAbsorbFx.push({fromX,fromY:fromY-(e?.z||0)-72,toX:handX,toY:handY,centerX:handX,centerY:handY,radius:350,face:player.face,t:.62,max:.62,success:!!e,seed:Math.random()*6.28});
-    if(!e){player.state='grabRelease';player.timer=.28;message='聚势之握落空——充能已消耗';messageT=1.1;return}
-    clearGrapplerHold(e);setEnemyFace(e,-player.face);e.grabbed=true;e.state='grabbed';e.vz=0;e.throwVx=0;e.knockVx=0;e.airLaunch=false;
-    player.starAbsorbPull={enemy:e,startX:e.x,startY:e.y,startZ:e.z||0,duration:.5,elapsed:0};player.state='starAbsorbPull';player.timer=.5;player.knockVx=0;message='聚势之握——吸过来！';messageT=.7;shake=Math.max(shake,7)
+    if((player.starAbsorbHits||0)<SKILL_CHARGE_MAX)return false;player.starAbsorbHits=0;player.inputQueue.length=0;player.starAbsorbPull={elapsed:0,duration:2,face:player.face||1,seed:Math.random()*Math.PI*2};player.state='starAbsorbPull';player.timer=2;player.knockVx=0;player.vz=0;message='聚势之握——松手便升龙！';messageT=.9;shake=Math.max(shake,5);return true
   }
-  function cancelStarAbsorbPull(){
-    const pull=player.starAbsorbPull,e=pull?.enemy;player.starAbsorbPull=null;
-    if(e&&e.grabbed){e.grabbed=false;e.state=e.hp>0?'hurt':'down';e.timer=e.hp>0?.25:1;e.vz=0}
+  function cancelStarAbsorbPull(followWithRising=false){
+    if(!player.starAbsorbPull)return;player.starAbsorbPull=null;player.timer=0;
+    if(followWithRising&&running&&player.hp>0&&player.state!=='enemyGrabbed'){player.state=player.z>0?'jump':'idle';startRisingPunch('absorb')}else if(player.state==='starAbsorbPull')player.state=player.z>0?'jump':'idle'
   }
   function updateStarAbsorbPull(dt){
-    const pull=player.starAbsorbPull,e=pull?.enemy;if(!pull||!e||e.dead||e.hp<=0){cancelStarAbsorbPull();player.state='grabRelease';player.timer=.28;return}
-    pull.elapsed=Math.min(pull.duration,pull.elapsed+dt);player.timer=Math.max(0,pull.duration-pull.elapsed);
-    const raw=clamp(pull.elapsed/pull.duration,0,1),q=1-Math.pow(1-raw,3),targetX=player.x+player.face*47,targetY=player.y-2,targetZ=player.z||0;
-    e.x=pull.startX+(targetX-pull.startX)*q;e.y=pull.startY+(targetY-pull.startY)*q;e.z=pull.startZ+(targetZ-pull.startZ)*q;e.vz=0;setEnemyFace(e,-player.face,true);
-    if(raw<1)return;
-    player.starAbsorbPull=null;e.grabbed=false;beginPlayerGrab(e);message='聚势之握——抓住了！';messageT=1.25;shake=Math.max(shake,9)
+    const pull=player.starAbsorbPull;if(!pull)return;pull.elapsed=Math.min(pull.duration,pull.elapsed+dt);player.timer=Math.max(0,pull.duration-pull.elapsed);player.face=pull.face;
+    const targetX=player.x+pull.face*55,targetY=player.y,targetZ=player.z||0;
+    for(const e of enemiesInStarAbsorbCone(350)){clearGrapplerHold(e);e.starAbsorbT=.12;e.attackTarget=null;e.state='hurt';e.timer=.12;e.airLaunch=false;e.throwVx*=.35;e.knockVx*=.35;e.vz*=.45;e.x+=(targetX-e.x)*Math.min(1,dt*3.8);e.y+=(targetY-e.y)*Math.min(1,dt*3.2);e.z+=(targetZ-e.z)*Math.min(1,dt*3.6);setEnemyFace(e,-pull.face,true)}
+    if(pull.elapsed>=pull.duration)cancelStarAbsorbPull(true)
   }
   function finishGrabAttempt(){
-    const e=player.grabTarget,ungrab=nearestUngrabbable(96),blockedByAxeArmor=e?.type==='axe'&&axeArmorStates.has(e.state);player.grabTarget=null;
-    if(!e||!canGrabEnemy(e)||e.dead||e.grabbed||e.level!==player.level||dist(player,e)>96||!zReach(player,e,108)){player.state='grabRelease';player.timer=.28;message=blockedByAxeArmor?'斧王正处于霸体……抓不住':ungrab?'这家伙不好抓……硬来只会露出破绽':'手空了……得挨打了';messageT=.65;return}
-    if(counterGrabTypes.has(e.type)){triggerCounterGrab(e);return}
+    const e=player.grabTarget,airborne=e&&((e.z||0)>0||e.airLaunch||['knockdown','slamAir','thrown','grappleThrown'].includes(e.state)),ungrab=nearestUngrabbable(96),blockedByAxeArmor=e?.type==='axe'&&axeArmorStates.has(e.state);player.grabTarget=null;
+    if(!e||!canGrabEnemy(e)||e.dead||e.grabbed||e.level!==player.level||dist(player,e)>(airborne?132:96)||!zReach(player,e,210)){player.state='grabRelease';player.timer=.28;message=blockedByAxeArmor?'斧王正处于霸体……抓不住':ungrab?'这家伙不好抓……硬来只会露出破绽':'手空了……得挨打了';messageT=.65;return}
+    if(counterGrabTypes.has(e.type)&&(player.z||0)<10&&(e.z||0)<10){triggerCounterGrab(e);return}
     beginPlayerGrab(e);message='抓住后不能移动……五秒内出手';messageT=2.4
   }
-  function nearest(range){let best=null,d=range;for(const e of enemies){if(!canGrabEnemy(e)||e.dead||e.grabbed||e.state==='down'||e.state==='knockdown'||e.state==='slamAir'||e.state==='thrown'||e.level!==player.level||!zReach(player,e,108))continue;const q=dist(player,e);if(q<d){d=q;best=e}}return best}
+  function nearest(range){let best=null,d=Infinity;for(const e of enemies){const airborne=(e.z||0)>0||e.airLaunch||['knockdown','slamAir','thrown','grappleThrown'].includes(e.state);if(!canGrabEnemy(e)||e.dead||e.grabbed||e.state==='down'||(!airborne&&e.state==='knockdown')||e.level!==player.level||!zReach(player,e,210))continue;const q=dist(player,e),limit=range+(airborne?34:0);if(q<limit&&q<d){d=q;best=e}}return best}
   function nearestUngrabbable(range){let best=null,d=range;for(const e of enemies){if(canGrabEnemy(e)||e.dead||e.state==='down'||e.state==='slamAir'||e.state==='thrown'||e.level!==player.level||!zReach(player,e,108))continue;const q=dist(player,e);if(q<d){d=q;best=e}}return best}
   function combatAttack(range,damage,force,delay,lunge,options={}){const intent=(keys.right?1:0)-(keys.left?1:0),directed=intent!==0;if(directed)player.face=Math.sign(intent);const step=directed?lunge*1.75:lunge;player.x+=player.face*step;attack(range+(directed?22:0),damage,force*(directed?1.28:1),delay,options)}
   function strikeForestTree(range){if(currentStageTheme!=='森林'||player.level!==0)return;for(const o of currentBlockers()){if(!o.forestProp||o.hiveDropped)continue;const dx=(o.x-player.x)*player.face;if(dx>-38&&dx<range+28&&Math.abs(o.y-player.y)<105){o.hiveDropped=true;forestHives.push({x:o.x+player.face*24,y:o.y,z:150,vz:30,t:8,stingT:.35,level:0});impact(o.x,o.y-125,null,false,player.face*90);message='蜂巢掉下来了——蜂群会攻击附近所有人！';messageT=1.4;break}}}
@@ -1477,7 +1466,7 @@
   }
   function finishPlayerLanding(stairLanding=null){
     if(stairLanding){player.y=stairLanding.y;applyStairTerrain(stairLanding.s)}
-    player.z=0;player.vz=0;player.knockVx=0;player.launchKick=false;player.launchKickTime=0;player.launchKickSpeed=0;player.launchKickFace=0;resetLaunchKickChain();player.risingAirInv=false;player.risingInvT=0;
+    player.z=0;player.vz=0;player.airFallTime=0;player.knockVx=0;player.launchKick=false;player.launchKickTime=0;player.launchKickSpeed=0;player.launchKickFace=0;resetLaunchKickChain();player.risingAirInv=false;player.risingInvT=0;
     const fallKind=player.fallFromLevel,fallStartY=player.fallStartY,actualDropY=Number.isFinite(fallStartY)?Math.max(0,player.y-fallStartY):0;
     player.fallFromLevel=null;player.fallStartY=null;player.fallDamage=fallKind!=null&&fallKind!=='pit'?fallDamageFromYDelta(actualDropY):0;
     if(player.fallDamage>0){
@@ -1660,7 +1649,7 @@
     message=`进入第 ${gateIndex+1} 区……后路封锁，清掉所有敌人`;messageT=1.9
   }
 
-  function update(dt){if(player.state==='climbOut'&&!player.climb){player.state='idle';player.z=0;player.vz=0;player.level=0;player.subPit=null;player.pitSafeT=1.1}if(player.climb){if((player.climb.kind==='pitOut'||player.climb.kind==='collapseUp')&&player.climb.t>=player.climb.dur+.08){player.climb.t=player.climb.dur}updateClimb(dt);updateCamera();return}if(slow>0){slow-=dt;return}player.inv=Math.max(0,player.inv-dt);player.risingInvT=Math.max(0,(player.risingInvT||0)-dt);if(player.risingInvT<=0||player.state!=='risingPunch')player.risingAirInv=false;player.pitSafeT=Math.max(0,(player.pitSafeT||0)-dt);player.comboT=Math.max(0,player.comboT-dt);player.kickComboT=Math.max(0,player.kickComboT-dt);player.risingCooldown=Math.max(0,player.risingCooldown-dt);messageT=Math.max(0,messageT-dt);flash=Math.max(0,flash-dt);screenTint=Math.max(0,screenTint-dt);if(powerSwitch)powerSwitch.flash=Math.max(0,powerSwitch.flash-dt);shake*=Math.pow(.04,dt);for(const f of hitFx)f.t-=dt;hitFx=hitFx.filter(f=>f.t>0);for(const f of blastFx)f.t-=dt;blastFx=blastFx.filter(f=>f.t>0);for(const f of resourceFx)f.t-=dt;resourceFx=resourceFx.filter(f=>f.t>0);for(const f of eliteArmorFx)f.t-=dt;eliteArmorFx=eliteArmorFx.filter(f=>f.t>0);for(const f of starAbsorbFx)f.t-=dt;starAbsorbFx=starAbsorbFx.filter(f=>f.t>0);updateProjectiles(dt);
+  function update(dt){if(player.state==='climbOut'&&!player.climb){player.state='idle';player.z=0;player.vz=0;player.level=0;player.subPit=null;player.pitSafeT=1.1}if(player.climb){if((player.climb.kind==='pitOut'||player.climb.kind==='collapseUp')&&player.climb.t>=player.climb.dur+.08){player.climb.t=player.climb.dur}updateClimb(dt);updateCamera();return}if(slow>0){slow-=dt;return}updateGrabHoldPending(dt);player.inv=Math.max(0,player.inv-dt);player.risingInvT=Math.max(0,(player.risingInvT||0)-dt);if(player.risingInvT<=0||player.state!=='risingPunch')player.risingAirInv=false;player.pitSafeT=Math.max(0,(player.pitSafeT||0)-dt);player.comboT=Math.max(0,player.comboT-dt);player.kickComboT=Math.max(0,player.kickComboT-dt);player.comboLinkT=Math.max(0,(player.comboLinkT||0)-dt);player.risingCooldown=Math.max(0,player.risingCooldown-dt);messageT=Math.max(0,messageT-dt);flash=Math.max(0,flash-dt);screenTint=Math.max(0,screenTint-dt);if(powerSwitch)powerSwitch.flash=Math.max(0,powerSwitch.flash-dt);shake*=Math.pow(.04,dt);for(const f of hitFx)f.t-=dt;hitFx=hitFx.filter(f=>f.t>0);for(const f of blastFx)f.t-=dt;blastFx=blastFx.filter(f=>f.t>0);for(const f of resourceFx)f.t-=dt;resourceFx=resourceFx.filter(f=>f.t>0);for(const f of eliteArmorFx)f.t-=dt;eliteArmorFx=eliteArmorFx.filter(f=>f.t>0);for(const f of starAbsorbFx)f.t-=dt;starAbsorbFx=starAbsorbFx.filter(f=>f.t>0);updateProjectiles(dt);
     updateForestHives(dt);updateSwampActor(player,dt,true);
     if(player.hp<=0){
       player.state='down';
@@ -1671,7 +1660,7 @@
       }
       if(player.z>0||player.vz){
         player.z+=player.vz*dt;
-        player.vz-=1200*dt;
+        applyAcceleratingGravity(player,dt,1200);
         if(player.z<=0){
           player.z=0;
           player.vz=0;
@@ -1699,7 +1688,7 @@
     if(player.z>0||player.vz>0){
       if(player.launchKick&&player.launchKickTime>0){const launchDt=Math.min(dt,player.launchKickTime),launchFace=player.launchKickFace||player.face,launchStartX=player.x,b=playerHorizontalBounds();player.face=launchFace;player.x=clamp(player.x+launchFace*player.launchKickSpeed*launchDt,b.left,b.right);player.launchKickTime-=launchDt;if(pushOutOfBlockers(player,26,launchStartX,player.y)){player.launchKickTime=0;message='飞踢撞上树干了';messageT=.55}}
       else if(player.knockVx){player.x=clamp(player.x+player.knockVx*dt,stageLockX,stageRightX);player.knockVx*=Math.pow(.12,dt)}
-      const previousAirY=player.y-player.z;player.z+=player.vz*dt;player.vz-=1200*dt;const currentAirY=player.y-player.z;
+      const previousAirY=player.y-player.z;player.z+=player.vz*dt;applyAcceleratingGravity(player,dt,1200);const currentAirY=player.y-player.z;
       const stairLanding=player.vz<=0?crossedStairWhileFalling(previousAirY,currentAirY):null;
       if(stairLanding)finishPlayerLanding(stairLanding);
       else if(player.z<=0)finishPlayerLanding();
@@ -1767,7 +1756,9 @@
     if(e.eliteArmorCheckT>0||e.grabbed||e.grappleHolder||['down','knockdown','thrown','grappleThrown','heavyDefeated','barbarianDown'].includes(e.state))return;
     e.eliteArmorCheckT=4;if(Math.random()>=.5)return;e.eliteArmorT=3;eliteArmorFx.push({x:e.x,y:e.y-(e.z||0)-105,t:.38,max:.38,radius:165,seed:Math.random()*Math.PI*2});if(eliteArmorFx.length>10)eliteArmorFx.shift();screenTint=Math.max(screenTint,.08);message='精英怪金光迸发——进入 3 秒霸体！';messageT=.9
   }
-  function updateEnemy(e,dt){e.inv=Math.max(0,e.inv-dt);e.faceHold=Math.max(0,(e.faceHold||0)-dt);updateEliteArmor(e,dt);if(updateGrappleThrownActor(e,dt,true))return;if(e.state==='knockdown'){const b=actorTravelBounds(18);e.timer-=dt;e.x=clamp(e.x+e.knockVx*dt,b.left,b.right);e.knockVx*=Math.pow(.07,dt);if(e.airLaunch){e.z+=e.vz*dt;e.vz-=1450*dt;if(catchEnemyOnPlatform(e))return;if(e.z<=0&&e.vz<0){for(const pit of currentPits())if(insidePit(e,pit))return dropEnemyIntoPit(e,pit);e.z=0;e.vz=0;e.airLaunch=false;e.timer=Math.min(e.timer,.14);impact(e.x,e.y-18,null,false,e.knockVx)}}if(e.timer<=0&&!e.airLaunch){e.state='down';e.timer=e.dead?3:2.2;e.knockVx=0}return}if(e.state==='thrown'){const b=actorTravelBounds(18);e.timer-=dt;e.x=clamp(e.x+e.throwVx*dt,b.left,b.right);e.throwVx*=Math.pow(.22,dt);e.z+=e.vz*dt;e.vz-=1450*dt;if(catchEnemyOnPlatform(e))return;for(const other of enemies){if(other===e||other.dead||other.grabbed||other.level!==e.level||e.throwHits?.has(other))continue;if(Math.abs(other.x-e.x)<82&&Math.abs(other.y-e.y)<50){e.throwHits?.add(other);hurtEnemy(other,22,Math.sign(e.throwVx||-player.face)*310,e.playerThrown?{playerHit:true}:{});impact(other.x,other.y-75,22,false,e.throwVx);message='砸中了！身后也不安全';messageT=.85}}if(e.z<=0&&e.vz<0){for(const pit of currentPits())if(insidePit(e,pit))return dropEnemyIntoPit(e,pit);e.z=0;e.vz=0;e.throwVx=0;e.playerThrown=false;e.state='down';e.timer=1.05;impact(e.x,e.y-18,34,false,-player.face*220);if(e.hp<=0&&!e.dead){e.dead=true;player.kills++}}return}if(e.dead){if(e.timer>0)e.timer-=dt;return}e.attackT=Math.max(0,e.attackT-dt);e.slamT=Math.max(0,e.slamT-dt);if(e.grabbed)return;
+  function updateEnemyRoam(e,dt){e.wanderT=(e.wanderT||0)-dt;if(e.wanderT<=0){e.wanderT=.65+Math.random()*1.7;e.wanderPause=Math.random()<.28;e.wanderX=(e.homeX??e.x)+(Math.random()-.5)*280;e.wanderY=(e.homeY??e.y)+(Math.random()-.5)*120}if(e.wanderPause){e.state='idle';return}const tx=e.wanderX??e.x,ty=e.wanderY??e.y,dx=tx-e.x,dy=ty-e.y;if(Math.abs(dx)<18&&Math.abs(dy)<14){e.state='idle';e.wanderT=0;return}const sp=(e.speed||80)*.32,b=laneBoundsFor(e.level,e.y,42,e);e.x=clamp(e.x+Math.sign(dx)*sp*dt,b.left,b.right);e.y+=Math.sign(dy)*Math.max(30,sp*.55)*dt;setEnemyFace(e,dx);e.state='run'}
+  function irregularChasePoint(e,aim,dt){e.chasePatternT=(e.chasePatternT||0)-dt;if(e.chasePatternT<=0){e.chasePatternT=.55+Math.random()*1.45;e.chasePause=Math.random()<.22;e.chaseOffsetX=(Math.random()-.5)*210;e.chaseOffsetY=(Math.random()-.5)*150}return e.chasePause?null:{x:aim.x+(e.chaseOffsetX||0),y:aim.y+(e.chaseOffsetY||0)}}
+  function updateEnemy(e,dt){e.inv=Math.max(0,e.inv-dt);e.faceHold=Math.max(0,(e.faceHold||0)-dt);updateEliteArmor(e,dt);if(updateGrappleThrownActor(e,dt,true))return;if(e.state==='knockdown'){const b=actorTravelBounds(18);e.timer-=dt;e.x=clamp(e.x+e.knockVx*dt,b.left,b.right);e.knockVx*=Math.pow(.07,dt);if(e.airLaunch){e.z+=e.vz*dt;applyAcceleratingGravity(e,dt,1450);if(catchEnemyOnPlatform(e))return;if(e.z<=0&&e.vz<0){for(const pit of currentPits())if(insidePit(e,pit))return dropEnemyIntoPit(e,pit);e.z=0;e.vz=0;e.airFallTime=0;e.airLaunch=false;e.timer=Math.min(e.timer,.14);impact(e.x,e.y-18,null,false,e.knockVx)}}if(e.timer<=0&&!e.airLaunch){e.state='down';e.timer=e.dead?3:2.2;e.knockVx=0}return}if(e.state==='thrown'){const b=actorTravelBounds(18);e.timer-=dt;e.x=clamp(e.x+e.throwVx*dt,b.left,b.right);e.throwVx*=Math.pow(.22,dt);e.z+=e.vz*dt;applyAcceleratingGravity(e,dt,1450);if(catchEnemyOnPlatform(e))return;for(const other of enemies){if(other===e||other.dead||other.grabbed||other.level!==e.level||e.throwHits?.has(other))continue;if(Math.abs(other.x-e.x)<82&&Math.abs(other.y-e.y)<50){e.throwHits?.add(other);hurtEnemy(other,22,Math.sign(e.throwVx||-player.face)*310,e.playerThrown?{playerHit:true}:{});impact(other.x,other.y-75,22,false,e.throwVx);message='砸中了！身后也不安全';messageT=.85}}if(e.z<=0&&e.vz<0){for(const pit of currentPits())if(insidePit(e,pit))return dropEnemyIntoPit(e,pit);e.z=0;e.vz=0;e.airFallTime=0;e.throwVx=0;e.playerThrown=false;e.state='down';e.timer=1.05;impact(e.x,e.y-18,34,false,-player.face*220);if(e.hp<=0&&!e.dead){e.dead=true;player.kills++}}return}if(e.dead){if(e.timer>0)e.timer-=dt;return}e.attackT=Math.max(0,e.attackT-dt);e.slamT=Math.max(0,e.slamT-dt);if(e.grabbed)return;
     if(e.level<0&&e.subPit?.bunker!==player.subPit?.bunker){e.state='idle';return}
     e.slideT=Math.max(0,e.slideT-dt);e.specialT=Math.max(0,e.specialT-dt);e.suitDaggerT=Math.max(0,(e.suitDaggerT||0)-dt);e.suitBackflipT=Math.max(0,(e.suitBackflipT||0)-dt);const aim=enemyCombatTarget(e);
     if(e.level<0&&e.bunkerRoom&&!e.bunkerRoom.opened){e.state='idle';e.awake=false;return}
@@ -1797,11 +1788,10 @@
       const slideTarget=!e.slideHit&&enemySkillTarget(e,76,48,58);if(slideTarget){e.slideHit=true;knockFriendlyTarget(slideTarget,16,e.face*34,{launchVz:330})}
       if(e.timer<=0){e.state='idle';e.attackT=.65}return
     }
-    if(e.vz>0||e.z>0){e.z+=e.vz*dt;e.vz-=1000*dt;if(e.z<=0){e.z=0;e.vz=0}}
+    if(e.vz>0||e.z>0){e.z+=e.vz*dt;applyAcceleratingGravity(e,dt,1000);if(e.z<=0){e.z=0;e.vz=0;e.airFallTime=0}}
     if(e.timer>0){e.timer-=dt;if(e.timer<=0)e.state='idle';return}
-    const senseX=Math.abs(aim.x-e.x),senseY=Math.abs(aim.y-e.y),aggro=e.awake||(Math.abs(aim.level-e.level)<=2&&senseX<ENEMY_ALERT_X&&senseY<ENEMY_ALERT_Y);
-    if(!aggro){e.state='idle';setEnemyFace(e,aim.x-e.x);return}
-    e.awake=true;
+    const senseX=Math.abs(aim.x-e.x),senseY=Math.abs(aim.y-e.y),sensed=Math.abs(aim.level-e.level)<=2&&senseX<ENEMY_ALERT_X&&senseY<ENEMY_ALERT_Y;if(sensed){e.awake=true;e.alertMemory=2.4+Math.random()*1.8}else e.alertMemory=Math.max(0,(e.alertMemory||0)-dt);const aggro=sensed||(e.awake&&(e.alertMemory||0)>0);
+    if(!aggro){e.awake=false;updateEnemyRoam(e,dt);return}
     if(e.terrainNav||e.level!==aim.level){enemyUseStairs(e,dt,aim);return}
     const d=dist(e,aim),dx=aim.x-e.x,dy=aim.y-e.y;setEnemyFace(e,dx);
     if(e.type==='breaker'){
@@ -1823,7 +1813,7 @@
       if(Math.abs(dx)>390){e.state='run';e.x+=Math.sign(dx)*sp*.82*dt;return}
       e.state='idle';return
     }
-    if(d>68){const sp=e.speed||80,move=forestSteeredVector(e,aim.x,aim.y);e.state='run';e.x+=Math.sign(move.dx)*sp*dt;e.y+=Math.sign(move.dy)*Math.max(48,sp*.62)*dt}
+    if(d>68){const chase=irregularChasePoint(e,aim,dt);if(!chase)e.state='idle';else{const sp=e.speed||80,move=forestSteeredVector(e,chase.x,chase.y);e.state='run';e.x+=Math.sign(move.dx)*sp*dt;e.y+=Math.sign(move.dy)*Math.max(48,sp*.62)*dt}}
     else e.state='idle';
     const p=platformForLevel(e.level);if(e.type==='skinny'&&p&&e.state==='hurt'&&!insidePlatform(e.x,e.y,0,p)){e.level=0;e.x=clamp(e.x,55,WORLD_W-55);e.y=570;e.hp-=18;window.TieJieAudio?.hitEnemy(e.type,18,e.elite);e.state='down';e.timer=1;message='摔下去了……这高度够他受';messageT=1.1;if(e.hp<=0)e.dead=true}
   }
@@ -3586,11 +3576,13 @@
   function drawProjectile(p){g.save();g.translate(p.x,p.y);drawGroundShadow(p.type==='grenade'?18:25,6,4,'#03050677');g.translate(0,-p.z);drawItemShape(p.type,0,0,p.spin*(p.vx<0?-1:1),p.type==='grenade'?.88:1);g.restore()}
   function drawStunIndicator(x,y){const t=performance.now()/180;g.save();g.translate(x,y);for(let i=0;i<3;i++){const a=t+i*2.094,s=5+(i===0?1:0);g.save();g.translate(Math.cos(a)*25,Math.sin(a)*7);g.rotate(a);g.fillStyle='#f2c34f';g.strokeStyle='#5b351a';g.lineWidth=2;g.beginPath();for(let k=0;k<10;k++){const r=k%2?s*.45:s,ang=-Math.PI/2+k*Math.PI/5;g.lineTo(Math.cos(ang)*r,Math.sin(ang)*r)}g.closePath();g.fill();g.stroke();g.restore()}g.restore()}
   function bar(x,y,w,h,p,c){g.fillStyle='#080a0cdd';g.fillRect(x,y,w,h);g.fillStyle=c;g.fillRect(x+2,y+2,(w-4)*clamp(p,0,1),h-4)}
-  function hud(){const showStarAbsorb=hasSkill('starAbsorb');g.fillStyle='#091014dd';g.fillRect(28,24,460,showStarAbsorb?136:106);g.strokeStyle='#8a5638';g.strokeRect(28,24,460,showStarAbsorb?136:106);g.fillStyle='#e8d5b3';g.font='800 21px sans-serif';g.textAlign='left';g.fillText('陆骁',48,54);bar(48,67,270,15,player.hp/player.maxHp,'#c84932');g.fillStyle='#96a5a5';g.font='14px sans-serif';g.fillText(`HP ${Math.max(0,Math.floor(player.hp))} / ${player.maxHp}`,328,80);g.fillStyle='#d5a467';g.fillText(player.held?(player.held==='grenade'?'手持：手榴弹':`手持：战锤（剩 ${player.heldUses} 次）`):'徒手格斗',48,94);
+  function hud(){const showStarAbsorb=hasSkill('starAbsorb'),showLaunchKick=hasSkill('launchKickChain'),meterCount=(showStarAbsorb?1:0)+(showLaunchKick?1:0),hudHeight=106+meterCount*25;g.fillStyle='#091014dd';g.fillRect(28,24,460,hudHeight);g.strokeStyle='#8a5638';g.strokeRect(28,24,460,hudHeight);g.fillStyle='#e8d5b3';g.font='800 21px sans-serif';g.textAlign='left';g.fillText('陆骁',48,54);bar(48,67,270,15,player.hp/player.maxHp,'#c84932');g.fillStyle='#96a5a5';g.font='14px sans-serif';g.fillText(`HP ${Math.max(0,Math.floor(player.hp))} / ${player.maxHp}`,328,80);g.fillStyle='#d5a467';g.fillText(player.held?(player.held==='grenade'?'手持：手榴弹':`手持：战锤（剩 ${player.heldUses} 次）`):'徒手格斗',48,94);
     const topGold=document.querySelector('#top-gold'),topChicken=document.querySelector('#top-chicken'),topFruit=document.querySelector('#top-fruit');if(topGold)topGold.textContent=String(progress.gold);if(topChicken)topChicken.textContent=String(progress.chicken);if(topFruit)topFruit.textContent=String(progress.fruit);
     const hpNow=vitalityStat(),atkNow=strengthStat(),defNow=defenseStat(),hpNext=hpNow+pendingGrowthUpgrades.hp,atkNext=atkNow+pendingGrowthUpgrades.atk,defNext=defNow+pendingGrowthUpgrades.def,preview=(now,next,pending)=>pending?`${now} → ${next}（待 +${pending}）`:String(now);const growthValues={hp:`属性 ${preview(hpNow,hpNext,pendingGrowthUpgrades.hp)} · HP ${Math.round(16*hpNext)}`,atk:`${preview(atkNow,atkNext,pendingGrowthUpgrades.atk)} · 伤害 ×${(atkNext/10).toFixed(2)}`,def:`${preview(defNow,defNext,pendingGrowthUpgrades.def)} · 减伤${Math.round((1-10/defNext)*100)}%`};for(const [kind,value] of Object.entries(growthValues)){const node=document.querySelector(`#growth-${kind}`);if(node)node.textContent=value}
     g.fillStyle='#d8c39a';g.font='13px sans-serif';g.fillText(`金币 ${progress.gold}  鸡腿 ${progress.chicken}  果实 ${progress.fruit}`,48,113);g.fillStyle='#91a0a1';g.fillText(`1血${vitalityStat()} 2力${strengthStat()} 3防${defenseStat()}  无伤${player.cleanHits%5}/5 攻速×${playerAttackSpeedMul().toFixed(1)}`,248,113);
-    if(showStarAbsorb){const hits=Math.min(20,player.starAbsorbHits||0),ready=hits>=20,x=48,y=137,w=270;g.fillStyle='#080a0cdd';g.fillRect(x,y,w,17);g.fillStyle=ready?'#e7b65d':'#7250a8';g.fillRect(x+2,y+2,(w-4)*hits/20,13);g.strokeStyle=ready?'#ffe39a':'#9c82ce';g.lineWidth=1.5;g.strokeRect(x,y,w,17);g.fillStyle=ready?'#fff0bd':'#d8ccef';g.font='800 12px sans-serif';g.textAlign='left';g.fillText(`聚势之握 ${hits}/20${ready?' · 按抓释放':''}`,x+6,y+13)}
+    let meterY=137;const drawChargeMeter=(hits,label,fill,edge,hint)=>{const ready=hits>=SKILL_CHARGE_MAX,x=48,y=meterY,w=270;g.fillStyle='#080a0cdd';g.fillRect(x,y,w,18);g.fillStyle=ready?'#f2c45f':fill;g.fillRect(x+2,y+2,(w-4)*hits/SKILL_CHARGE_MAX,14);g.strokeStyle=ready?'#ffe59b':edge;g.lineWidth=1.5;g.strokeRect(x,y,w,18);g.fillStyle=ready?'#fff2bd':'#eee4f5';g.font='800 12px sans-serif';g.textAlign='left';g.fillText(`${label} ${hits}/${SKILL_CHARGE_MAX}${ready?` · ${hint}`:''}`,x+6,y+13);meterY+=25};
+    if(showStarAbsorb)drawChargeMeter(Math.min(SKILL_CHARGE_MAX,player.starAbsorbHits||0),'聚势之握','#7b50b5','#b59adb','长按抓');
+    if(showLaunchKick)drawChargeMeter(Math.min(SKILL_CHARGE_MAX,player.launchKickChargeHits||0),'空中飞连踢','#d56b32','#f0a46c','飞踢后按腿');
     const place=levelName(player.level),map=trialMaps[mapIndex],hudRight=W-40,tempSupport=progress.tempRecruit&&!progress.tempRecruit.pending&&progress.tempRecruit.activeStage===currentStageNumber()?` · 临时支援 ${Math.ceil(progress.tempRecruit.remaining)}秒`:'';g.textAlign='right';g.fillStyle='#ddd';g.font='700 17px sans-serif';if(freeTourMode)g.fillText(`自由游览 · 第 ${currentStageNumber()} 关`,hudRight,49);else if(gauntletMode)g.fillText(`${gauntletEliteMode?'精英':''}测试轮战 ${Math.min(gauntletIndex+1,gauntletEnemyTypes.length)} / ${gauntletEnemyTypes.length}`,hudRight,49);else g.fillText(`第 ${currentStageNumber()} 关 · 难度 ×${stageDifficulty().toFixed(1)} · 路段 ${gateIndex+1}/${map.gates.length}`,hudRight,49);g.fillStyle='#91a0a1';g.font='14px sans-serif';g.fillText(`${gauntletMode?'模型测试场':map.name} · ${themeName(currentStageTheme)} · ${place}`,hudRight,72);g.fillText(freeTourMode?`队友 ${companions.length} · 敌人关闭`:`击倒 ${player.kills} · 队友 ${companions.filter(c=>!c.dead).length}/${companions.length}${tempSupport} · 最高 ${progress.bestStage} 关`,hudRight,94);
     if(messageT>0){g.textAlign='center';g.font='800 22px sans-serif';const tw=g.measureText(message).width+48;g.fillStyle='#080c0ee8';g.fillRect(W/2-tw/2,112,tw,46);g.strokeStyle='#b26b3b';g.strokeRect(W/2-tw/2,112,tw,46);g.fillStyle='#f0d4a5';g.fillText(message,W/2,143)}
     g.textAlign='center';g.font='14px sans-serif';g.fillStyle='#c9d0cbcc';g.fillText('升龙拳需要可被打断的下蹲蓄力｜膝撞每次命中后必须收腿，最多三次',W/2,H-18)}
@@ -3598,6 +3590,7 @@
     for(const f of eliteArmorFx){if(f.x+f.radius<cameraX-20||f.x-f.radius>cameraX+W+20||f.y+f.radius<cameraY-20||f.y-f.radius>cameraY+H+20)continue;const q=clamp(1-f.t/f.max,0,1),fade=clamp(f.t/f.max,0,1),radius=f.radius*(.25+.75*q);g.save();g.translate(f.x,f.y);g.globalCompositeOperation='screen';g.globalAlpha=fade;g.fillStyle='#ffd45a55';g.beginPath();g.arc(0,0,22+q*30,0,Math.PI*2);g.fill();g.shadowColor='#ffbd32';g.shadowBlur=nativeDouyinRuntime?0:16;for(let i=0;i<8;i++){const angle=f.seed+i*Math.PI*2/8+(i%3-.9)*.025,len=radius*(.64+(i%5)*.09),inner=18+q*17;g.strokeStyle=i%3===0?'#fff4b0':'#ffbd32';g.lineWidth=i%4===0?5:2.6;g.beginPath();g.moveTo(Math.cos(angle)*inner,Math.sin(angle)*inner);g.lineTo(Math.cos(angle)*len,Math.sin(angle)*len);g.stroke()}g.shadowBlur=0;g.strokeStyle='#ffe477';g.lineWidth=4;g.beginPath();g.arc(0,0,34+q*82,0,Math.PI*2);g.stroke();g.restore()}
   }
   function drawStarAbsorbEffects(){
+    if(player.starAbsorbPull){const pull=player.starAbsorbPull,face=pull.face||player.face||1,handX=player.x+face*36,handY=player.y-(player.z||0)-88,range=350,phase=performance.now()*.009+(pull.seed||0),colors=['#ff4938','#ffd93d','#b97952'];g.save();g.globalCompositeOperation='screen';g.lineCap='round';g.lineJoin='round';g.globalAlpha=.88;g.fillStyle='#8b4bd31f';g.beginPath();g.moveTo(handX,handY);g.lineTo(handX+face*range,handY-135);g.lineTo(handX+face*range,handY+135);g.closePath();g.fill();for(let strand=0;strand<colors.length;strand++){g.strokeStyle=colors[strand];g.lineWidth=strand===1?4.5:3.5;g.shadowColor=colors[strand];g.shadowBlur=12;g.beginPath();for(let i=0;i<=48;i++){const p=i/48,radius=8+p*112,a=phase+strand*Math.PI*2/3+p*Math.PI*7,x=handX+face*(range*p+Math.cos(a)*radius*.2),y=handY+Math.sin(a)*radius;const method=i?'lineTo':'moveTo';g[method](x,y)}g.stroke()}g.shadowBlur=0;for(let i=0;i<18;i++){const p=1-((performance.now()*.0012+i/18+(pull.seed||0))%1),a=phase+i*1.71+p*Math.PI*5,radius=10+p*100,x=handX+face*(range*p+Math.cos(a)*radius*.18),y=handY+Math.sin(a)*radius;g.fillStyle=colors[i%3];g.globalAlpha=.45+.5*(1-p);g.beginPath();g.arc(x,y,2+(i%3),0,Math.PI*2);g.fill()}g.globalAlpha=.95;g.fillStyle='#fff4c5';g.shadowColor='#ffe06d';g.shadowBlur=18;g.beginPath();g.arc(handX,handY,7+Math.sin(phase)*2,0,Math.PI*2);g.fill();g.restore()}
     for(const f of starAbsorbFx){
       const q=clamp(1-f.t/f.max,0,1),fade=clamp(f.t/f.max,0,1),pulse=Math.sin(q*Math.PI),dx=f.toX-f.fromX,dy=f.toY-f.fromY,distance=Math.max(1,Math.hypot(dx,dy)),nx=-dy/distance,ny=dx/distance;
       g.save();g.globalCompositeOperation='screen';g.lineCap='round';g.lineJoin='round';
@@ -3617,7 +3610,12 @@
   function effects(){if(!running)return;drawStarAbsorbEffects();for(const f of resourceFx){const q=1-f.t/f.max,color=f.type==='coin'?'#ffd85a':f.type==='chicken'?'#ee7c42':'#e85b72';g.save();g.translate(f.x,f.y-(f.mode==='collect'?q*42:0));g.globalAlpha=clamp(f.t/f.max,0,1);g.strokeStyle=color;g.lineWidth=3;g.beginPath();g.ellipse(0,0,14+q*38,6+q*16,0,0,6.3);g.stroke();for(let i=0;i<8;i++){const a=i*Math.PI/4,len=10+q*36;g.beginPath();g.moveTo(Math.cos(a)*8,Math.sin(a)*5);g.lineTo(Math.cos(a)*len,Math.sin(a)*len*.55);g.stroke()}if(f.mode==='collect'){g.fillStyle='#fff1c1';g.font='900 18px sans-serif';g.textAlign='center';g.fillText(`+${f.value}`,0,-18)}g.restore()}for(const f of blastFx){const q=1-f.t/f.max;g.save();g.translate(f.x,f.y);g.globalAlpha=clamp(f.t/f.max,0,1);g.fillStyle='#d85a2428';g.strokeStyle='#f1a646';g.lineWidth=8*(1-q)+2;g.beginPath();g.ellipse(0,0,f.radius*q,f.radius*q*.32,0,0,6.3);g.fill();g.stroke();g.strokeStyle='#ffd27a';g.lineWidth=3;for(let i=0;i<12;i++){const a=i*Math.PI/6,len=24+q*90;g.beginPath();g.moveTo(Math.cos(a)*12,Math.sin(a)*7);g.lineTo(Math.cos(a)*len,Math.sin(a)*len*.4);g.stroke()}g.restore()}for(const f of hitFx){const q=1-f.t/f.max,r=12+q*48,fade=clamp(f.t/f.max,0,1);g.save();g.translate(f.x,f.y);g.globalAlpha=fade;if(f.blueFistFlame){g.globalAlpha=fade*f.blueFistFlame;g.globalCompositeOperation='screen';g.shadowColor='#29b8ff';g.shadowBlur=18;g.fillStyle='#bff6ff';g.beginPath();g.arc(0,0,9+q*15,0,6.3);g.fill();for(let i=0;i<7;i++){const a=f.seed+i*.897,len=18+q*(40+(i%2)*16);g.strokeStyle=i%2?'#2c8cff':'#8fefff';g.lineWidth=i%3===0?6:3;g.beginPath();g.moveTo(Math.cos(a)*6,Math.sin(a)*6);g.lineTo(Math.cos(a)*len,Math.sin(a)*len);g.stroke()}g.shadowBlur=0;g.globalCompositeOperation='source-over'}g.globalAlpha=fade;g.strokeStyle=f.onPlayer?'#b62f29':'#f1bb69';g.lineWidth=5*(1-q)+1;g.beginPath();g.arc(0,0,r,0,6.3);g.stroke();for(let i=0;i<9;i++){const a=f.seed+i*.698,len=18+q*(28+(i%3)*9);g.strokeStyle=i%2?'#eee2c5':f.onPlayer?'#d63d31':'#df7737';g.lineWidth=i%3===0?4:2;g.beginPath();g.moveTo(Math.cos(a)*8,Math.sin(a)*8);g.lineTo(Math.cos(a)*len,Math.sin(a)*len);g.stroke()}if(f.dmg!=null){g.globalAlpha=Math.min(1,f.t*6);g.fillStyle=f.onPlayer?'#ef8171':'#ffe0a1';g.font='900 20px sans-serif';g.textAlign='center';g.fillText('-'+f.dmg,0,-30-q*25)}g.restore()}}
   function refreshDoorActionVisibility(){if(!doorActionButton)return;doorActionButton.hidden=!(running&&player.hp>0&&nearbyBunkerDoor())}
   function loop(now){const dt=Math.min(.033,(now-last)/1000||0);last=now;if(running)update(dt);refreshDoorActionVisibility();render();window.TieJieNativeUi?.presentFrame?.();requestAnimationFrame(loop)}
-  function key(e,on){const m={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down'};if(m[e.code]){keys[m[e.code]]=on;e.preventDefault()}if(on&&!e.repeat){if(e.code==='KeyR'){restartCurrentStage();return}if(failurePopupT>0)return;if(e.code==='Digit1')tryUpgrade('hp');if(e.code==='Digit2')tryUpgrade('atk');if(e.code==='Digit3')tryUpgrade('def');if(e.code==='KeyJ'&&player.hp>0)act('punch');if(e.code==='KeyK')act('kick');if(e.code==='KeyL'){if(wave===2){if(gauntletMode)startGauntlet();else reset()}else act('grab')}if(e.code==='Space')act('jump')}}
+  const heldActions=new Set();let grabHoldPending=null;const GRAB_LONG_PRESS_SECONDS=.24;
+  function canPrepareStarAbsorb(){if(!running||player.hp<=0||player.climb||player.grab||player.held||player.state==='enemyGrabbed'||['hurt','down','fall'].includes(player.state)||!hasSkill('starAbsorb')||(player.starAbsorbHits||0)<SKILL_CHARGE_MAX)return false;return !playerAttackStates.has(player.state)||(player.comboLinkT||0)>0}
+  function pressAction(name){if(wave===2&&name==='grab'){if(gauntletMode)startGauntlet();else reset();return}if(name==='grab'&&canPrepareStarAbsorb()){heldActions.add(name);grabHoldPending={elapsed:0};return}act(name)}
+  function releaseAction(name){heldActions.delete(name);if(name!=='grab')return;if(player.starAbsorbPull){cancelStarAbsorbPull(true);return}if(grabHoldPending){grabHoldPending=null;act('grab')}}
+  function updateGrabHoldPending(dt){if(!grabHoldPending)return;if(!heldActions.has('grab')){grabHoldPending=null;return}if(!canPrepareStarAbsorb()){grabHoldPending=null;return}grabHoldPending.elapsed+=dt;if(grabHoldPending.elapsed<GRAB_LONG_PRESS_SECONDS)return;grabHoldPending=null;consumeHitLink('grab');useStarAbsorb()}
+  function key(e,on){const m={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down'};if(m[e.code]){keys[m[e.code]]=on;e.preventDefault()}if(!on&&e.code==='KeyL'){releaseAction('grab');return}if(on&&!e.repeat){if(e.code==='KeyR'){restartCurrentStage();return}if(failurePopupT>0)return;if(e.code==='Digit1')tryUpgrade('hp');if(e.code==='Digit2')tryUpgrade('atk');if(e.code==='Digit3')tryUpgrade('def');if(e.code==='KeyJ'&&player.hp>0)pressAction('punch');if(e.code==='KeyK')pressAction('kick');if(e.code==='KeyL')pressAction('grab');if(e.code==='Space')pressAction('jump')}}
   addEventListener('keydown',e=>key(e,true));addEventListener('keyup',e=>key(e,false));
   const touchUi=document.querySelector('#touch-ui'),dpad=touchUi?.querySelector('.dpad'),joystickKnob=dpad?.querySelector('.joystick-knob'),actionPad=touchUi?.querySelector('.actions'),doorActionButton=document.querySelector('#open-door-action');
   const joystickTouch={id:null,startX:0,startY:0,pressed:new Set()};
@@ -3644,9 +3642,9 @@
   function triggerTouchAction(button,gesture){
     if(!button||gesture.values.has(button.dataset.action))return;
     gesture.values.add(button.dataset.action);gesture.buttons.add(button);button.classList.add('pressed');haptic(12);
-    if(failurePopupT>0)return;const a=button.dataset.action;if(wave===2&&a==='grab'){if(gauntletMode)startGauntlet();else reset()}else if(player.hp>0)act(a)
+    if(failurePopupT>0)return;const a=button.dataset.action;if(player.hp>0)pressAction(a)
   }
-  function releaseTouchActions(e){const gesture=actionGestures.get(e.pointerId);if(!gesture)return;for(const button of gesture.buttons)button.classList.remove('pressed');actionGestures.delete(e.pointerId)}
+  function releaseTouchActions(e){const gesture=actionGestures.get(e.pointerId);if(!gesture)return;for(const action of gesture.values)releaseAction(action);for(const button of gesture.buttons)button.classList.remove('pressed');actionGestures.delete(e.pointerId)}
   actionPad?.addEventListener('pointerdown',e=>{const button=e.target.closest('[data-action]:not([hidden])');if(!button)return;e.preventDefault();const gesture={values:new Set(),buttons:new Set()};actionGestures.set(e.pointerId,gesture);actionPad.setPointerCapture(e.pointerId);triggerTouchAction(button,gesture)});
   actionPad?.addEventListener('pointermove',e=>{const gesture=actionGestures.get(e.pointerId);if(gesture)triggerTouchAction(actionButtonAt(e.clientX,e.clientY),gesture)});
   actionPad?.addEventListener('pointerup',releaseTouchActions);actionPad?.addEventListener('pointercancel',releaseTouchActions);
