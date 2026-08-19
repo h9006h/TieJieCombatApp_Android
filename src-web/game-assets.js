@@ -90,7 +90,7 @@
     waterShelterOceanBackground:image('assets/environment/water-shelter-ocean-background-v1.jpg?v=1.0'),
     waterShelterSurfaceAtlas:image('assets/environment/water-shelter-surface-materials-2x2-v1.jpg?v=2.0'),
     waterShelterStructureAtlas:image('assets/environment/water-shelter-structure-materials-2x2-v1.jpg?v=2.0'),
-    waterShelterFloodedRoomAtlas:image('assets/environment/water-shelter-flooded-room-materials-2x2-v1.jpg?v=1.0'),
+    waterShelterFloodedRoomAtlas:image('assets/environment/water-shelter-flooded-room-materials-2x2-v5.jpg?v=5.0'),
     forestBackdropTile:image('assets/environment/forest-backdrop-tile-v1.jpg?v=1.4'),
     forestTreeRootSprite:image('assets/environment/forest-tree-root-v1.png?v=1.5'),
     forestTerrainAtlas:image('assets/environment/forest-terrain-materials-2x2-v1.jpg?v=1.0'),
