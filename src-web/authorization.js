@@ -2,7 +2,6 @@
   'use strict';
 
   const config = window.TieJieAuthConfig || {};
-  const t = (key, params) => window.TieJieI18n?.t?.(key, params) || key;
   const TOKEN_KEY = 'tiejie-auth-token-v2';
   const GRANT_KEY = 'tiejie-auth-grant-v2';
   let resolveReady;
@@ -35,7 +34,15 @@
     register: document.querySelector('#auth-register'),
     retry: document.querySelector('#auth-retry'),
   });
-  const reasonMessage = reason => t(`auth.reason.${reason}`);
+  const reasonMessages = {
+    disabled: '此账号已被停用',
+    'invalid-session': '登录已失效，请重新登录',
+    'invalid-credentials': '用户名需要3–24位，密码至少8位',
+    'login-failed': '用户名或密码错误',
+    'username-taken': '这个用户名已经被注册',
+    'registration-closed': '服务器当前已关闭注册',
+    'server-error': '账号服务器暂时不可用',
+  };
 
   function showGate(message, { form = false, retry = false } = {}) {
     const view = elements();
@@ -100,10 +107,10 @@
   async function verify({ allowOffline = true } = {}) {
     const token = getStored(TOKEN_KEY);
     if (!token) {
-      showGate(t('auth.needLogin'), { form: true });
+      showGate('请登录已有账号，或注册一个新账号', { form: true });
       return false;
     }
-    showGate(t('auth.verifyingAccount'));
+    showGate('正在验证账号……');
     try {
       const { response, result } = await request('/v1/verify', {}, token);
       if (response.ok && result.allowed) {
@@ -113,7 +120,7 @@
       }
       removeStored(TOKEN_KEY);
       removeStored(GRANT_KEY);
-      showGate(result.reason ? reasonMessage(result.reason) : t('auth.invalid'), { form: true });
+      showGate(reasonMessages[result.reason] || '账号授权无效，请重新登录', { form: true });
       return false;
     } catch {
       const grant = allowOffline ? getOfflineGrant() : null;
@@ -121,7 +128,7 @@
         allow(grant, true);
         return true;
       }
-      showGate(t('auth.networkError'), { retry: true });
+      showGate('无法连接账号服务器，请检查网络后重试', { retry: true });
       return false;
     }
   }
@@ -131,23 +138,23 @@
     const username = view.username?.value.trim() || '';
     const password = view.password?.value || '';
     if (username.length < 3 || username.length > 24 || password.length < 8) {
-      showGate(reasonMessage('invalid-credentials'), { form: true });
+      showGate(reasonMessages['invalid-credentials'], { form: true });
       return;
     }
     if (view.login) view.login.disabled = true;
     if (view.register) view.register.disabled = true;
-    showGate(path === '/v1/register' ? t('auth.creating') : t('auth.loggingIn'));
+    showGate(path === '/v1/register' ? '正在创建账号……' : '正在登录……');
     try {
       const { response, result } = await request(path, { username, password });
       if (!response.ok || !result.allowed || !result.token) {
-        showGate(result.reason ? reasonMessage(result.reason) : t('auth.operationFailed'), { form: true });
+        showGate(reasonMessages[result.reason] || '操作失败，请稍后重试', { form: true });
         return;
       }
       setStored(TOKEN_KEY, result.token);
       cacheGrant(result);
       allow(result);
     } catch {
-      showGate(t('auth.networkError'), { form: true });
+      showGate('无法连接账号服务器，请检查网络后重试', { form: true });
     } finally {
       if (view.login) view.login.disabled = false;
       if (view.register) view.register.disabled = false;
@@ -175,7 +182,7 @@
         }
       }, 21600000);
     } else {
-      showGate(t('auth.serverMissing'));
+      showGate('账号服务器尚未配置，请联系管理员');
     }
   }
 

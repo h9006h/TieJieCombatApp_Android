@@ -213,20 +213,9 @@ button:disabled { opacity: .38; cursor: default; filter: none; }
 .battle-menu-settings button { display: flex; justify-content: space-between; gap: 8px; padding: 10px; font-size: 12px; font-weight: 800; }
 .battle-menu-settings b { color: #f0bb72; }
 .battle-menu-settings .muted { opacity: .55; }
-#battle-menu-settings-open { border-color: #6f5c36; background: #171411; color: #e8d5ae; }
 #battle-menu-end { border-color: #78382c; background: #351816; color: #dca796; }
 #battle-menu-toggle { position: absolute; z-index: 9; left: max(12px, env(safe-area-inset-left)); top: max(12px, env(safe-area-inset-top)); padding: 9px 13px; border: 1px solid #875336; background: linear-gradient(155deg, #29363a, #101719); color: #ead8b5; font-weight: 900; clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px); transition: opacity .15s, visibility .15s; }
 #battle-menu-toggle span { color: var(--rust-hi); }
-
-.settings-block { padding: 14px; border: 1px solid #6d4d33; background: linear-gradient(145deg, #131b1e, #090d10); }
-.settings-block strong { display: block; color: #e2c79f; font-size: 18px; }
-.settings-block small { display: block; margin-top: 6px; color: #9facaa; }
-.settings-block p { margin: 12px 0 0; color: #8d9a98; font-size: 12px; }
-#settings-language-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
-.settings-language-btn { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; padding: 10px 12px; text-align: left; }
-.settings-language-btn b { color: #b8a07f; font-size: 11px; }
-.settings-language-btn.active { border-color: #c57a44; background: #2d1d16; color: #ffe2bc; box-shadow: 0 0 14px #b15a2c2f; }
-.settings-language-btn.active b { color: #ffd088; }
 
 #growth-panel { position: absolute; z-index: 16; left: 50%; top: max(66px, calc(env(safe-area-inset-top) + 58px)); transform: translateX(-50%); width: min(500px, 92vw); padding: 15px; border: 1px solid #86613d; background: #081013f4; box-shadow: 0 15px 44px #000d; color: #e6d5ae; pointer-events: auto; }
 #growth-panel header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
@@ -319,7 +308,6 @@ button:disabled { opacity: .38; cursor: default; filter: none; }
   #gauntlet-enemies { gap: 6px; }
   #ad-debug-actions { grid-template-columns: 1fr; }
   .ad-debug-summary { grid-template-columns: 1fr; }
-  #settings-language-list { grid-template-columns: 1fr; }
   .skill-page-head { grid-template-columns: 95px 1fr 95px; margin-bottom: 7px; padding-bottom: 7px; }
   .skill-page-head strong { font-size: 20px; letter-spacing: 4px; }
   .skill-page-body { grid-template-columns: minmax(0, 1.65fr) minmax(240px, 1fr); gap: 8px; }
