@@ -1,6 +1,7 @@
 (async () => {
   'use strict';
   const authorization=await window.TieJieAuthorization.ready;
+  await window.TieJieViewportReady;
   const W=window.TieJieViewport?.width||1280,H=window.TieJieViewport?.height||720,WORLD_W=8600,SURFACE_WORLD_W=6200,WORLD_BOTTOM=1320,GROUND_Y=570,UNDER_Y=1460,GROUND_MIN_Y=490,GROUND_MAX_Y=760,BUNKER_ROOM_MODULE_W=1280,BUNKER_DEPTH=200,BUNKER_FLOOR_SKEW=1.12, canvas=document.querySelector('#game'), g=canvas.getContext('2d');
   const {
     heroKickSheet,heroKick1Sheet,heroKick2Sheet,heroKick3Sheet,heroJumpKickSheet,heroJumpKickChainSheet,
@@ -903,12 +904,11 @@
   function closeGrowthPanel(){const panel=document.querySelector('#growth-panel'),close=document.querySelector('#growth-close');clearPendingGrowth();if(panel)panel.hidden=true;if(close){close.textContent='×';close.classList.remove('advance');close.setAttribute('aria-label','关闭')}if(pendingGrowthAdvance){pendingGrowthAdvance=false;running=true;advanceStage()}}
   function closeRewardModal(resume=true){const modal=document.querySelector('#reward-modal'),summary=document.querySelector('#stage-settlement-summary'),cancel=document.querySelector('#reward-cancel'),exit=document.querySelector('#reward-exit');if(modal)modal.hidden=true;if(summary)summary.hidden=true;if(cancel)cancel.hidden=false;if(exit)exit.hidden=true;pendingReward=null;if(resume)running=rewardResumeRunning;rewardResumeRunning=false}
   function openRewardModal(kind,reason='',mode='resource'){
-    const rewards={gold:100,chicken:3,fruit:1},names={gold:'金币',chicken:'鸡腿',fruit:'果实'};
     const modal=document.querySelector('#reward-modal'),title=document.querySelector('#reward-modal-title'),desc=document.querySelector('#reward-modal-desc'),confirm=document.querySelector('#reward-confirm'),cancel=document.querySelector('#reward-cancel'),exit=document.querySelector('#reward-exit'),summary=document.querySelector('#stage-settlement-summary');if(!modal)return;
     if(summary)summary.hidden=true;cancel.hidden=false;if(exit)exit.hidden=mode!=='defeat';
     rewardResumeRunning=running;running=false;pendingReward={kind,mode};title.textContent=mode==='defeat'?'全员阵亡':'资源补给';
-    desc.textContent=mode==='defeat'?'主角和所有队友均已阵亡，本关携带的金币、鸡腿和果实已经掉落。可以看广告找回掉落并结束此关，满血复活继续此关，或不看广告直接返回初始页。':`${reason||`${names[kind]}不足。`} 完整观看视频可领取 ${names[kind]} +${rewards[kind]}。`;
-    confirm.textContent=mode==='defeat'?'看广告找回掉落并结束':'观看视频并领取';cancel.textContent=mode==='defeat'?'满血复活继续此关':'取消';modal.hidden=false
+    desc.textContent=mode==='defeat'?'主角和所有队友均已阵亡，本关携带的金币、鸡腿和果实已经掉落。可以满血复活继续此关，或放弃掉落返回初始页。':reason;
+    confirm.hidden=true;cancel.textContent=mode==='defeat'?'满血复活继续此关':'取消';modal.hidden=false
   }
   function openStageSettlement(){
     if(stageSettlementOpen)return;stageSettlementOpen=true;expireTemporaryRecruitAfterStage();
@@ -917,38 +917,18 @@
     const clearedStage=currentStageNumber();
     if(!testRunMode&&clearedStage>progress.bestStage){progress.bestStage=clearedStage;saveProgress();if(rankedRunEligible)window.TieJiePlatform?.rank?.submitHighestStage?.(clearedStage)}
     document.querySelector('#settlement-gold').textContent=String(stageRewardTotals.gold);document.querySelector('#settlement-chicken').textContent=String(stageRewardTotals.chicken);document.querySelector('#settlement-fruit').textContent=String(stageRewardTotals.fruit);
-    summary.hidden=false;confirm.textContent='看广告，奖励翻倍';cancel.textContent='直接领取并分配属性';cancel.hidden=false;if(exit)exit.hidden=true;modal.hidden=false
+    const testAdReady=isTestBuild&&(window.TieJieAdMobTestNative?.getRewardedReadyCount?.()||0)>0;summary.hidden=false;confirm.hidden=!testAdReady;confirm.disabled=false;confirm.textContent='播放测试广告，奖励翻倍';cancel.textContent='领取并分配属性';cancel.hidden=false;if(exit)exit.hidden=true;modal.hidden=false
   }
   function continueAfterStageSettlement(){
     if(pendingReward?.mode!=='stage-settlement')return;stageSettlementOpen=false;closeRewardModal(false);pendingGrowthAdvance=true;running=false;const panel=document.querySelector('#growth-panel'),close=document.querySelector('#growth-close');if(panel)panel.hidden=false;if(close){close.textContent='进入下一关';close.classList.add('advance');close.setAttribute('aria-label','完成加点并进入下一关')}
   }
-  async function doubleStageRewardsWithAd(){
+  let rewardedTestPoll=0;
+  function showSettlementTestRewarded(){
     if(pendingReward?.mode!=='stage-settlement'||stageRewardDoubled)return;
-    const confirm=document.querySelector('#reward-confirm'),cancel=document.querySelector('#reward-cancel'),desc=document.querySelector('#reward-modal-desc'),buttons=[confirm,cancel].filter(Boolean);
-    buttons.forEach(button=>button.disabled=true);desc.textContent='正在准备双倍奖励视频……';
-    try{
-      const result=await window.TieJiePlatform?.ads?.showRewarded('stageDouble');
-      if(!result?.ok){desc.textContent=result?.reason==='missing-ad-unit'?'尚未配置关卡双倍奖励广告位 ID':result?.reason==='not-completed'?'广告未完整观看，本关奖励未翻倍':result?.reason==='busy'?'另一个广告正在播放，请稍后重试':'广告暂时无法播放，本关奖励未翻倍';return}
-      if(stageRewardDoubled||pendingReward?.mode!=='stage-settlement')return;
-      for(const key of ['gold','chicken','fruit'])progress[key]+=stageRewardTotals[key];
-      stageRewardDoubled=true;saveProgress();
-      document.querySelector('#settlement-gold').textContent=String(stageRewardTotals.gold*2);document.querySelector('#settlement-chicken').textContent=String(stageRewardTotals.chicken*2);document.querySelector('#settlement-fruit').textContent=String(stageRewardTotals.fruit*2);
-      desc.textContent='完整观看成功，双倍奖励已到账！';message='双倍奖励已到账！';messageT=1.8;continueAfterStageSettlement()
-    }catch{desc.textContent='广告暂时无法播放，本关奖励未翻倍'}
-    finally{buttons.forEach(button=>button.disabled=false)}
-  }
-  async function claimRewardedResource(kind,mode='resource'){
-    const rewards={gold:100,chicken:3,fruit:1},names={gold:'金币',chicken:'鸡腿',fruit:'果实'},amount=rewards[kind];if(!amount)return;
-    const buttons=[...document.querySelectorAll('[data-reward-ad],#reward-confirm,#reward-cancel,#reward-exit')];buttons.forEach(button=>button.disabled=true);message='正在准备视频……';messageT=99;
-    let completed=false;
-    try{
-      const placement=mode==='defeat'?'revive':kind,result=await window.TieJiePlatform?.ads?.showRewarded(placement);
-      if(result?.ok&&mode==='defeat'){
-        if(lostResources){progress.gold+=lostResources.gold;progress.chicken+=lostResources.chicken;progress.fruit+=lostResources.fruit}lostResources=null;saveProgress();completed=true;closeRewardModal(false);returnToStart()
-      }else if(result?.ok){progress[kind]+=amount;saveProgress();message=`领取完成：${names[kind]} +${amount}`;messageT=1.6;completed=true}
-      else{message=result?.reason==='missing-ad-unit'?'尚未配置抖音广告位 ID':result?.reason==='not-completed'?'广告未完整观看，不发放奖励':'广告暂时无法播放，请稍后再试';messageT=1.5}
-    }catch{message='广告暂时无法播放，请稍后再试';messageT=1.5}
-    finally{buttons.forEach(button=>button.disabled=false);if(completed&&mode!=='defeat')closeRewardModal(true)}
+    const native=window.TieJieAdMobTestNative,confirm=document.querySelector('#reward-confirm'),cancel=document.querySelector('#reward-cancel'),desc=document.querySelector('#reward-modal-desc');if(!native?.showTestRewarded){if(desc)desc.textContent='测试广告桥不可用';return}
+    confirm.disabled=true;cancel.disabled=true;if(desc)desc.textContent='正在加载 Google 官方测试激励广告……';window.TieJieAudio?.pause();
+    let state='';try{state=native.showTestRewarded()||''}catch{state='failed:bridge-error'}
+    clearInterval(rewardedTestPoll);const started=Date.now();rewardedTestPoll=setInterval(()=>{try{state=native.getRewardedState?.()||state;if(state==='loaded')state=native.showTestRewarded?.()||state}catch{state='failed:bridge-error'}if(state==='loading'&&desc)desc.textContent='正在加载 Google 官方测试激励广告……';else if(state==='showing'&&desc)desc.textContent='测试广告正在播放……';if(!['earned','closed'].includes(state)&&!state.startsWith('failed:')&&Date.now()-started<=65000)return;clearInterval(rewardedTestPoll);rewardedTestPoll=0;confirm.disabled=false;cancel.disabled=false;if(state==='earned'){if(!stageRewardDoubled&&pendingReward?.mode==='stage-settlement'){for(const key of['gold','chicken','fruit'])progress[key]+=stageRewardTotals[key];stageRewardDoubled=true;saveProgress();document.querySelector('#settlement-gold').textContent=String(stageRewardTotals.gold*2);document.querySelector('#settlement-chicken').textContent=String(stageRewardTotals.chicken*2);document.querySelector('#settlement-fruit').textContent=String(stageRewardTotals.fruit*2);message='测试广告完成，双倍奖励已到账';messageT=1.8;continueAfterStageSettlement()}return}if(desc)desc.textContent=state==='closed'?'测试广告未完整观看，奖励没有翻倍':state.startsWith('failed:')?`测试广告失败：${state}`:'测试广告等待超时';window.TieJieAudio?.resume?.()},250)
   }
   function revivePartyFull(){
     lostResources=null;failureHandled=false;failurePopupT=0;partyDefeatPending=false;
@@ -1019,7 +999,7 @@
     const type=[...selectedRecruitTypes][0];if(!type)return true;
     if(recruitUnlocked(type))return true;
     const temp=progress.tempRecruit;if(temp?.type===type&&(temp.pending||(temp.activeStage===progress.currentStage&&temp.remaining>0)))return true;
-    refreshRecruitPanel('该队友尚未解锁，请先购买或看广告临时招募');return false
+    refreshRecruitPanel('该队友尚未解锁，请先使用金币购买');return false
   }
   function updateTemporaryRecruit(dt){
     const temp=progress.tempRecruit;if(!temp||temp.pending||temp.activeStage!==currentStageNumber())return;
@@ -1639,7 +1619,7 @@
     wave=2;enemies=[];message=`${gauntletEnemyTypes.length}个敌人都打完了……按 R 再来`;messageT=99;
   }
   function advanceStage(){
-    const next=currentStageNumber()+1;setStagePosition(next,!testRunMode,testRunMode);window.TieJiePlatform?.ads?.showInterstitial?.();loadMap(mapIndex);message=`进入第 ${next} 关 · 难度 ×${stageDifficulty(next).toFixed(1)}`;messageT=2;return;
+    const next=currentStageNumber()+1;setStagePosition(next,!testRunMode,testRunMode);loadMap(mapIndex);message=`进入第 ${next} 关 · 难度 ×${stageDifficulty(next).toFixed(1)}`;messageT=2;return;
   }
   function enterNextGateIfReady(){
     if(gauntletMode||gatePhase!=='exit')return;
@@ -3767,94 +3747,8 @@
   function refreshStartStageLabel(){const start=document.querySelector('#start');if(start)start.textContent=`继续第 ${progress.currentStage} 关`}
   refreshStartStageLabel();
   document.querySelector('#start').onclick=()=>beginFromMenu(reset,true);
-  const testTools=document.querySelector('#test-tools'),gauntletButton=document.querySelector('#gauntlet-btn'),quickStageInput=document.querySelector('#quick-stage-number'),adDebugButton=document.querySelector('#ad-debug-btn');
-  if(testTools)testTools.hidden=!isTestBuild;if(gauntletButton)gauntletButton.hidden=!isTestBuild;if(adDebugButton)adDebugButton.hidden=!isTestBuild;if(quickStageInput)quickStageInput.value=String(progress.currentStage);
-  const adDebugPlacements=[
-    {kind:'gold',label:'奖励广告 · 金币',desc:'测试金币补给位'},
-    {kind:'chicken',label:'奖励广告 · 鸡腿',desc:'测试鸡腿补给位'},
-    {kind:'fruit',label:'奖励广告 · 果实',desc:'测试果实补给位'},
-    {kind:'revive',label:'奖励广告 · 复活',desc:'测试阵亡补救位'},
-    {kind:'stageDouble',label:'奖励广告 · 关卡翻倍',desc:'测试结算双倍位'},
-    {kind:'temporaryRecruit',label:'奖励广告 · 临时招募',desc:'测试队友招募位'},
-    {kind:'__interstitial__',label:'插屏广告 · 过关插屏',desc:'测试关卡插屏位'}
-  ];
-  async function runAdDebugPlacement(kind,button){
-    if(button){button.disabled=true;button.classList.add('busy');button.textContent='测试中…'}
-    const status=document.querySelector('#ad-debug-status');
-    if(status)status.textContent=`正在测试 ${kind==='__interstitial__'?'插屏广告':'奖励广告'}：${kind}`;
-    try{
-      const result=kind==='__interstitial__'
-        ?await window.TieJiePlatform?.ads?.showInterstitial?.()
-        :await window.TieJiePlatform?.ads?.showRewarded?.(kind);
-      if(status)status.textContent=kind==='__interstitial__'
-        ?(result?'插屏广告展示完成':'插屏广告未展示，已记录最近状态')
-        :(result?.ok?`奖励广告 ${kind} 播放成功`:`奖励广告 ${kind} 失败：${result?.reason||'unknown'}`);
-    }catch(error){
-      if(status)status.textContent=`广告测试异常：${error?.message||error||'unknown-error'}`
-    }finally{
-      refreshAdDebugPanel();
-      if(button){button.disabled=false;button.classList.remove('busy');button.textContent='测试广告'}
-    }
-  }
-  function refreshAdDebugPanel(){
-    const report=window.TieJiePlatform?.ads?.debugReport?.()||{};
-    const platform=document.querySelector('#ad-debug-platform'),native=document.querySelector('#ad-debug-native'),last=document.querySelector('#ad-debug-last-result'),status=document.querySelector('#ad-debug-status'),actions=document.querySelector('#ad-debug-actions'),log=document.querySelector('#ad-debug-log');
-    if(platform)platform.textContent=report.platform||'unknown';
-    if(native)native.textContent=report.nativeAvailable?'已连接':'未连接';
-    const lastResult=report.lastResult;
-    if(last)last.textContent=lastResult?`${lastResult.type}/${lastResult.placement} · ${lastResult.ok?'成功':'失败'}`:'暂无';
-    if(status){
-      const nativeNote=report.native?`原生: 激励缓存 ${report.native.rewardedReadyCount||0} 个，插屏${report.native.interstitialReady?'已就绪':'未就绪'}，激励事件 ${report.native.lastRewardedEvent||'idle'}，插屏事件 ${report.native.lastInterstitialEvent||'idle'}`:'当前无原生快照';
-      status.textContent=`平台 ${report.platform||'unknown'}｜广告忙碌 ${report.busy?'是':'否'}｜${nativeNote}`
-    }
-    if(actions){
-      actions.innerHTML='';
-      for(const item of adDebugPlacements){
-        const card=document.createElement('section');
-        card.className='ad-debug-card';
-        const title=document.createElement('h3');
-        title.textContent=item.label;
-        const desc=document.createElement('p');
-        desc.textContent=item.desc;
-        const config=document.createElement('p');
-        if(item.kind==='__interstitial__'){
-          const nativeState=report.native?.interstitialReady?'原生已预加载':'原生未预加载';
-          config.textContent=`状态：${report.platform==='android-native'?nativeState:(report.douyinConfigured?.interstitial?'抖音已配置':'抖音未配置')}`;
-        }else{
-          const nativeState=(report.native?.rewardedReadyCount||0)>0?'原生已有激励缓存':'原生激励缓存为空';
-          const douyinState=report.douyinConfigured?.rewarded?.[item.kind]?'抖音已配置':'抖音未配置';
-          config.textContent=`状态：${report.platform==='android-native'?nativeState:douyinState}`;
-        }
-        const button=document.createElement('button');
-        button.type='button';
-        button.textContent='测试广告';
-        button.onclick=()=>runAdDebugPlacement(item.kind,button);
-        card.appendChild(title);
-        card.appendChild(desc);
-        card.appendChild(config);
-        card.appendChild(button);
-        actions.appendChild(card);
-      }
-    }
-    if(log){
-      log.innerHTML='';
-      const entries=Array.isArray(report.log)?report.log:[];
-      if(!entries.length){
-        const empty=document.createElement('div');
-        empty.className='ad-debug-log-item';
-        empty.textContent='暂无广告调用记录';
-        log.appendChild(empty);
-      }else{
-        for(const entry of entries){
-          const row=document.createElement('div');
-          row.className='ad-debug-log-item';
-          const stateClass=entry.ok?'ok':'fail';
-          row.innerHTML=`<strong>${entry.type}</strong> / ${entry.placement} / ${entry.platform} <span class="${stateClass}">${entry.ok?'成功':'失败'}</span><br>${entry.time}${entry.reason?` · ${entry.reason}`:''}`;
-          log.appendChild(row);
-        }
-      }
-    }
-  }
+  const testTools=document.querySelector('#test-tools'),gauntletButton=document.querySelector('#gauntlet-btn'),quickStageInput=document.querySelector('#quick-stage-number');
+  if(testTools)testTools.hidden=!isTestBuild;if(gauntletButton)gauntletButton.hidden=!isTestBuild;if(quickStageInput)quickStageInput.value=String(progress.currentStage);
   function normalizeQuickStage(){const requested=Math.max(1,Math.floor(Number(quickStageInput?.value)||1)),stage=isTestBuild?requested:Math.min(requested,maxSelectableStage());if(quickStageInput)quickStageInput.value=String(stage);return stage}
   quickStageInput?.addEventListener('change',normalizeQuickStage);
   document.querySelector('#quick-stage-prev')?.addEventListener('click',()=>{if(quickStageInput)quickStageInput.value=String(Math.max(1,normalizeQuickStage()-1))});
@@ -3865,9 +3759,6 @@
   function closeMenuPages(){document.querySelectorAll('.menu-page').forEach(page=>page.hidden=true);document.querySelector('#skill-panel').hidden=true}
   document.querySelector('#level-select').onclick=()=>{closeMenuPages();const panel=document.querySelector('#level-panel');panel.hidden=false;refreshStageSelect(Math.floor((progress.currentStage-1)/trialMaps.length))};
   document.querySelector('#level-back').onclick=()=>{document.querySelector('#level-panel').hidden=true};
-  document.querySelector('#ad-debug-btn')?.addEventListener('click',()=>{if(!isTestBuild)return;closeMenuPages();document.querySelector('#ad-debug-panel').hidden=false;refreshAdDebugPanel()});
-  document.querySelector('#ad-debug-back')?.addEventListener('click',()=>{document.querySelector('#ad-debug-panel').hidden=true});
-  document.querySelector('#ad-debug-refresh')?.addEventListener('click',refreshAdDebugPanel);
   document.querySelector('#stage-prev-page').onclick=()=>refreshStageSelect(stageSelectPage-1);
   document.querySelector('#stage-next-page').onclick=()=>refreshStageSelect(stageSelectPage+1);
   document.querySelector('#stage-current').onclick=()=>refreshStageSelect(Math.floor((progress.currentStage-1)/trialMaps.length));
@@ -3897,20 +3788,19 @@
   function refreshRecruitPanel(override=''){
     const type=[...selectedRecruitTypes][0],info=recruitInfo(type),temp=progress.tempRecruit;
     const gold=document.querySelector('#recruit-gold'),status=document.querySelector('#recruit-status'),action=document.querySelector('#recruit-action');if(gold)gold.textContent=`金币 ${progress.gold.toLocaleString()}`;
-    document.querySelectorAll('.recruit-enemy').forEach(b=>{const unlocked=recruitUnlocked(b.dataset.type),selected=type===b.dataset.type;b.classList.toggle('selected',selected);b.classList.toggle('unlocked',unlocked);b.classList.toggle('unaffordable',!unlocked&&progress.gold<Number(b.dataset.price));const span=b.querySelector('span');if(span){const item=recruitInfo(b.dataset.type);span.textContent=isTestBuild?'测试版直接招募':unlocked?'已永久解锁':`${item.price.toLocaleString()} 金币 · 广告 ${item.tempSeconds}秒`}});
-    if(action){action.hidden=!info||recruitUnlocked(type)||temp?.type===type;action.textContent=info&&progress.gold>=info.price?`支付 ${info.price.toLocaleString()} 金币永久解锁`:`看广告临时招募 ${info?.tempSeconds||0} 秒`}
-    const state=!type?'尚未选择队友':isTestBuild?`测试版已选择 ${enemyCatalog[type].name} · 可直接出战`:recruitUnlocked(type)?`已选择 ${enemyCatalog[type].name} · 永久队友`:temp?.type===type?temp.pending?`已预约 ${enemyCatalog[type].name}，只在下一关出战 ${Math.ceil(temp.remaining)} 秒`:`${enemyCatalog[type].name} 本关临时支援剩余 ${Math.ceil(temp.remaining)} 秒`:progress.gold>=(info?.price||Infinity)?`可永久解锁 ${enemyCatalog[type].name}`:`金币不足，可看广告临时招募；只在下一关出现`;
+    document.querySelectorAll('.recruit-enemy').forEach(b=>{const unlocked=recruitUnlocked(b.dataset.type),selected=type===b.dataset.type;b.classList.toggle('selected',selected);b.classList.toggle('unlocked',unlocked);b.classList.toggle('unaffordable',!unlocked&&progress.gold<Number(b.dataset.price));const span=b.querySelector('span');if(span){const item=recruitInfo(b.dataset.type);span.textContent=isTestBuild?'测试版直接招募':unlocked?'已永久解锁':`${item.price.toLocaleString()} 金币`}});
+    if(action){action.hidden=!info||recruitUnlocked(type)||temp?.type===type||(!isTestBuild&&progress.gold<info.price);action.textContent=info?`支付 ${info.price.toLocaleString()} 金币永久解锁`:''}
+    const state=!type?'尚未选择队友':isTestBuild?`测试版已选择 ${enemyCatalog[type].name} · 可直接出战`:recruitUnlocked(type)?`已选择 ${enemyCatalog[type].name} · 永久队友`:temp?.type===type?temp.pending?`已预约 ${enemyCatalog[type].name}，只在下一关出战 ${Math.ceil(temp.remaining)} 秒`:`${enemyCatalog[type].name} 本关临时支援剩余 ${Math.ceil(temp.remaining)} 秒`:progress.gold>=(info?.price||Infinity)?`可永久解锁 ${enemyCatalog[type].name}`:'金币不足，暂时无法招募';
     if(status)status.textContent=override||state
   }
   (function buildRecruitPanel(){
     const box=document.querySelector('#recruit-enemies');
-    recruitCatalog.forEach(({type,price,tempSeconds})=>{const b=document.createElement('button');b.className='recruit-enemy';b.dataset.type=type;b.dataset.price=price;b.textContent=enemyCatalog[type].name;const cost=document.createElement('span');cost.textContent=isTestBuild?'测试版直接招募':`${price.toLocaleString()} 金币 · 广告 ${tempSeconds}秒`;b.appendChild(cost);b.onclick=()=>{if(!isTestBuild&&progress.tempRecruit&&progress.tempRecruit.type!==type){refreshRecruitPanel(`临时队友 ${enemyCatalog[progress.tempRecruit.type].name} 已占用唯一队友位`);return}if(selectedRecruitTypes.has(type))selectedRecruitTypes.clear();else{selectedRecruitTypes.clear();selectedRecruitTypes.add(type)}pendingRecruitType=[...selectedRecruitTypes][0]||null;refreshRecruitPanel()};box.appendChild(b)});refreshRecruitPanel()
+    recruitCatalog.forEach(({type,price})=>{const b=document.createElement('button');b.className='recruit-enemy';b.dataset.type=type;b.dataset.price=price;b.textContent=enemyCatalog[type].name;const cost=document.createElement('span');cost.textContent=isTestBuild?'测试版直接招募':`${price.toLocaleString()} 金币`;b.appendChild(cost);b.onclick=()=>{if(!isTestBuild&&progress.tempRecruit&&progress.tempRecruit.type!==type){refreshRecruitPanel(`临时队友 ${enemyCatalog[progress.tempRecruit.type].name} 已占用唯一队友位`);return}if(selectedRecruitTypes.has(type))selectedRecruitTypes.clear();else{selectedRecruitTypes.clear();selectedRecruitTypes.add(type)}pendingRecruitType=[...selectedRecruitTypes][0]||null;refreshRecruitPanel()};box.appendChild(b)});refreshRecruitPanel()
   })();
   document.querySelector('#recruit-action').onclick=async()=>{
     const type=[...selectedRecruitTypes][0],info=recruitInfo(type),button=document.querySelector('#recruit-action');if(!type||!info||recruitUnlocked(type))return;
     if(progress.gold>=info.price){progress.gold-=info.price;progress.unlockedRecruits.push(type);progress.unlockedRecruits=[...new Set(progress.unlockedRecruits)];if(progress.tempRecruit?.type===type)progress.tempRecruit=null;pendingRecruitType=null;saveProgress();refreshRecruitPanel(`${enemyCatalog[type].name} 已永久解锁`);return}
-    button.disabled=true;refreshRecruitPanel('正在准备临时招募广告……');
-    try{const result=await window.TieJiePlatform?.ads?.showRewarded('temporaryRecruit');if(result?.ok){progress.tempRecruit={type,remaining:info.tempSeconds,pending:true,activeStage:null};pendingRecruitType=null;saveProgress();refreshRecruitPanel(`${enemyCatalog[type].name} 已临时招募，将在下一关出现 ${info.tempSeconds} 秒`)}else refreshRecruitPanel(result?.reason==='not-completed'?'广告未完整观看，临时招募未生效':'广告暂时无法播放，请稍后再试')}catch{refreshRecruitPanel('广告暂时无法播放，请稍后再试')}finally{button.disabled=false}
+    refreshRecruitPanel('金币不足，暂时无法招募')
   };
   document.querySelector('#recruit-btn').onclick=()=>{closeMenuPages();document.querySelector('#recruit-panel').hidden=false;refreshRecruitPanel()};
   document.querySelector('#recruit-back').onclick=()=>{document.querySelector('#recruit-panel').hidden=true};
@@ -3918,8 +3808,7 @@
   document.querySelector('#skill-back').onclick=()=>{document.querySelector('#skill-panel').hidden=true};
   document.querySelector('#rank-btn').onclick=async()=>{const result=await window.TieJiePlatform?.rank?.open?.();if(!result?.ok&&result?.reason!=='unsupported'){message='排行榜暂时无法打开，请稍后重试';messageT=1.8}};
   document.querySelector('#feedback-btn').onclick=async()=>{const result=await window.TieJiePlatform?.support?.openFeedback?.();if(!result?.ok&&result?.reason!=='unsupported'){message='反馈入口暂时无法打开，请稍后重试';messageT=1.8}};
-  document.querySelectorAll('[data-reward-ad]').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();if(failurePopupT<=0)openRewardModal(button.dataset.rewardAd)}));
-  document.querySelector('#reward-confirm').addEventListener('click',()=>{if(pendingReward?.mode==='stage-settlement')doubleStageRewardsWithAd();else if(pendingReward)claimRewardedResource(pendingReward.kind,pendingReward.mode)});
+  document.querySelector('#reward-confirm').addEventListener('click',showSettlementTestRewarded);
   document.querySelector('#reward-cancel').addEventListener('click',()=>{if(pendingReward?.mode==='stage-settlement')continueAfterStageSettlement();else if(pendingReward?.mode==='defeat')revivePartyFull();else closeRewardModal()});
   document.querySelector('#reward-exit').addEventListener('click',abandonDropsAndReturn);
   let vibrationEnabled=true,lastHapticAt=0;
@@ -3935,10 +3824,29 @@
   document.querySelector('#growth-toggle').addEventListener('click',()=>{if(failurePopupT>0||!canAllocateStats())return;const panel=document.querySelector('#growth-panel');if(panel.hidden)panel.hidden=false;else closeGrowthPanel()});
   document.querySelector('#growth-confirm').addEventListener('click',confirmGrowthUpgrades);
   document.querySelector('#growth-close').addEventListener('click',closeGrowthPanel);
+  function handleNativeBack(){
+    const rewardModal=document.querySelector('#reward-modal');
+    if(rewardModal&&!rewardModal.hidden){document.querySelector('#reward-cancel')?.click();return}
+    const growthPanel=document.querySelector('#growth-panel');
+    if(growthPanel&&!growthPanel.hidden){closeGrowthPanel();return}
+    const battleMenu=document.querySelector('#battle-menu');
+    if(battleMenu&&!battleMenu.hidden){document.querySelector('#battle-menu-resume')?.click();return}
+    const visibleMenuPage=[...document.querySelectorAll('.menu-page')].find(page=>!page.hidden);
+    if(visibleMenuPage){const backButton=visibleMenuPage.querySelector('button[id$="-back"]');if(backButton)backButton.click();else visibleMenuPage.hidden=true;return}
+    const skillPanel=document.querySelector('#skill-panel');
+    if(skillPanel&&!skillPanel.hidden){document.querySelector('#skill-back')?.click();return}
+    const startCard=document.querySelector('#start-card');
+    if(startCard&&startCard.style.display==='none')document.querySelector('#battle-menu-toggle')?.click()
+  }
+  window.addEventListener('tiejie-native-back',handleNativeBack);
   const audioToggle=document.querySelector('#audio-toggle');
   function refreshAudioToggle(){const on=window.TieJieAudio?.isEnabled?.()!==false,state=audioToggle.querySelector('b');if(state)state.textContent=on?'开':'关';audioToggle.classList.toggle('muted',!on);audioToggle.setAttribute('aria-label',on?'关闭音乐和音效':'开启音乐和音效')}
   audioToggle.addEventListener('click',()=>{window.TieJieAudio?.unlock();window.TieJieAudio?.setEnabled(!window.TieJieAudio?.isEnabled?.());refreshAudioToggle()});refreshAudioToggle();
   document.querySelectorAll('[data-upgrade]').forEach(button=>button.addEventListener('click',()=>tryUpgrade(button.dataset.upgrade)));
   document.querySelectorAll('[data-downgrade]').forEach(button=>button.addEventListener('click',()=>undoPendingUpgrade(button.dataset.downgrade)));
-  refreshSkillControls();refreshSkillPanel();refreshGrowthConfirmation();reset();requestAnimationFrame(loop);
+  async function startAdMobAfterMenuReady(){
+    try{await window.TieJieAssets?.whenReady}catch{}
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{try{window.TieJieAdMobTestNative?.startAndPreload?.()}catch{}}))
+  }
+  refreshSkillControls();refreshSkillPanel();refreshGrowthConfirmation();reset();requestAnimationFrame(loop);startAdMobAfterMenuReady();
 })();

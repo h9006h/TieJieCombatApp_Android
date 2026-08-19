@@ -5,8 +5,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
-import android.webkit.WebView;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -14,7 +14,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
-    private AdMobBridge adMobBridge;
+    private AdMobInitializationTestBridge adMobTestBridge;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -27,13 +27,29 @@ public class MainActivity extends BridgeActivity {
             getWindow().setAttributes(attributes);
         }
         boolean isDebuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
-        WebView.setWebContentsDebuggingEnabled(isDebuggable);
-        WebView webView = getBridgeWebView();
-        if (webView != null) {
-            adMobBridge = new AdMobBridge(this);
-            webView.addJavascriptInterface(adMobBridge, "TieJieAndroidAdsNative");
-            adMobBridge.initialize();
+        android.webkit.WebView.setWebContentsDebuggingEnabled(isDebuggable);
+        android.webkit.WebView webView = bridge != null ? bridge.getWebView() : null;
+        if (isDebuggable && webView != null) {
+            adMobTestBridge = new AdMobInitializationTestBridge(this);
+            webView.addJavascriptInterface(
+                adMobTestBridge,
+                "TieJieAdMobTestNative"
+            );
         }
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                android.webkit.WebView currentWebView =
+                    bridge != null ? bridge.getWebView() : null;
+                if (currentWebView == null) {
+                    return;
+                }
+                currentWebView.post(() -> currentWebView.evaluateJavascript(
+                    "window.dispatchEvent(new Event('tiejie-native-back'));",
+                    null
+                ));
+            }
+        });
         enterImmersiveMode();
     }
 
@@ -51,14 +67,10 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onDestroy() {
-        if (adMobBridge != null) {
-            adMobBridge.destroy();
+        if (adMobTestBridge != null) {
+            adMobTestBridge.destroy();
         }
         super.onDestroy();
-    }
-
-    public WebView getBridgeWebView() {
-        return bridge != null ? bridge.getWebView() : null;
     }
 
     private void enterImmersiveMode() {
