@@ -158,6 +158,26 @@ button:disabled { opacity: .38; cursor: default; filter: none; }
 #test-tools { margin-top: 9px; padding: 9px; border: 1px solid #5f4b35; background: #0e1416; }
 .test-toggle { display: flex; justify-content: center; align-items: center; gap: 8px; color: #c5cfc9; font-weight: 800; }
 .test-toggle input, .gauntlet-elite-toggle input { accent-color: var(--rust-hi); }
+.ad-debug-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-bottom: 10px; }
+.ad-debug-summary div { padding: 10px 12px; border: 1px solid #644733; background: #101618; }
+.ad-debug-summary small { display: block; color: #8a938f; font-size: 10px; letter-spacing: 1px; }
+.ad-debug-summary strong { display: block; margin-top: 4px; color: #f0d2a3; font-size: 15px; }
+#ad-debug-status { min-height: 20px; margin-bottom: 10px; padding: 8px 10px; border: 1px solid #4f3a2a; background: #0a1012; color: #c8c7bf; font-size: 12px; }
+#ad-debug-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
+.ad-debug-card { padding: 10px; border: 1px solid #5b4332; background: linear-gradient(180deg, #141b1d, #0a0e10); }
+.ad-debug-card h3 { margin: 0 0 6px; color: #ebcea2; font-size: 15px; }
+.ad-debug-card p { margin: 0 0 4px; color: #aab3ae; font-size: 11px; line-height: 1.45; }
+.ad-debug-card button { width: 100%; min-height: 38px; margin-top: 8px; font-weight: 900; }
+.ad-debug-card button.busy { opacity: .7; }
+.ad-debug-log-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #ffffff12; }
+.ad-debug-log-head strong { color: #ddb88c; font-size: 13px; letter-spacing: 1px; }
+#ad-debug-refresh { min-height: 34px; padding: 6px 11px; font-weight: 800; }
+#ad-debug-log { margin-top: 8px; border: 1px solid #4c392c; background: #091013; max-height: 250px; overflow: auto; }
+.ad-debug-log-item { padding: 8px 10px; border-top: 1px solid #ffffff0e; color: #aeb7b2; font-size: 11px; line-height: 1.5; }
+.ad-debug-log-item:first-child { border-top: 0; }
+.ad-debug-log-item strong { color: #f0d4a5; }
+.ad-debug-log-item .ok { color: #8ed5a7; }
+.ad-debug-log-item .fail { color: #e08f87; }
 
 #gauntlet-enemies { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
 .gauntlet-title { margin-bottom: 9px; color: #b79b78; text-align: center; font-size: 12px; }
@@ -193,9 +213,20 @@ button:disabled { opacity: .38; cursor: default; filter: none; }
 .battle-menu-settings button { display: flex; justify-content: space-between; gap: 8px; padding: 10px; font-size: 12px; font-weight: 800; }
 .battle-menu-settings b { color: #f0bb72; }
 .battle-menu-settings .muted { opacity: .55; }
+#battle-menu-settings-open { border-color: #6f5c36; background: #171411; color: #e8d5ae; }
 #battle-menu-end { border-color: #78382c; background: #351816; color: #dca796; }
 #battle-menu-toggle { position: absolute; z-index: 9; left: max(12px, env(safe-area-inset-left)); top: max(12px, env(safe-area-inset-top)); padding: 9px 13px; border: 1px solid #875336; background: linear-gradient(155deg, #29363a, #101719); color: #ead8b5; font-weight: 900; clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px); transition: opacity .15s, visibility .15s; }
 #battle-menu-toggle span { color: var(--rust-hi); }
+
+.settings-block { padding: 14px; border: 1px solid #6d4d33; background: linear-gradient(145deg, #131b1e, #090d10); }
+.settings-block strong { display: block; color: #e2c79f; font-size: 18px; }
+.settings-block small { display: block; margin-top: 6px; color: #9facaa; }
+.settings-block p { margin: 12px 0 0; color: #8d9a98; font-size: 12px; }
+#settings-language-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.settings-language-btn { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; padding: 10px 12px; text-align: left; }
+.settings-language-btn b { color: #b8a07f; font-size: 11px; }
+.settings-language-btn.active { border-color: #c57a44; background: #2d1d16; color: #ffe2bc; box-shadow: 0 0 14px #b15a2c2f; }
+.settings-language-btn.active b { color: #ffd088; }
 
 #growth-panel { position: absolute; z-index: 16; left: 50%; top: max(66px, calc(env(safe-area-inset-top) + 58px)); transform: translateX(-50%); width: min(500px, 92vw); padding: 15px; border: 1px solid #86613d; background: #081013f4; box-shadow: 0 15px 44px #000d; color: #e6d5ae; pointer-events: auto; }
 #growth-panel header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
@@ -286,6 +317,9 @@ button:disabled { opacity: .38; cursor: default; filter: none; }
   .menu-page-head strong { font-size: 20px; }
   .map-grid button { min-height: 38px; }
   #gauntlet-enemies { gap: 6px; }
+  #ad-debug-actions { grid-template-columns: 1fr; }
+  .ad-debug-summary { grid-template-columns: 1fr; }
+  #settings-language-list { grid-template-columns: 1fr; }
   .skill-page-head { grid-template-columns: 95px 1fr 95px; margin-bottom: 7px; padding-bottom: 7px; }
   .skill-page-head strong { font-size: 20px; letter-spacing: 4px; }
   .skill-page-body { grid-template-columns: minmax(0, 1.65fr) minmax(240px, 1fr); gap: 8px; }

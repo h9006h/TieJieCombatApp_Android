@@ -14,6 +14,8 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    private AdMobBridge adMobBridge;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -26,6 +28,12 @@ public class MainActivity extends BridgeActivity {
         }
         boolean isDebuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         WebView.setWebContentsDebuggingEnabled(isDebuggable);
+        WebView webView = getBridgeWebView();
+        if (webView != null) {
+            adMobBridge = new AdMobBridge(this);
+            webView.addJavascriptInterface(adMobBridge, "TieJieAndroidAdsNative");
+            adMobBridge.initialize();
+        }
         enterImmersiveMode();
     }
 
@@ -39,6 +47,18 @@ public class MainActivity extends BridgeActivity {
     public void onResume() {
         super.onResume();
         enterImmersiveMode();
+    }
+
+    @Override
+    public void onDestroy() {
+        if (adMobBridge != null) {
+            adMobBridge.destroy();
+        }
+        super.onDestroy();
+    }
+
+    public WebView getBridgeWebView() {
+        return bridge != null ? bridge.getWebView() : null;
     }
 
     private void enterImmersiveMode() {

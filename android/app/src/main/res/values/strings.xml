@@ -4,4 +4,13 @@
     <string name="title_activity_main">铁街格斗</string>
     <string name="package_name">com.tiejiecombat.game</string>
     <string name="custom_url_scheme">com.tiejiecombat.game</string>
+    <string name="admob_app_id">ca-app-pub-9700221862086110~9970721297</string>
+    <string name="admob_rewarded_default">ca-app-pub-9700221862086110/9866779514</string>
+    <string name="admob_rewarded_gold">ca-app-pub-9700221862086110/9866779514</string>
+    <string name="admob_rewarded_chicken">ca-app-pub-9700221862086110/9866779514</string>
+    <string name="admob_rewarded_fruit">ca-app-pub-9700221862086110/9866779514</string>
+    <string name="admob_rewarded_revive">ca-app-pub-9700221862086110/9866779514</string>
+    <string name="admob_rewarded_stage_double">ca-app-pub-9700221862086110/9866779514</string>
+    <string name="admob_rewarded_temporary_recruit">ca-app-pub-9700221862086110/9866779514</string>
+    <string name="admob_interstitial_stage"></string>
 </resources>
