@@ -31,7 +31,7 @@
     spinner:{walk:[0,1,0,1],walkRate:2.35},
     grappler:{walk:[0,1,0,1],walkRate:2.6},
     axe:{walk:[0,1,0,1],walkRate:2.8},
-    assassin:{walk:[0,1,0,1],walkRate:2.05},
+    assassin:{walk:[0,1,0,1],walkRate:2.05,runRate:1.35},
     suit:{walk:[0,1,0,1],walkRate:2.35},
     breaker:{walk:[0,1,0,1],walkRate:2.75},
     whip:{walk:[0,1,0,1],walkRate:2.45},

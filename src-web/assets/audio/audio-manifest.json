@@ -1,20 +1,22 @@
 {
-  "generator": "tools/generate_original_audio.py",
-  "generatorVersion": 5,
+  "generator": "tools/generate_original_audio.py + scripts/generate_battle_music_preview.py",
+  "generatorVersion": "5 + battle-v4",
   "musicDirection": "Stereo wuxia MMORPG score: bowed ensemble, guzheng/pipa-like strings, dizi/xiao, war drums, bronze gong and generated hall ambience",
   "sustainedBeds": "Overlapping two-bar evolving harmonic beds for every stage",
   "arrangement": "12 bars: intro, main, variation, breakdown, build, climax",
   "sampleRate": 22050,
+  "additionalSampleRates": [44100],
   "copyrightNote": "Original sample-free procedural synthesis. No third-party recordings, loops, melodies, or sound libraries were used.",
   "files": [
     {
       "path": "web/assets/audio/music/01-iron-alley.wav",
-      "seconds": 27.692,
+      "seconds": 54.092,
       "channels": 2,
-      "sha256": "21e44ef6eb674190de180480fe1f959994a9acb7015d4defb551fa4671d19dc4",
+      "sampleRate": 44100,
+      "sha256": "31f2e1de76a82699b5434445b8e8b17664a4ae43bcabd5f5ddafef4b0a5bd9d9",
       "kind": "music",
-      "title": "铁街旧巷",
-      "bpm": 104
+      "title": "铁血沸腾",
+      "bpm": 148
     },
     {
       "path": "web/assets/audio/music/02-dunhuang-wall.wav",

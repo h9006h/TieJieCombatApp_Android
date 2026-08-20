@@ -2,6 +2,7 @@
   'use strict';
 
   const config = window.TieJieAuthConfig || {};
+  const tr = (key, fallback) => window.TieJieI18n?.t?.(key) || fallback;
   const TOKEN_KEY = 'tiejie-auth-token-v2';
   const GRANT_KEY = 'tiejie-auth-grant-v2';
   let resolveReady;
@@ -11,6 +12,7 @@
     allowed: false,
     mode: 'normal',
     username: '',
+    displayName: '',
   };
 
   window.TieJieAuthorization = authorization;
@@ -41,6 +43,7 @@
     'login-failed': '用户名或密码错误',
     'username-taken': '这个用户名已经被注册',
     'registration-closed': '服务器当前已关闭注册',
+    'too-many-attempts': '登录失败次数过多，请15分钟后重试',
     'server-error': '账号服务器暂时不可用',
   };
 
@@ -52,18 +55,11 @@
     if (view.retry) view.retry.hidden = !retry;
   }
 
-  function cacheGrant(result) {
-    setStored(GRANT_KEY, JSON.stringify({
-      mode: result.mode,
-      username: result.username,
-      verifiedAtMs: Date.now(),
-    }));
-  }
-
   function allow(result, offline = false) {
     authorization.allowed = true;
     authorization.mode = result.mode === 'test' ? 'test' : 'normal';
     authorization.username = result.username || '';
+    authorization.displayName = result.displayName || result.username || '';
     authorization.offline = offline;
     const view = elements();
     if (view.gate) view.gate.hidden = true;
@@ -94,27 +90,29 @@
     }
   }
 
-  function getOfflineGrant() {
+  async function authorizedPost(path, body = {}) {
+    const token = getStored(TOKEN_KEY);
+    if (!token) return { ok: false, reason: 'invalid-session' };
     try {
-      const grant = JSON.parse(getStored(GRANT_KEY) || 'null');
-      const graceMs = 3600000 * Math.max(0, Number(config.offlineGraceHours) || 0);
-      return grant && Date.now() - Number(grant.verifiedAtMs) <= graceMs ? grant : null;
+      const { response, result } = await request(path, body, token);
+      return { ...result, ok: response.ok && result.ok !== false, status: response.status };
     } catch {
-      return null;
+      return { ok: false, reason: 'network-error' };
     }
   }
 
-  async function verify({ allowOffline = true } = {}) {
+  authorization.api = Object.freeze({ post: authorizedPost });
+
+  async function verify() {
     const token = getStored(TOKEN_KEY);
     if (!token) {
-      showGate('请登录已有账号，或注册一个新账号', { form: true });
+      showGate(tr('authPrompt', '请登录已有账号，或注册一个新账号'), { form: true });
       return false;
     }
-    showGate('正在验证账号……');
+    showGate(tr('authVerifying', '正在验证账号……'));
     try {
       const { response, result } = await request('/v1/verify', {}, token);
       if (response.ok && result.allowed) {
-        cacheGrant(result);
         allow(result);
         return true;
       }
@@ -123,12 +121,7 @@
       showGate(reasonMessages[result.reason] || '账号授权无效，请重新登录', { form: true });
       return false;
     } catch {
-      const grant = allowOffline ? getOfflineGrant() : null;
-      if (grant) {
-        allow(grant, true);
-        return true;
-      }
-      showGate('无法连接账号服务器，请检查网络后重试', { retry: true });
+      showGate(tr('authNetwork', '无法连接账号服务器，请检查网络后重试'), { retry: true });
       return false;
     }
   }
@@ -143,7 +136,7 @@
     }
     if (view.login) view.login.disabled = true;
     if (view.register) view.register.disabled = true;
-    showGate(path === '/v1/register' ? '正在创建账号……' : '正在登录……');
+    showGate(path === '/v1/register' ? tr('authCreating', '正在创建账号……') : tr('authLoggingIn', '正在登录……'));
     try {
       const { response, result } = await request(path, { username, password });
       if (!response.ok || !result.allowed || !result.token) {
@@ -151,10 +144,9 @@
         return;
       }
       setStored(TOKEN_KEY, result.token);
-      cacheGrant(result);
       allow(result);
     } catch {
-      showGate('无法连接账号服务器，请检查网络后重试', { form: true });
+      showGate(tr('authNetwork', '无法连接账号服务器，请检查网络后重试'), { form: true });
     } finally {
       if (view.login) view.login.disabled = false;
       if (view.register) view.register.disabled = false;
@@ -168,10 +160,11 @@
       submit('/v1/register');
     });
     view.login?.addEventListener('click', () => submit('/v1/login'));
-    view.retry?.addEventListener('click', () => verify({ allowOffline: false }));
+    view.retry?.addEventListener('click', () => verify());
   }
 
   async function start() {
+    removeStored(GRANT_KEY);
     bindControls();
     if (config.apiBaseUrl && !config.apiBaseUrl.includes('REPLACE_')) {
       await verify();
@@ -182,7 +175,7 @@
         }
       }, 21600000);
     } else {
-      showGate('账号服务器尚未配置，请联系管理员');
+      showGate(tr('authUnconfigured', '账号服务器尚未配置，请联系管理员'));
     }
   }
 

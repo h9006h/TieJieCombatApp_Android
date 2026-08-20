@@ -10,6 +10,7 @@ const outputDir = new URL('www/', root);
 const sourcePath = fileURLToPath(sourceDir);
 const sourceFiles = [
   'app-bootstrap.js',
+  'i18n.js',
   'auth-config.js',
   'authorization.js',
   'ad-config.js',

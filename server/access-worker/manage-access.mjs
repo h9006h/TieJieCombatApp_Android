@@ -7,6 +7,8 @@ function usage(message = '') {
   if (message) console.error(message);
   console.error(`Usage:
   node manage-access.mjs list
+  node manage-access.mjs leaderboard
+  node manage-access.mjs feedback
   node manage-access.mjs disable <username>
   node manage-access.mjs enable <username>
   node manage-access.mjs mode <username> <test|normal>
@@ -38,6 +40,17 @@ switch (command) {
   case 'list':
     execute(`SELECT username, enabled, mode, created_at, last_seen_at
       FROM users ORDER BY created_at DESC;`);
+    break;
+  case 'leaderboard':
+    execute(`SELECT COALESCE(NULLIF(display_name, ''), username) AS name, best_stage,
+      stat_hp, stat_atk, stat_def, skill_mask, progress_updated_at
+      FROM users WHERE enabled = 1 AND best_stage > 0
+      ORDER BY best_stage DESC, progress_updated_at ASC LIMIT 10;`);
+    break;
+  case 'feedback':
+    execute(`SELECT f.created_at, u.username, f.category, f.stage, f.language,
+      f.client_version, f.content FROM feedback f JOIN users u ON u.id = f.user_id
+      ORDER BY f.created_at DESC LIMIT 50;`);
     break;
   case 'disable':
   case 'enable': {

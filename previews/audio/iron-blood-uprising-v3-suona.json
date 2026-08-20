@@ -1,0 +1,12 @@
+{
+  "title": "铁血沸腾",
+  "file": "iron-blood-uprising-v3-suona.wav",
+  "sampleRate": 44100,
+  "channels": 2,
+  "seconds": 54.092,
+  "bpm": 148,
+  "key": "D minor / Phrygian inflection",
+  "direction": "激情、热血、战斗、东方工业史诗",
+  "copyright": "Original deterministic synthesis; no recordings, samples, loops, or prior game melodies used.",
+  "sha256": "c80863e60b372bc16cf0e2aa35cb545e33c3e08752e5de46f82e8ecfcee7df30"
+}

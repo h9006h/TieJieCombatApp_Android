@@ -10,9 +10,28 @@
     let previousSize = '';
     let stableFrames = 0;
     let completed = false;
+    const readViewport = () => {
+      const visualViewport = window.visualViewport;
+      const width = visualViewport?.width || window.innerWidth || document.documentElement.clientWidth || baseWidth;
+      const height = visualViewport?.height || window.innerHeight || document.documentElement.clientHeight || baseHeight;
+      return {
+        width: Math.max(1, Math.round(width)),
+        height: Math.max(1, Math.round(height))
+      };
+    };
+    const resetStability = () => {
+      previousSize = '';
+      stableFrames = 0;
+    };
+    const stopWatchingViewport = () => {
+      window.removeEventListener('resize', resetStability);
+      window.removeEventListener('orientationchange', resetStability);
+      window.visualViewport?.removeEventListener('resize', resetStability);
+    };
     const complete = (viewportWidth, viewportHeight) => {
       if (completed) return;
       completed = true;
+      stopWatchingViewport();
       const aspect = viewportWidth / viewportHeight;
       const baseAspect = baseWidth / baseHeight;
       const width = aspect >= baseAspect ? Math.round(baseHeight * aspect) : baseWidth;
@@ -25,14 +44,15 @@
       resolve(window.TieJieViewport);
     };
     const waitForStableLandscape = () => {
-      const viewportWidth = Math.max(1, Math.round(window.innerWidth || document.documentElement.clientWidth || baseWidth));
-      const viewportHeight = Math.max(1, Math.round(window.innerHeight || document.documentElement.clientHeight || baseHeight));
+      const viewport = readViewport();
+      const viewportWidth = viewport.width;
+      const viewportHeight = viewport.height;
       const sizeKey = `${viewportWidth}x${viewportHeight}`;
       const landscape = viewportWidth >= viewportHeight;
       stableFrames = landscape && sizeKey === previousSize ? stableFrames + 1 : landscape ? 1 : 0;
       previousSize = sizeKey;
       const elapsed = performance.now() - startedAt;
-      if (stableFrames >= 6 && elapsed >= 250) {
+      if (stableFrames >= 12 && elapsed >= 500) {
         complete(viewportWidth, viewportHeight);
         return;
       }
@@ -42,6 +62,9 @@
       }
       requestAnimationFrame(waitForStableLandscape);
     };
+    window.addEventListener('resize', resetStability);
+    window.addEventListener('orientationchange', resetStability);
+    window.visualViewport?.addEventListener('resize', resetStability);
     requestAnimationFrame(waitForStableLandscape);
   });
   document.addEventListener('contextmenu', event => event.preventDefault());

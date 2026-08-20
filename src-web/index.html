@@ -9,18 +9,18 @@
 <body>
   <section id="auth-gate" aria-label="测试授权">
     <div class="auth-card">
-      <strong>铁街测试通行证</strong>
-      <p id="auth-status">正在验证测试资格……</p>
+      <strong data-i18n="authTitle">铁街测试通行证</strong>
+      <p id="auth-status" data-i18n="authChecking">正在验证测试资格……</p>
       <form id="auth-form" hidden autocomplete="off">
-        <input id="auth-username" type="text" inputmode="text" autocapitalize="none" spellcheck="false" minlength="3" maxlength="24" placeholder="用户名（3–24位）" aria-label="用户名">
-        <input id="auth-password" type="password" minlength="8" maxlength="64" placeholder="密码（至少8位）" aria-label="密码">
+        <input id="auth-username" type="text" inputmode="text" autocapitalize="none" spellcheck="false" minlength="3" maxlength="24" placeholder="用户名（3–24位）" aria-label="用户名" data-i18n-placeholder="username">
+        <input id="auth-password" type="password" minlength="8" maxlength="64" placeholder="密码（至少8位）" aria-label="密码" data-i18n-placeholder="password">
         <div class="auth-actions">
           <button id="auth-login" type="button">登录</button>
           <button id="auth-register" type="submit">注册并进入</button>
         </div>
       </form>
       <button id="auth-retry" type="button" hidden>重新验证</button>
-      <small>测试期间开放注册；正式上线后测试账号会统一清除</small>
+      <small data-i18n="authFoot">测试期间开放注册；正式上线后测试账号会统一清除</small>
     </div>
   </section>
   <main id="game-wrap">
@@ -89,6 +89,36 @@
         <button id="skill-btn">技能</button>
         <button id="rank-btn">闯关排行榜</button>
         <button id="feedback-btn">意见反馈</button>
+        <button id="settings-btn">设置</button>
+      </div>
+    </section>
+    <section id="settings-panel" class="menu-page" hidden aria-label="游戏设置">
+      <div class="menu-page-shell compact-page-shell">
+        <header class="menu-page-head"><button id="settings-back" type="button" data-i18n="back">← 返回</button><div><strong data-i18n="settingsTitle">游戏设置</strong><small data-i18n="settingsSub">语言、角色名与本机选项</small></div><span>SETTINGS</span></header>
+        <div class="settings-form">
+          <label><span data-i18n="language">界面语言</span><select id="language-select"></select></label>
+          <label><span data-i18n="playerName">角色名字</span><input id="player-name-input" type="text" maxlength="12" autocomplete="off" data-i18n-placeholder="playerNameHint"></label>
+          <small data-i18n="playerNameHint">1–12个文字、数字、空格或下划线</small>
+          <button id="settings-save" type="button" data-i18n="save">保存</button>
+          <div id="settings-status" role="status"></div>
+        </div>
+      </div>
+    </section>
+    <section id="rank-panel" class="menu-page" hidden aria-label="闯关排行榜">
+      <div class="menu-page-shell">
+        <header class="menu-page-head"><button id="rank-back" type="button" data-i18n="back">← 返回</button><div><strong data-i18n="rankTitle">闯关排行榜</strong><small data-i18n="rankSub">服务器最高通关前十名</small></div><span>TOP 10</span></header>
+        <div id="rank-list" class="rank-list"><p data-i18n="rankLoading">正在读取排行榜……</p></div>
+      </div>
+    </section>
+    <section id="feedback-panel" class="menu-page" hidden aria-label="意见反馈">
+      <div class="menu-page-shell compact-page-shell">
+        <header class="menu-page-head"><button id="feedback-back" type="button" data-i18n="back">← 返回</button><div><strong data-i18n="feedbackTitle">意见反馈</strong><small data-i18n="feedbackSub">问题会提交到测试服务器</small></div><span>SUPPORT</span></header>
+        <form id="feedback-form" class="feedback-form">
+          <label><span data-i18n="feedbackType">反馈类型</span><select id="feedback-category"><option value="bug" data-i18n="feedbackBug">游戏问题</option><option value="idea" data-i18n="feedbackIdea">玩法建议</option><option value="other" data-i18n="feedbackOther">其他</option></select></label>
+          <label><span data-i18n="feedbackContent">反馈内容</span><textarea id="feedback-content" minlength="10" maxlength="800" data-i18n-placeholder="feedbackHint"></textarea></label>
+          <button id="feedback-submit" type="submit" data-i18n="feedbackSubmit">提交反馈</button>
+          <div id="feedback-status" role="status"></div>
+        </form>
       </div>
     </section>
     <section id="level-panel" class="menu-page" hidden aria-label="选择关卡">
@@ -174,6 +204,7 @@
     </div>
   </main>
   <script src="app-bootstrap.js?v=2.0"></script>
+  <script src="i18n.js?v=1.0"></script>
   <script src="auth-config.js?v=1.0"></script>
   <script src="authorization.js?v=1.0"></script>
   <script src="ad-config.js?v=1.3"></script>
