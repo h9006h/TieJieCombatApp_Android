@@ -17,6 +17,7 @@ npx wrangler d1 execute tiejie-access --remote --file migrations/0002-player-pro
 npx wrangler d1 execute tiejie-access --remote --file migrations/0003-password-work-factor.sql
 npx wrangler d1 execute tiejie-access --remote --file migrations/0004-auth-throttle.sql
 npx wrangler d1 execute tiejie-access --remote --file migrations/0005-stage-run-validation.sql
+npx wrangler d1 execute tiejie-access --remote --file migrations/0006-authoritative-progression.sql
 ```
 
 ## 服务端保存字段
@@ -32,8 +33,15 @@ npx wrangler d1 execute tiejie-access --remote --file migrations/0005-stage-run-
 
 `sessions` 只保存会话 ID、用户 ID、令牌哈希、过期与访问时间，不保存明文令牌。`feedback` 保存反馈类型、正文、关卡、客户端版本、语言和提交时间，不采集广告 ID、设备序列号或通讯录等信息。
 
+从 `0006` 起，最高关、金币、鸡腿、果实、属性、技能和永久队友均为服务端权威字段。客户端只能请求开始/完成关卡、消费鸡腿加点、消费果实解锁技能或消费金币招募，不能通过通用保存接口覆盖最终数值。该迁移会保留账号凭据，但会把已有测试进度归零一次。
+
 离线授权已关闭；本地仍可保存游戏进度，但账号授权和服务器进度同步必须连接 Worker。新密码使用 600,000 次 PBKDF2-HMAC-SHA256，旧账号在下一次成功登录时从 10,000 次自动升级。
 登录失败按“来源 IP + 用户名”的 SHA-256 哈希键限流，15 分钟内最多失败 5 次；成功登录会立即清除限流记录，数据库不保存明文 IP。
+
+账号删除入口：
+
+- `GET /account-deletion`：无需安装应用即可访问的公开删号网页，可填写到 Google Play Console 的账号删除网址。
+- `POST /v1/account/delete`：再次验证当前密码后，永久删除账号、全部会话、反馈、关卡运行和关卡完成记录。应用内使用 Bearer 令牌并提交 `password`；公开网页提交 `username` 与 `password`。
 
 排行榜最高关不再接受 `/v1/player/save` 上传的数值。正式挑战必须先调用 `/v1/stage/start` 获取一次性凭证，再由 `/v1/stage/complete` 按顺序结算；服务端按关卡要求至少 45 秒并逐关增加，最高 180 秒，可通过 Worker 环境变量 `MIN_STAGE_SECONDS` 覆盖统一阈值。凭证只保存哈希、最长 6 小时且成功后立即删除。
 

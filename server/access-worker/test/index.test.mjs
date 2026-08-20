@@ -32,8 +32,14 @@ class MemoryStatement {
       const user = session && this.db.users.find(item => item.id === session.user_id);
       return session && user ? { ...user, session_id: session.id, expires_at: session.expires_at } : null;
     }
+    if (this.sql.includes('FROM users WHERE id = ?')) {
+      return this.db.users.find(user => user.id === this.values[0]) || null;
+    }
     if (this.sql.includes('FROM stage_runs WHERE user_id')) {
       return this.db.stageRuns.get(this.values[0]) || null;
+    }
+    if (this.sql.includes('FROM stage_completions WHERE user_id')) {
+      return this.db.stageCompletions.get(`${this.values[0]}:${this.values[1]}`) || null;
     }
     if (this.sql.includes('FROM feedback WHERE user_id')) {
       return null;
@@ -49,23 +55,47 @@ class MemoryStatement {
   }
 
   async run() {
+    let changes = 1;
     if (this.sql.startsWith('INSERT INTO users')) {
       const [id, username, password_salt, password_hash, password_iterations, mode, created_at, updated_at, last_seen_at, client_version] = this.values;
-      this.db.users.push({ id, username, password_salt, password_hash, password_iterations, enabled: 1, mode, created_at, updated_at, last_seen_at, client_version });
+      this.db.users.push({ id, username, password_salt, password_hash, password_iterations, enabled: 1, mode, created_at, updated_at, last_seen_at, client_version, display_name: '', best_stage: 0, gold: 0, chicken: 0, fruit: 0, stat_hp: 0, stat_atk: 0, stat_def: 0, stat_spd: 0, ascend_level: 0, skill_mask: 0, recruit_mask: 0, progress_updated_at: null });
     } else if (this.sql.startsWith('INSERT INTO sessions')) {
       assert.equal(this.values.length, 6, 'session INSERT must bind all six values');
       const [id, user_id, token_hash, expires_at, created_at, last_seen_at] = this.values;
       assert.ok(this.db.users.some(user => user.id === user_id), 'session user must exist');
       this.db.sessions.push({ id, user_id, token_hash, expires_at, created_at, last_seen_at });
+    } else if (this.sql.startsWith('DELETE FROM feedback')) {
+      this.db.feedback = this.db.feedback.filter(item => item.user_id !== this.values[0]);
+    } else if (this.sql.startsWith('DELETE FROM sessions')) {
+      this.db.sessions = this.db.sessions.filter(item => item.user_id !== this.values[0]);
     } else if (this.sql.startsWith('DELETE FROM users')) {
       this.db.users = this.db.users.filter(user => user.id !== this.values[0]);
     } else if (this.sql.startsWith('UPDATE users SET display_name')) {
-      const [display_name, best_stage, stat_hp, stat_atk, stat_def, skill_mask, progress_blob, progress_updated_at, updated_at, id] = this.values;
-      Object.assign(this.db.users.find(user => user.id === id), { display_name, best_stage, stat_hp, stat_atk, stat_def, skill_mask, progress_blob, progress_updated_at, updated_at });
-    } else if (this.sql.startsWith('UPDATE users SET best_stage')) {
-      const [best_stage, progress_updated_at, updated_at, id, previousBestStage] = this.values;
+      const [display_name, updated_at, id] = this.values;
+      Object.assign(this.db.users.find(user => user.id === id), { display_name, updated_at });
+    } else if (this.sql.startsWith('UPDATE users SET chicken')) {
+      const [cost, hp, atk, def, progress_updated_at, updated_at, id, requiredChicken] = this.values;
       const user = this.db.users.find(item => item.id === id);
-      if (user && (user.best_stage || 0) === previousBestStage) Object.assign(user, { best_stage, progress_updated_at, updated_at });
+      if (!user || user.chicken < requiredChicken) changes = 0;
+      else Object.assign(user, { chicken: user.chicken - cost, stat_hp: user.stat_hp + hp, stat_atk: user.stat_atk + atk, stat_def: user.stat_def + def, progress_updated_at, updated_at });
+    } else if (this.sql.startsWith('UPDATE users SET fruit')) {
+      const [cost, bit, progress_updated_at, updated_at, id, requiredFruit] = this.values;
+      const user = this.db.users.find(item => item.id === id);
+      if (!user || user.fruit < requiredFruit || (user.skill_mask & bit) !== 0) changes = 0;
+      else Object.assign(user, { fruit: user.fruit - cost, skill_mask: user.skill_mask | bit, progress_updated_at, updated_at });
+    } else if (this.sql.startsWith('UPDATE users SET skill_mask =')) {
+      const [skill_mask, progress_updated_at, updated_at, id] = this.values;
+      Object.assign(this.db.users.find(user => user.id === id), { skill_mask, progress_updated_at, updated_at });
+    } else if (this.sql.startsWith('UPDATE users SET gold')) {
+      const [price, bit, progress_updated_at, updated_at, id, requiredGold] = this.values;
+      const user = this.db.users.find(item => item.id === id);
+      if (!user || user.gold < requiredGold || (user.recruit_mask & bit) !== 0) changes = 0;
+      else Object.assign(user, { gold: user.gold - price, recruit_mask: user.recruit_mask | bit, progress_updated_at, updated_at });
+    } else if (this.sql.startsWith('UPDATE users SET best_stage')) {
+      const [best_stage, rewardGold, rewardChicken, rewardFruit, progress_updated_at, updated_at, id, previousBestStage] = this.values;
+      const user = this.db.users.find(item => item.id === id);
+      if (user && (user.best_stage || 0) === previousBestStage) Object.assign(user, { best_stage, gold: user.gold + rewardGold, chicken: user.chicken + rewardChicken, fruit: user.fruit + rewardFruit, progress_updated_at, updated_at });
+      else changes = 0;
     } else if (this.sql.startsWith('UPDATE users SET password_hash')) {
       const [password_hash, password_iterations, id] = this.values;
       Object.assign(this.db.users.find(user => user.id === id), { password_hash, password_iterations });
@@ -79,12 +109,17 @@ class MemoryStatement {
     } else if (this.sql.startsWith('DELETE FROM auth_throttle')) {
       this.db.throttles.delete(this.values[0]);
     } else if (this.sql.startsWith('INSERT INTO stage_runs')) {
-      const [user_id, stage, token_hash, started_at, expires_at] = this.values;
-      this.db.stageRuns.set(user_id, { stage, token_hash, started_at, expires_at });
+      const [user_id, stage, token_hash, started_at, expires_at, reward_gold, reward_chicken, reward_fruit] = this.values;
+      this.db.stageRuns.set(user_id, { stage, token_hash, started_at, expires_at, reward_gold, reward_chicken, reward_fruit });
+    } else if (this.sql.startsWith('INSERT INTO stage_completions')) {
+      const [user_id, stage, token_hash, reward_gold, reward_chicken, reward_fruit, completed_at] = this.values;
+      this.db.stageCompletions.set(`${user_id}:${stage}`, { token_hash, reward_gold, reward_chicken, reward_fruit, completed_at });
     } else if (this.sql.startsWith('DELETE FROM stage_runs')) {
       this.db.stageRuns.delete(this.values[0]);
+    } else if (this.sql.startsWith('DELETE FROM stage_completions')) {
+      for (const key of this.db.stageCompletions.keys()) if (key.startsWith(`${this.values[0]}:`)) this.db.stageCompletions.delete(key);
     }
-    return { success: true };
+    return { success: true, meta: { changes } };
   }
 }
 
@@ -94,6 +129,7 @@ class MemoryD1 {
   feedback = [];
   throttles = new Map();
   stageRuns = new Map();
+  stageCompletions = new Map();
 
   prepare(sql) {
     return new MemoryStatement(this, sql);
@@ -102,6 +138,15 @@ class MemoryD1 {
   async batch(statements) {
     return Promise.all(statements.map(statement => statement.run()));
   }
+}
+
+async function testPasswordHash(password, saltHex, pepper, iterations) {
+  const salt = new Uint8Array(String(saltHex).match(/.{2}/g).map(byte => parseInt(byte, 16)));
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(`${pepper}:${password}`), 'PBKDF2', false, ['deriveBits'],
+  );
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations }, key, 256);
+  return [...new Uint8Array(bits)].map(value => value.toString(16).padStart(2, '0')).join('');
 }
 
 test('register creates a verifiable session using the production schema', async () => {
@@ -139,7 +184,29 @@ test('register creates a verifiable session using the production schema', async 
   assert.equal((await login.json()).allowed, true);
 });
 
-test('player progress stays compact while leaderboard stage requires a timed run', async () => {
+test('a valid legacy password logs in without a synchronous work-factor upgrade', async () => {
+  const DB = new MemoryD1();
+  const PASSWORD_PEPPER = 'test-only-pepper-with-at-least-32-characters';
+  const password = 'safe-test-password';
+  const password_salt = '00112233445566778899aabbccddeeff';
+  DB.users.push({
+    id: 'legacy-user', username: 'legacy_probe', password_salt,
+    password_hash: await testPasswordHash(password, password_salt, PASSWORD_PEPPER, 10000),
+    password_iterations: 10000, enabled: 1, mode: 'test',
+  });
+
+  const response = await worker.fetch(new Request('https://example.test/v1/login', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ username: 'legacy_probe', password }),
+  }), { DB, PASSWORD_PEPPER });
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).allowed, true);
+  assert.equal(DB.users[0].password_iterations, 10000, 'legacy hash must not be downgraded or synchronously rehashed');
+  assert.equal(DB.sessions.length, 1);
+});
+
+test('client saves cannot overwrite authoritative progression and a timed run awards server rewards once', async () => {
   const DB = new MemoryD1();
   const env = { DB, PASSWORD_PEPPER: 'test-only-pepper-with-at-least-32-characters' };
   const registration = await worker.fetch(new Request('https://example.test/v1/register', {
@@ -158,8 +225,12 @@ test('player progress stays compact while leaderboard stage requires a timed run
   const player = await worker.fetch(new Request('https://example.test/v1/player/get', { method: 'POST', headers }), env);
   const playerData = await player.json();
   assert.equal(playerData.displayName, '荒铁');
-  assert.deepEqual(playerData.stats, [3, 4, 5]);
-  assert.deepEqual(playerData.progress, { ...progress, b: 0, q: 1 });
+  assert.deepEqual(playerData.stats, [0, 0, 0]);
+  assert.equal(playerData.gold, 0);
+  assert.equal(playerData.chicken, 0);
+  assert.equal(playerData.fruit, 0);
+  assert.equal(playerData.skillMask, 0);
+  assert.deepEqual(playerData.progress, { v: 2, u: 0, g: 0, c: 0, f: 0, h: 0, a: 0, d: 0, s: 0, x: 0, b: 0, q: 1, m: 0, r: [] });
   assert.equal(playerData.bestStage, 0, 'generic progress save must not raise leaderboard stage');
 
   const started = await worker.fetch(new Request('https://example.test/v1/stage/start', {
@@ -180,7 +251,20 @@ test('player progress stays compact while leaderboard stage requires a timed run
     method: 'POST', headers, body: JSON.stringify({ stage: 1, runToken: run.runToken }),
   }), env);
   assert.equal(completed.status, 200);
-  assert.equal((await completed.json()).bestStage, 1);
+  const completion = await completed.json();
+  assert.equal(completion.bestStage, 1);
+  assert.ok(completion.rewards.gold > 0);
+  assert.equal(completion.gold, completion.rewards.gold);
+  assert.equal(completion.chicken, completion.rewards.chicken);
+  assert.equal(completion.fruit, completion.rewards.fruit);
+
+  const retried = await worker.fetch(new Request('https://example.test/v1/stage/complete', {
+    method: 'POST', headers, body: JSON.stringify({ stage: 1, runToken: run.runToken }),
+  }), env);
+  const retriedData = await retried.json();
+  assert.equal(retried.status, 200);
+  assert.equal(retriedData.replayedReceipt, true);
+  assert.equal(retriedData.gold, completion.gold, 'retry must not duplicate stage rewards');
 
   const ranking = await worker.fetch(new Request('https://example.test/v1/leaderboard', { method: 'POST', headers }), env);
   const rankData = await ranking.json();
@@ -192,6 +276,57 @@ test('player progress stays compact while leaderboard stage requires a timed run
   }), env);
   assert.equal(feedback.status, 201);
   assert.equal(DB.feedback.length, 1);
+});
+
+test('upgrades, skills, and recruits are validated and spent atomically by the server', async () => {
+  const DB = new MemoryD1();
+  const env = { DB, PASSWORD_PEPPER: 'test-only-pepper-with-at-least-32-characters' };
+  const registration = await worker.fetch(new Request('https://example.test/v1/register', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ username: 'economy_probe', password: 'safe-test-password' }),
+  }), env);
+  const { token } = await registration.json();
+  const headers = { 'content-type': 'application/json', authorization: `Bearer ${token}` };
+  Object.assign(DB.users[0], { mode: 'normal', chicken: 3, fruit: 3, gold: 2500 });
+
+  const rejectedUpgrade = await worker.fetch(new Request('https://example.test/v1/player/upgrade', {
+    method: 'POST', headers, body: JSON.stringify({ hp: 4, atk: 0, def: 0 }),
+  }), env);
+  assert.equal(rejectedUpgrade.status, 409);
+  assert.equal(DB.users[0].chicken, 3);
+
+  const upgraded = await worker.fetch(new Request('https://example.test/v1/player/upgrade', {
+    method: 'POST', headers, body: JSON.stringify({ hp: 1, atk: 1, def: 1 }),
+  }), env);
+  const upgradedData = await upgraded.json();
+  assert.equal(upgraded.status, 200);
+  assert.equal(upgradedData.chicken, 0);
+  assert.deepEqual(upgradedData.stats, [1, 1, 1]);
+
+  const missingPrerequisite = await worker.fetch(new Request('https://example.test/v1/player/skill', {
+    method: 'POST', headers, body: JSON.stringify({ skillId: 'legFlame', enabled: true }),
+  }), env);
+  assert.equal(missingPrerequisite.status, 409);
+  assert.equal((await missingPrerequisite.json()).reason, 'skill-prerequisite');
+
+  const legArts = await worker.fetch(new Request('https://example.test/v1/player/skill', {
+    method: 'POST', headers, body: JSON.stringify({ skillId: 'legArts', enabled: true }),
+  }), env);
+  assert.equal(legArts.status, 200);
+  assert.equal((await legArts.json()).fruit, 2);
+  const legFlame = await worker.fetch(new Request('https://example.test/v1/player/skill', {
+    method: 'POST', headers, body: JSON.stringify({ skillId: 'legFlame', enabled: true }),
+  }), env);
+  assert.equal(legFlame.status, 200);
+  assert.equal((await legFlame.json()).fruit, 0);
+
+  const recruited = await worker.fetch(new Request('https://example.test/v1/player/recruit', {
+    method: 'POST', headers, body: JSON.stringify({ type: 'assassin' }),
+  }), env);
+  const recruitedData = await recruited.json();
+  assert.equal(recruited.status, 200);
+  assert.equal(recruitedData.gold, 0);
+  assert.deepEqual(recruitedData.recruits, ['assassin']);
 });
 
 test('CORS only accepts the bundled Capacitor origin or configured origins', async () => {
@@ -232,4 +367,50 @@ test('login is throttled after five failures for the same source and username', 
   }), env);
   assert.equal(blocked.status, 429);
   assert.equal((await blocked.json()).reason, 'too-many-attempts');
+});
+
+test('account deletion requires the password and removes all associated data', async () => {
+  const DB = new MemoryD1();
+  const env = { DB, PASSWORD_PEPPER: 'test-only-pepper-with-at-least-32-characters' };
+  const registration = await worker.fetch(new Request('https://example.test/v1/register', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ username: 'delete_probe', password: 'safe-test-password' }),
+  }), env);
+  const { token } = await registration.json();
+  const userId = DB.users[0].id;
+  DB.feedback.push({ id: 'feedback-1', user_id: userId });
+  DB.stageRuns.set(userId, { stage: 1 });
+  DB.stageCompletions.set(`${userId}:1`, { stage: 1 });
+
+  const rejected = await worker.fetch(new Request('https://example.test/v1/account/delete', {
+    method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify({ password: 'wrong-password' }),
+  }), env);
+  assert.equal(rejected.status, 401);
+  assert.equal(DB.users.length, 1);
+
+  const deleted = await worker.fetch(new Request('https://example.test/v1/account/delete', {
+    method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify({ password: 'safe-test-password' }),
+  }), env);
+  assert.equal(deleted.status, 200);
+  assert.deepEqual(await deleted.json(), { ok: true, deleted: true });
+  assert.equal(DB.users.length, 0);
+  assert.equal(DB.sessions.length, 0);
+  assert.equal(DB.feedback.length, 0);
+  assert.equal(DB.stageRuns.size, 0);
+  assert.equal(DB.stageCompletions.size, 0);
+});
+
+test('public account deletion page works without the app and same-origin requests are accepted', async () => {
+  const page = await worker.fetch(new Request('https://example.test/account-deletion'), {});
+  assert.equal(page.status, 200);
+  assert.match(page.headers.get('content-type'), /text\/html/);
+  assert.match(await page.text(), /铁街格斗账号删除/);
+
+  const preflight = await worker.fetch(new Request('https://example.test/v1/account/delete', {
+    method: 'OPTIONS', headers: { origin: 'https://example.test' },
+  }), {});
+  assert.equal(preflight.status, 204);
+  assert.equal(preflight.headers.get('access-control-allow-origin'), 'https://example.test');
 });

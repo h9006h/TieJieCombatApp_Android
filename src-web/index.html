@@ -101,9 +101,26 @@
           <small data-i18n="playerNameHint">1–12个文字、数字、空格或下划线</small>
           <button id="settings-save" type="button" data-i18n="save">保存</button>
           <div id="settings-status" role="status"></div>
+          <section class="account-danger-zone">
+            <strong data-i18n="deleteAccountTitle">删除账号</strong>
+            <small data-i18n="deleteAccountHint">永久删除账号、游戏进度、排行榜和反馈记录，此操作无法恢复。</small>
+            <button id="delete-account-open" type="button" data-i18n="deleteAccount">删除我的账号</button>
+          </section>
         </div>
       </div>
     </section>
+    <div id="delete-account-modal" hidden role="dialog" aria-modal="true" aria-labelledby="delete-account-title">
+      <form id="delete-account-form" class="modal-card">
+        <h2 id="delete-account-title" data-i18n="deleteAccountTitle">删除账号</h2>
+        <p data-i18n="deleteAccountWarning">账号及全部服务器游戏数据将永久删除。请输入当前密码确认。</p>
+        <input id="delete-account-password" type="password" autocomplete="current-password" minlength="8" maxlength="64" required data-i18n-placeholder="currentPassword" placeholder="当前密码">
+        <div id="delete-account-status" role="status"></div>
+        <div class="modal-actions">
+          <button id="delete-account-confirm" type="submit" data-i18n="deleteAccountConfirm">永久删除</button>
+          <button id="delete-account-cancel" type="button" data-i18n="cancel">取消</button>
+        </div>
+      </form>
+    </div>
     <section id="rank-panel" class="menu-page" hidden aria-label="闯关排行榜">
       <div class="menu-page-shell">
         <header class="menu-page-head"><button id="rank-back" type="button" data-i18n="back">← 返回</button><div><strong data-i18n="rankTitle">闯关排行榜</strong><small data-i18n="rankSub">服务器最高通关前十名</small></div><span>TOP 10</span></header>
@@ -154,6 +171,7 @@
         <header class="menu-page-head"><button id="gauntlet-back" type="button">← 返回</button><div><strong>轮番战</strong><small>选择本轮出战对手</small></div><span>GAUNTLET</span></header>
         <div class="gauntlet-title">选择出战对手（点击切换）</div>
         <div id="gauntlet-enemies"></div>
+        <label class="gauntlet-difficulty"><span>敌人难度倍率</span><input id="gauntlet-difficulty" type="number" min="0.5" max="5" step="0.1" value="1.0"><small>同时调整敌人的生命、攻击与速度成长，范围 ×0.5–×5.0</small></label>
         <label class="gauntlet-elite-toggle"><input id="gauntlet-elite" type="checkbox"><span>精英敌人</span><small>全部对手获得精英体型、生命和攻击强化</small></label>
         <button id="gauntlet-start" disabled>至少选一个对手</button>
       </div>
@@ -200,6 +218,7 @@
         <button class="hand" data-action="punch">拳</button><button data-action="grab">抓</button>
         <button data-action="jump">跳</button><button class="leg" data-action="kick">腿</button>
       </div>
+      <button id="item-action" type="button" hidden>拾取</button>
       <button id="open-door-action" type="button" hidden>开门</button>
     </div>
   </main>

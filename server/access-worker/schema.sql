@@ -25,6 +25,12 @@ CREATE TABLE IF NOT EXISTS users (
   stat_atk INTEGER NOT NULL DEFAULT 0,
   stat_def INTEGER NOT NULL DEFAULT 0,
   skill_mask INTEGER NOT NULL DEFAULT 0,
+  gold INTEGER NOT NULL DEFAULT 0,
+  chicken INTEGER NOT NULL DEFAULT 0,
+  fruit INTEGER NOT NULL DEFAULT 0,
+  stat_spd INTEGER NOT NULL DEFAULT 0,
+  ascend_level INTEGER NOT NULL DEFAULT 0,
+  recruit_mask INTEGER NOT NULL DEFAULT 0,
   progress_blob TEXT NOT NULL DEFAULT '',
   progress_updated_at TEXT
 );
@@ -66,10 +72,24 @@ CREATE TABLE IF NOT EXISTS stage_runs (
   stage INTEGER NOT NULL,
   token_hash TEXT NOT NULL,
   started_at INTEGER NOT NULL,
-  expires_at INTEGER NOT NULL
+  expires_at INTEGER NOT NULL,
+  reward_gold INTEGER NOT NULL DEFAULT 0,
+  reward_chicken INTEGER NOT NULL DEFAULT 0,
+  reward_fruit INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_stage_runs_expires_at ON stage_runs(expires_at);
+
+CREATE TABLE IF NOT EXISTS stage_completions (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  stage INTEGER NOT NULL,
+  token_hash TEXT NOT NULL,
+  reward_gold INTEGER NOT NULL,
+  reward_chicken INTEGER NOT NULL,
+  reward_fruit INTEGER NOT NULL,
+  completed_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, stage)
+);
 
 INSERT INTO app_settings (id, registration_open, registration_mode, updated_at)
 VALUES (1, 1, 'test', CURRENT_TIMESTAMP)

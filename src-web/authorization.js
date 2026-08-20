@@ -101,7 +101,17 @@
     }
   }
 
-  authorization.api = Object.freeze({ post: authorizedPost });
+  async function deleteAccount(password) {
+    const result = await authorizedPost('/v1/account/delete', { password });
+    if (result.ok) {
+      removeStored(TOKEN_KEY);
+      removeStored(GRANT_KEY);
+      authorization.allowed = false;
+    }
+    return result;
+  }
+
+  authorization.api = Object.freeze({ post: authorizedPost, deleteAccount });
 
   async function verify() {
     const token = getStored(TOKEN_KEY);
@@ -116,8 +126,14 @@
         allow(result);
         return true;
       }
-      removeStored(TOKEN_KEY);
-      removeStored(GRANT_KEY);
+      if (response.status >= 500 || result.reason === 'server-error') {
+        showGate(reasonMessages['server-error'], { retry: true });
+        return false;
+      }
+      if (response.status === 401 || result.reason === 'invalid-session') {
+        removeStored(TOKEN_KEY);
+        removeStored(GRANT_KEY);
+      }
       showGate(reasonMessages[result.reason] || '账号授权无效，请重新登录', { form: true });
       return false;
     } catch {
@@ -155,6 +171,13 @@
 
   function bindControls() {
     const view = elements();
+    const revealInput = event => setTimeout(() => event.currentTarget?.scrollIntoView?.({ block: 'center', behavior: 'smooth' }), 120);
+    view.username?.addEventListener('focus', revealInput);
+    view.password?.addEventListener('focus', revealInput);
+    window.visualViewport?.addEventListener('resize', () => {
+      const focused = document.activeElement;
+      if (focused === view.username || focused === view.password) revealInput({ currentTarget: focused });
+    });
     view.form?.addEventListener('submit', event => {
       event.preventDefault();
       submit('/v1/register');

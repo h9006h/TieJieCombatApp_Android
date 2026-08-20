@@ -10,7 +10,7 @@
     skinnySlideSheet,heroGrabSheet,heroGrabKneeSheet,heroOverChestThrowSheet,heroBackThrowFrames,heroJumpTransitionSheet,heroClimbOutSheet,heroRisingPunchSheet,heroRisingFlameSheet,
     spinnerSpinSheet,suitDaggerSheet,suitBackflipSheet,grapplerWrestlingSheet,heavyCounterGrabSheet,grapplerCounterGrabSheet,assassinRunSheet,enemyMoveSheets,barbarianReviveSheet,barbarianSprintSheet,barbarianQiAuraSheet,barbarianSwingFxSheet,grenadeItemSprite,warHammerItemSprite,
     materialAtlas,greatWallBrickTile,greatWallGroundTile,greatWallPitSprite,greatWallPitEdgeSprite,greatWallCollapseSprite,greatWallMountainLayer,greatWallPitFloorTile,
-    oldAlleyRoadCollapseSprite,oldAlleyHouseWallWindows,oldAlleyHouseWallBalcony,oldAlleyBackground,oldAlleyStreetGround,oldAlleyRooftopGround,desertYardangBackground,desertYardangTerrainAtlas,desertYardangArchitectureAtlas,desertYardangCaveClimbTexture,
+    oldAlleyRoadCollapseSprite,oldAlleyHouseWallWindows,oldAlleyHouseWallBalcony,oldAlleyBackground,oldAlleyStreetGround,oldAlleyRooftopGround,desertYardangBackground,desertYardangTerrainAtlas,desertYardangArchitectureAtlas,
     highriseBackground,highriseRooftopGround,highriseStructure,skyShelterBackground,skyShelterRooftopGround,skyShelterStructureAtlas,skyShelterBoundariesAtlas,skyShelterOuterPitWallsAtlas,
     waterShelterOceanBackground,waterShelterSurfaceAtlas,waterShelterStructureAtlas,waterShelterFloodedRoomAtlas,
     forestBackdropTile,forestTreeRootSprite,forestTerrainAtlas,forestArchitectureAtlas,environmentBoundaryAtlas,bunkerStructureAtlas,bunkerCavePlainTexture,bunkerCaveClimbTexture,bunkerRoomAtlas,bunkerSideDoorAtlas,bunkerCivilDefenseDoorAtlas,bunkerLoungeGymAtlas,bunkerModernRoomStrips,generatedEnemySheets,fighterShadows
@@ -53,7 +53,7 @@
   // Charge movement is intentionally faster than the sprite cadence: the
   // barbarian covers ground violently without turning the four poses into a blur.
   const BARBARIAN_CHARGE_SPEED=455,BARBARIAN_RAGE_CHARGE_SPEED=560,BARBARIAN_CHARGE_FRAME_STEP=1.05;
-  let running=false,last=0,shake=0,flash=0,slow=0,wave=1,message='',messageT=0,screenTint=0,hitFx=[],blastFx=[],resourceFx=[],eliteArmorFx=[],starAbsorbFx=[],cameraX=0,cameraY=0,mapIndex=0,gateIndex=0,mapCycle=0,gatePhase='combat',stageLockX=70,stageRightX=1050,cameraLockX=0,powerSwitch=null,gauntletMode=false,gauntletIndex=0,gauntletEliteMode=false,gauntletDifficulty=1,freeTourMode=false,testRunMode=false,rankedRunEligible=false,activeStageRun=null,failureHandled=false,failurePopupT=0,partyDefeatPending=false,lostResources=null,pendingReward=null,rewardResumeRunning=false,battleMenuResumeRunning=false,pendingGrowthAdvance=false,stageRewardTotals={gold:0,chicken:0,fruit:0},stageChickenBudget=1,stageChickenDropped=0,stageSettlementOpen=false,stageRewardDoubled=false,jumpSourcePlatform=null,jumpPlatformCleared=false;
+  let running=false,last=0,shake=0,flash=0,slow=0,wave=1,message='',messageT=0,screenTint=0,hitFx=[],blastFx=[],resourceFx=[],eliteArmorFx=[],starAbsorbFx=[],cameraX=0,cameraY=0,mapIndex=0,gateIndex=0,mapCycle=0,gatePhase='combat',stageLockX=70,stageRightX=1050,cameraLockX=0,powerSwitch=null,gauntletMode=false,gauntletIndex=0,gauntletEliteMode=false,freeTourMode=false,testRunMode=false,rankedRunEligible=false,activeStageRun=null,failureHandled=false,failurePopupT=0,partyDefeatPending=false,lostResources=null,pendingReward=null,rewardResumeRunning=false,battleMenuResumeRunning=false,pendingGrowthAdvance=false,stageRewardTotals={gold:0,chicken:0,fruit:0},stageChickenBudget=1,stageChickenDropped=0,stageSettlementOpen=false,stageRewardDoubled=false,jumpSourcePlatform=null,jumpPlatformCleared=false;
   document.body.classList.add('menu-mode');
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const PLATFORMS=[
@@ -761,8 +761,7 @@
   const dist=(a,b)=>Math.hypot(a.x-b.x,(a.y-b.y)*1.35);
   const PLAYER_MOVE_SPEED_X=320,PLAYER_MOVE_SPEED_Y=206,ENEMY_MOVE_SPEED_MUL=2.4,ENEMY_ALERT_X=675,ENEMY_ALERT_Y=270,SKILL_CHARGE_MAX=12;
   const PLAYER_BASE_ATTACK_SPEED_MUL=.8,BLUE_FLAME_SPEED_PER_TIER=.16,BLUE_FLAME_MAX_TIERS=5;
-  const AIR_JUGGLE_LIFT_HALF_LIFE=.65;
-  const AIR_GRAB_LIFT_REFRESH=120,OVER_CHEST_THROW_LIFT=720,GRAB_KICK_LIFT=180;
+  const AIR_JUGGLE_LIFT_DECAY=.08;
   const player={x:270,y:566,z:0,vz:0,airFallTime:0,knockVx:0,level:0,face:1,hp:160,maxHp:160,state:'idle',timer:0,combo:0,comboT:0,comboLinkT:0,attackEpoch:0,attackSequence:0,kickCombo:0,kickComboT:0,cleanHits:0,attackSpeedTier:0,starAbsorbHits:0,launchKickChargeHits:0,starAbsorbPull:null,grab:null,grabTarget:null,grabT:0,grabEscapeT:0,grabKickQueue:0,grabKickTotal:0,risingQueued:false,risingCooldown:0,risingAirInv:false,risingInvT:0,held:null,heldUses:0,inv:0,kills:0,inputQueue:[],climb:null,fallDamage:0,fallFromLevel:null,fallStartY:null,subPit:null,pitSafeT:0,launchKickChainCount:0,launchKickChainQueued:0};
   let enemies=[],companions=[],pickups=[],projectiles=[],forestHives=[];
   const pendingGrowthUpgrades={hp:0,atk:0,def:0};
@@ -777,10 +776,9 @@
   function applyPackedProgress(p){if(!p||typeof p!=='object')return false;const n=value=>Math.max(0,Math.floor(Number(value)||0));progress={...progress,gold:n(p.g),chicken:n(p.c),fruit:n(p.f),hpLv:n(p.h),atkLv:n(p.a),defLv:n(p.d),spdLv:n(p.s),ascend:n(p.x),bestStage:n(p.b),currentStage:Math.max(1,n(p.q)||1),syncAt:n(p.u),unlockedRecruits:Array.isArray(p.r)?p.r.filter(value=>typeof value==='string').slice(0,8):[],unlockedSkills:syncedSkillIds.filter((_,index)=>(n(p.m)&(1<<index))!==0),tempRecruit:p.t&&typeof p.t.y==='string'?{type:p.t.y,remaining:n(p.t.r),pending:!!p.t.p,activeStage:n(p.t.a)}:null};return true}
   function writeLocalProgress(){try{localStorage.setItem('tiejie-progress',JSON.stringify(progress))}catch(e){}}
   function scheduleProgressSync(){clearTimeout(progressSyncTimer);progressSyncTimer=setTimeout(()=>syncProgressToServer(),1500)}
-  function saveProgress(sync=false){progress.syncAt=Date.now();writeLocalProgress();if(sync)scheduleProgressSync()}
-  function applyAuthoritativePlayer(result){if(!result?.ok)return false;if(result.progress)applyPackedProgress(result.progress);const stats=Array.isArray(result.stats)?result.stats:[],serverMask=Math.max(0,Math.floor(Number(result.skillMask)||0));progress.displayName=String(result.displayName||progress.displayName).slice(0,12);progress.gold=Math.max(0,Math.floor(Number(result.gold??result.progress?.g)||0));progress.chicken=Math.max(0,Math.floor(Number(result.chicken??result.progress?.c)||0));progress.fruit=Math.max(0,Math.floor(Number(result.fruit??result.progress?.f)||0));progress.bestStage=Math.max(0,Math.floor(Number(result.bestStage)||0));progress.hpLv=Math.max(0,Math.floor(Number(stats[0])||0));progress.atkLv=Math.max(0,Math.floor(Number(stats[1])||0));progress.defLv=Math.max(0,Math.floor(Number(stats[2])||0));progress.spdLv=Math.max(0,Math.floor(Number(result.speed??result.progress?.s)||0));progress.ascend=Math.max(0,Math.floor(Number(result.ascend??result.progress?.x)||0));progress.unlockedSkills=syncedSkillIds.filter((_,index)=>(serverMask&(1<<index))!==0);progress.unlockedRecruits=Array.isArray(result.recruits)?result.recruits.filter(type=>typeof type==='string'):Array.isArray(result.progress?.r)?result.progress.r.filter(type=>typeof type==='string'):[];progress.currentStage=Math.max(1,Math.floor(Number(result.progress?.q)||progress.bestStage+1));progress.syncAt=Date.parse(result.updatedAt)||Date.now();writeLocalProgress();return true}
-  async function syncProgressToServer(){if(progressSyncing||authorization.offline||!authorization.api?.post)return false;progressSyncing=true;clearTimeout(progressSyncTimer);try{const result=await authorization.api.post('/v1/player/save',{displayName:progress.displayName});return applyAuthoritativePlayer(result)}finally{progressSyncing=false}}
-  async function hydrateProgressFromServer(){if(authorization.offline||!authorization.api?.post)return false;const result=await authorization.api.post('/v1/player/get');return applyAuthoritativePlayer(result)}
+  function saveProgress(sync=true){progress.syncAt=Date.now();writeLocalProgress();if(sync)scheduleProgressSync()}
+  async function syncProgressToServer(){if(progressSyncing||authorization.offline||!authorization.api?.post)return false;progressSyncing=true;clearTimeout(progressSyncTimer);try{const result=await authorization.api.post('/v1/player/save',{displayName:progress.displayName,bestStage:progress.bestStage,stats:[progress.hpLv,progress.atkLv,progress.defLv],skillMask:skillMask(),progress:packProgress()});return !!result.ok}finally{progressSyncing=false}}
+  async function hydrateProgressFromServer(){if(authorization.offline||!authorization.api?.post)return false;const result=await authorization.api.post('/v1/player/get');if(!result.ok)return false;const remoteTime=Date.parse(result.updatedAt)||0;if(!remoteTime){if(result.displayName)progress.displayName=String(result.displayName).slice(0,12);scheduleProgressSync();return true}if(result.progress)applyPackedProgress(result.progress);const stats=Array.isArray(result.stats)?result.stats:[],serverMask=Math.max(0,Math.floor(Number(result.skillMask)||0));progress.displayName=String(result.displayName||progress.displayName).slice(0,12);progress.bestStage=Math.max(0,Math.floor(Number(result.bestStage)||0));progress.hpLv=Math.max(0,Math.floor(Number(stats[0])||0));progress.atkLv=Math.max(0,Math.floor(Number(stats[1])||0));progress.defLv=Math.max(0,Math.floor(Number(stats[2])||0));progress.unlockedSkills=syncedSkillIds.filter((_,index)=>(serverMask&(1<<index))!==0);progress.currentStage=Math.max(1,Math.floor(Number(result.progress?.q)||progress.bestStage+1));progress.syncAt=remoteTime;writeLocalProgress();return true}
   async function beginServerStageRun(stage){
     activeStageRun=null;
     if(!rankedRunEligible||stage!==progress.bestStage+1)return true;
@@ -804,11 +802,11 @@
   }
   let progressHydrationPromise=hydrateProgressFromServer();
   const skillCatalog=[
-    {id:'basicPunch',branch:'拳击分支',icon:'拳',name:'普通三段拳',cost:0,requires:null,desc:'三拳基础伤害依次为 8、9、11；前两拳只有微小浮空，第三拳小幅击飞。拳、腿与抓摔完整衔接才能快速解决普通敌人。',release:'连续按“拳”：左直拳→右直拳→上勾拳；根据敌人的落点衔接腿技、空抓与过胸摔。',story:'主角机缘巧合下获得了能让拳头力大无穷的神器果实，从此掌握普通三段拳。'},
+    {id:'basicPunch',branch:'拳击分支',icon:'拳',name:'普通三段拳',cost:0,requires:null,desc:'连续普通拳形成三段攻击，也是升龙拳和拳焰的根节点。',release:'连续按“拳”：左直拳→右直拳→上勾拳。',story:'主角机缘巧合下获得了能让拳头力大无穷的神器果实，从此掌握普通三段拳。'},
     {id:'risingPunch',branch:'拳击分支',icon:'升',name:'升龙拳',cost:1,requires:'basicPunch',desc:'起飞后的前 0.34 秒处于无敌状态，可以穿过敌人的攻击；下蹲蓄力阶段没有无敌。',release:'在地面进入跳跃下蹲时按“拳”，完成蓄力后自动起飞出拳；技能冷却 1 秒。',story:''},
     {id:'lifeSteal',branch:'拳击分支',icon:'血',name:'吸血',cost:3,requires:'risingPunch',desc:'主角造成伤害时，将敌人实际损失生命的 10% 转化为自己的生命。',release:'点亮后被动生效；主角的拳脚、擒拿、摔投和投掷道具造成伤害时均可吸血。',story:''},
     {id:'downRisingPunch',branch:'拳击分支',icon:'躺',name:'地躺升龙拳',cost:3,requires:'risingPunch',desc:'被击倒且已经落地时，可以瞬间用升龙拳反击。',release:'主角倒地并接触地面后按“拳”；仍在空中被击飞时无效。',story:''},
-    {id:'blueFlame',branch:'拳击分支',icon:'拳焰',name:'拳焰',cost:3,requires:'basicPunch',desc:'每次拳击额外造成 2 点伤害；无伤期间每有效命中 5 次，攻击节奏加快 16%，最多叠加 5 次。受到伤害会失去全部攻速加成。',release:'点亮后被动生效。连续命中并避免受伤，才能维持攻速增益。',story:''},
+    {id:'blueFlame',branch:'拳击分支',icon:'拳焰',name:'拳焰',cost:3,requires:'basicPunch',desc:'每次拳击额外造成 10 点基础伤害；无伤期间每有效命中 5 次，攻击节奏加快 16%，最多叠加 5 次。受到伤害会失去全部攻速加成。',release:'点亮后被动生效。连续命中并避免受伤，才能维持攻速增益。',story:''},
     {id:'legArts',branch:'腿法分支',icon:'腿',name:'腿法',cost:1,requires:null,desc:'开放主角的普通腿法和战斗界面的“腿”按键。',release:'按“腿”发动普通腿法。',story:''},
     {id:'legFlame',branch:'腿法分支',icon:'腿焰',name:'腿焰',cost:2,requires:'legArts',desc:'为所有腿技附加腿部火焰，并将腿技的攻击距离提升为原来的 1.3 倍。',release:'点亮后被动生效；普通踢腿、空中踢和弹射飞踢均获得腿焰与 1.3 倍攻击距离。',story:''},
     {id:'launchKick',branch:'腿法分支',icon:'飞',name:'弹射飞踢',cost:3,requires:'legFlame',desc:'在跳跃起势阶段高速向前弹射飞踢；命中后仍保持横向弹射，并带动敌人进入空中追击距离。',release:'跳跃下蹲阶段按“腿”；命中后继续点腿可接弹射飞连腿。',story:''},
@@ -821,7 +819,7 @@
   function applySkillIcon(node,skill){const position=skillIconPositions[skill.id]||[0,0];node.textContent='';node.dataset.skillIcon=skill.id;node.style.setProperty('--skill-icon-x',`${position[0]*100/3}%`);node.style.setProperty('--skill-icon-y',`${position[1]*50}%`)}
   let selectedSkillId='basicPunch';
   function hasSkill(id){return id==='basicPunch'||progress.unlockedSkills.includes(id)}
-  async function unlockSkill(id){const skill=skillCatalog.find(item=>item.id===id);if(!skill||id==='basicPunch')return false;const enabled=!progress.unlockedSkills.includes(id);if(!isTestBuild&&!enabled)return false;if(enabled&&skill.requires&&!hasSkill(skill.requires)){refreshSkillPanel(`需要先点亮${skillCatalog.find(item=>item.id===skill.requires)?.name||'前置技能'}`);return false}if(enabled&&!isTestBuild&&progress.fruit<skill.cost){refreshSkillPanel(`神奇果实不足，需要 ${skill.cost} 个`);return false}const result=await authorization.api?.post?.('/v1/player/skill',{skillId:id,enabled});if(!applyAuthoritativePlayer(result)){const reason=result?.reason==='skill-prerequisite'?'前置技能尚未点亮':result?.reason==='insufficient-fruit'?'神奇果实不足':'技能保存失败，请检查网络';refreshSkillPanel(reason);return false}refreshSkillPanel(`${skill.name}${enabled?'已点亮':'已熄灭'}`);refreshSkillControls();return true}
+  function unlockSkill(id){const skill=skillCatalog.find(item=>item.id===id);if(!skill||id==='basicPunch')return false;if(isTestBuild){const unlocked=progress.unlockedSkills.includes(id);progress.unlockedSkills=unlocked?progress.unlockedSkills.filter(skillId=>skillId!==id):[...new Set([...progress.unlockedSkills,id])];saveProgress();refreshSkillPanel(`${skill.name}${unlocked?'已熄灭':'已点亮'}`);refreshSkillControls();return true}if(hasSkill(id))return false;if(skill.requires&&!hasSkill(skill.requires)){refreshSkillPanel(`需要先点亮${skillCatalog.find(item=>item.id===skill.requires)?.name||'前置技能'}`);return false}if(progress.fruit<skill.cost){refreshSkillPanel(`神奇果实不足，需要 ${skill.cost} 个`);return false}progress.fruit-=skill.cost;progress.unlockedSkills.push(id);progress.unlockedSkills=[...new Set(progress.unlockedSkills)];saveProgress();refreshSkillPanel(`${skill.name}已点亮`);refreshSkillControls();return true}
   function refreshSkillControls(){const kick=[...document.querySelectorAll('[data-action]')].find(item=>item.dataset.action==='kick');if(kick)kick.hidden=!hasSkill('legArts');window.TieJieSkillState={legArts:hasSkill('legArts')}}
   function selectSkill(id){if(skillCatalog.some(skill=>skill.id===id)){selectedSkillId=id;refreshSkillPanel()}}
   function refreshSkillDetail(){const skill=skillCatalog.find(item=>item.id===selectedSkillId)||skillCatalog[0],unlocked=hasSkill(skill.id),available=isTestBuild||!skill.requires||hasSkill(skill.requires),requires=skill.requires?skillCatalog.find(item=>item.id===skill.requires)?.name:'';const set=(id,text)=>{const node=document.querySelector(`#${id}`);if(node)node.textContent=text};const detailIcon=document.querySelector('#skill-detail-icon');if(detailIcon)applySkillIcon(detailIcon,skill);set('skill-detail-path',skill.branch);set('skill-detail-name',skill.name);set('skill-detail-desc',skill.desc);set('skill-detail-release',skill.release);set('skill-detail-story',skill.story||'相关故事尚未确定。');set('skill-detail-requirement',skill.id==='basicPunch'?'初始技能 · 始终点亮':isTestBuild?'测试版 · 可自由点亮或熄灭':`前置：${requires||'无'} · 消耗：${skill.cost} 个神奇果实`);const action=document.querySelector('#skill-unlock');if(action){action.disabled=skill.id==='basicPunch'||(!isTestBuild&&(unlocked||!available));action.textContent=skill.id==='basicPunch'?'初始技能':isTestBuild?unlocked?'熄灭技能':'免费点亮':unlocked?'已点亮':available?`消耗 ${skill.cost} 个果实点亮`:`需要先点亮${requires}`;action.onclick=()=>unlockSkill(skill.id)}}
@@ -901,7 +899,7 @@
   function applyPlayerDirectDamage(target,damage,register=true){const previousHp=target.hp;if(register)registerPlayerHit();target.hp-=damage;healPlayerFromDamage(target,previousHp);return Math.min(Math.max(0,previousHp),Math.max(0,damage))}
   function resetPlayerHitStreak(){if((player.cleanHits||0)>0||(player.attackSpeedTier||0)>0){player.cleanHits=0;player.attackSpeedTier=0;message='无伤连击中断，攻速恢复';messageT=.8}}
   const playerAttackStates=new Set(['punch1','punch2','punch3','kick1','kick2','backKick','airBackKick','risingPunch','grab','grabKnee','grabRelease','throw','throwItem','overChestThrow']);
-  const BLUE_FIST_FLAME_BONUS=2;
+  const BLUE_FIST_FLAME_BONUS=10;
   // Source-pixel anchors for the striking fist in the six 384 px punch cells.
   // Keeping this as equipment metadata lets the flame follow every authored pose
   // without coupling the effect animation to the character animation timing.
@@ -944,7 +942,7 @@
   function pendingGrowthTotal(){return Object.values(pendingGrowthUpgrades).reduce((sum,value)=>sum+value,0)}
   function clearPendingGrowth(){for(const kind of Object.keys(pendingGrowthUpgrades))pendingGrowthUpgrades[kind]=0;refreshGrowthConfirmation()}
   function refreshGrowthConfirmation(){const button=document.querySelector('#growth-confirm'),total=pendingGrowthTotal();document.querySelectorAll('[data-downgrade]').forEach(control=>{control.disabled=(pendingGrowthUpgrades[control.dataset.downgrade]||0)<=0});if(button){button.disabled=total<=0;button.textContent=total>0?`保存强化（消耗 ${total} 鸡腿）`:'保存强化'}}
-  async function confirmGrowthUpgrades(){const total=pendingGrowthTotal();if(!total)return;if(progress.chicken<total){message='鸡腿数量不足，无法确认强化';messageT=1;return}const upgrades={hp:pendingGrowthUpgrades.hp,atk:pendingGrowthUpgrades.atk,def:pendingGrowthUpgrades.def},oldMax=player.maxHp,button=document.querySelector('#growth-confirm');if(button)button.disabled=true;const result=await authorization.api?.post?.('/v1/player/upgrade',upgrades);if(!applyAuthoritativePlayer(result)){if(button)button.disabled=false;message=result?.reason==='insufficient-chicken'?'服务器记录的鸡腿不足':'强化保存失败，请检查网络';messageT=1.5;return}player.maxHp=playerMaxHp();player.hp=Math.min(player.maxHp,player.hp+player.maxHp-oldMax);const summary=`血量 +${upgrades.hp} · 力量 +${upgrades.atk} · 防御 +${upgrades.def}`;clearPendingGrowth();message=`强化生效：${summary}`;messageT=1.4}
+  function confirmGrowthUpgrades(){const total=pendingGrowthTotal();if(!total)return;if(progress.chicken<total){message='鸡腿数量不足，无法确认强化';messageT=1;return}const oldMax=player.maxHp;progress.chicken-=total;progress.hpLv+=pendingGrowthUpgrades.hp;progress.atkLv+=pendingGrowthUpgrades.atk;progress.defLv+=pendingGrowthUpgrades.def;player.maxHp=playerMaxHp();player.hp=Math.min(player.maxHp,player.hp+player.maxHp-oldMax);const summary=`血量 +${pendingGrowthUpgrades.hp} · 力量 +${pendingGrowthUpgrades.atk} · 防御 +${pendingGrowthUpgrades.def}`;clearPendingGrowth();saveProgress();message=`强化生效：${summary}`;messageT=1.4}
   function closeGrowthPanel(){const panel=document.querySelector('#growth-panel'),close=document.querySelector('#growth-close');clearPendingGrowth();if(panel)panel.hidden=true;if(close){close.textContent='×';close.classList.remove('advance');close.setAttribute('aria-label','关闭')}if(pendingGrowthAdvance){pendingGrowthAdvance=false;running=true;advanceStage()}}
   function closeRewardModal(resume=true){const modal=document.querySelector('#reward-modal'),summary=document.querySelector('#stage-settlement-summary'),cancel=document.querySelector('#reward-cancel'),exit=document.querySelector('#reward-exit');if(modal)modal.hidden=true;if(summary)summary.hidden=true;if(cancel)cancel.hidden=false;if(exit)exit.hidden=true;pendingReward=null;if(resume)running=rewardResumeRunning;rewardResumeRunning=false}
   function openRewardModal(kind,reason='',mode='resource'){
@@ -958,13 +956,13 @@
     if(stageSettlementOpen)return;stageSettlementOpen=true;expireTemporaryRecruitAfterStage();
     const modal=document.querySelector('#reward-modal'),title=document.querySelector('#reward-modal-title'),desc=document.querySelector('#reward-modal-desc'),confirm=document.querySelector('#reward-confirm'),cancel=document.querySelector('#reward-cancel'),exit=document.querySelector('#reward-exit'),summary=document.querySelector('#stage-settlement-summary');if(!modal)return;
     rewardResumeRunning=false;running=false;title.textContent='正在校验通关';desc.textContent='正在由服务器核对关卡顺序和挑战用时……';modal.hidden=false;summary.hidden=true;confirm.hidden=true;cancel.hidden=true;if(exit)exit.hidden=true;
-    const clearedStage=currentStageNumber(),previousBestStage=progress.bestStage;
+    const clearedStage=currentStageNumber();
     const validation=testRunMode||freeTourMode?{ok:true,bestStage:progress.bestStage,replay:true}:await completeServerStageRun(clearedStage);
     if(!validation?.ok){pendingReward={mode:'stage-validation-failed'};title.textContent='通关校验失败';desc.textContent=validation?.reason==='stage-not-next'?'服务器记录的下一关与本局不一致，请返回初始页重新读取进度。':'本次通关未写入服务器，请检查网络后返回初始页重试。';cancel.textContent='返回初始页';cancel.hidden=false;return}
     pendingReward={mode:'stage-settlement'};title.textContent='关卡结算';desc.textContent=`第 ${clearedStage} 关 · ${trialMaps[mapIndex].name} 已清理完毕`;
-    if(!testRunMode){applyAuthoritativePlayer(validation);stageRewardTotals={gold:Math.max(0,Number(validation.rewards?.gold)||0),chicken:Math.max(0,Number(validation.rewards?.chicken)||0),fruit:Math.max(0,Number(validation.rewards?.fruit)||0)};if(rankedRunEligible&&validation.bestStage>previousBestStage)window.TieJiePlatform?.rank?.submitHighestStage?.(validation.bestStage)}
+    if(!testRunMode&&!validation.replay&&validation.bestStage>progress.bestStage){progress.bestStage=validation.bestStage;progress.currentStage=Math.max(progress.currentStage,validation.nextStage||validation.bestStage+1);saveProgress();if(rankedRunEligible)window.TieJiePlatform?.rank?.submitHighestStage?.(validation.bestStage)}
     document.querySelector('#settlement-gold').textContent=String(stageRewardTotals.gold);document.querySelector('#settlement-chicken').textContent=String(stageRewardTotals.chicken);document.querySelector('#settlement-fruit').textContent=String(stageRewardTotals.fruit);
-    summary.hidden=false;confirm.hidden=true;confirm.disabled=true;confirm.textContent='服务器校验广告后奖励翻倍';cancel.textContent='领取并分配属性';cancel.hidden=false;if(exit)exit.hidden=true;modal.hidden=false
+    const testAdReady=isTestBuild&&(window.TieJieAdMobTestNative?.getRewardedReadyCount?.()||0)>0;summary.hidden=false;confirm.hidden=!testAdReady;confirm.disabled=false;confirm.textContent='播放测试广告，奖励翻倍';cancel.textContent='领取并分配属性';cancel.hidden=false;if(exit)exit.hidden=true;modal.hidden=false
   }
   function continueAfterStageSettlement(){
     if(pendingReward?.mode!=='stage-settlement')return;stageSettlementOpen=false;closeRewardModal(false);pendingGrowthAdvance=true;running=false;const panel=document.querySelector('#growth-panel'),close=document.querySelector('#growth-close');if(panel)panel.hidden=false;if(close){close.textContent='进入下一关';close.classList.add('advance');close.setAttribute('aria-label','完成加点并进入下一关')}
@@ -1025,7 +1023,7 @@
   function enemyName(type,seed,elite=false){const n=enemyNames[type]||[enemyCatalog[type]?.name||'打手'];return elite?`${n[seed%n.length]}·头目`:n[seed%n.length]}
   let currentStageTheme=trialMaps[0].theme;
 
-  function enemy(x,y,type='skinny',name,elite=false,rank=1){const meta=enemyCatalog[type]||enemyCatalog.skinny,difficulty=gauntletMode?gauntletDifficulty:stageDifficulty(rank),baseHp=Math.round(meta.hp*difficulty),hp=baseHp*(elite?2:1);return{x,y,z:0,vz:0,level:levelAtPoint(x,y),face:-1,faceHold:0,hp,maxHp:hp,type,rank,difficulty,damage:Math.round(meta.dmg*difficulty*(elite?1.25:1)),speed:meta.spd*ENEMY_MOVE_SPEED_MUL*(1+Math.min(1.5,(difficulty-1)*.03)),state:'idle',timer:0,inv:0,attackT:1+Math.random()*1.3,slamT:type==='heavy'?.9+Math.random()*1.4:99,slideT:type==='skinny'?1.1+Math.random()*1.2:99,specialT:type==='barbarian'?2.8+Math.random()*1.8:.8+Math.random()*1.4,slamTargetX:x,slamHit:false,slideHit:false,name:name||meta.name,elite,dead:false,grabbed:false,revived:false,rage:false,eliteAware:false,eliteArmorCheckT:4,eliteArmorT:0}}
+  function enemy(x,y,type='skinny',name,elite=false,rank=1){const meta=enemyCatalog[type]||enemyCatalog.skinny,difficulty=gauntletMode?1+Math.max(0,rank-1)*.075:stageDifficulty(rank),baseHp=Math.round(meta.hp*difficulty),hp=baseHp*(elite?2:1);return{x,y,z:0,vz:0,level:levelAtPoint(x,y),face:-1,faceHold:0,hp,maxHp:hp,type,rank,difficulty,damage:Math.round(meta.dmg*difficulty*(elite?1.25:1)),speed:meta.spd*ENEMY_MOVE_SPEED_MUL*(1+Math.min(1.5,(difficulty-1)*.03)),state:'idle',timer:0,inv:0,attackT:1+Math.random()*1.3,slamT:type==='heavy'?.9+Math.random()*1.4:99,slideT:type==='skinny'?1.1+Math.random()*1.2:99,specialT:type==='barbarian'?2.8+Math.random()*1.8:.8+Math.random()*1.4,slamTargetX:x,slamHit:false,slideHit:false,name:name||meta.name,elite,dead:false,grabbed:false,revived:false,rage:false,eliteAware:false,eliteArmorCheckT:4,eliteArmorT:0}}
   function syncCompanionStats(c){
     const nextMax=playerMaxHp(),oldMax=c.maxHp||nextMax;
     if(nextMax!==oldMax)c.hp=Math.min(nextMax,Math.max(1,c.hp+nextMax-oldMax));
@@ -1253,14 +1251,13 @@
     const e=enemy(spot.x,spot.y,type,enemyName(type,rank+17,gauntletEliteMode),gauntletEliteMode,rank);e.level=spot.level;e.subPit=spot.subPit||null;e.homeX=e.x;e.homeY=e.y;e.awake=false;enemies=[e];
     powerSwitch=null;currentStageTheme='沙漠';
     player.hp=Math.min(player.maxHp,player.hp+34);
-    message=`${gauntletEliteMode?'精英':''}轮番战 ×${gauntletDifficulty.toFixed(1)} ${gauntletIndex+1} / ${gauntletEnemyTypes.length}：${enemyCatalog[type].name}`;
+    message=`${gauntletEliteMode?'精英':''}轮番战 ${gauntletIndex+1} / ${gauntletEnemyTypes.length}：${enemyCatalog[type].name}`;
     messageT=1.6;
   }
   function startGauntlet(){
-    if(!isTestBuild)return false;
     gauntletMode=true;failureHandled=false;failurePopupT=0;partyDefeatPending=false;lostResources=null;stageRewardTotals={gold:0,chicken:0,fruit:0};stageSettlementOpen=false;stageRewardDoubled=false;jumpSourcePlatform=null;jumpPlatformCleared=false;closeRewardModal(false);gauntletIndex=0;wave=1;mapCycle=0;mapIndex=1;window.TieJieAudio?.playMusic(mapIndex);gateIndex=0;gatePhase='combat';stageLockX=70;stageRightX=1860;cameraLockX=0;currentStageTheme='沙漠';generatedTerrain=generateThemeTerrain(currentStageTheme,0x7eed1234);generatedTerrain.pits=[normalizePit({x:1460,w:118,name:'测试暗坑'},'沙漠',Math.random)];desertPits=generatedTerrain.pits;
     const maxHp=playerMaxHp();Object.assign(player,{x:220,y:566,z:0,vz:0,airFallTime:0,knockVx:0,throwVx:0,airLaunch:false,level:0,face:1,hp:maxHp,maxHp,state:'idle',timer:0,combo:0,comboT:0,comboLinkT:0,attackEpoch:(player.attackEpoch||0)+1,kickCombo:0,kickComboT:0,cleanHits:0,attackSpeedTier:0,starAbsorbHits:0,launchKickChargeHits:0,starAbsorbPull:null,grab:null,grabTarget:null,grabbed:false,grappleHolder:null,grappleInvincible:false,grabT:0,grabEscapeT:0,grabKickQueue:0,grabKickTotal:0,risingQueued:false,risingCooldown:0,risingAirInv:false,risingInvT:0,held:null,heldUses:0,inv:.35,kills:0,inputQueue:[],climb:null,fallDamage:0,fallFromLevel:null,fallStartY:null,subPit:null,pitSafeT:0,launchKickChainCount:0,launchKickChainQueued:0});
-    spawnSelectedCompanions();pickups=[{type:'hammer',x:520,y:570,level:0,active:true,throwsLeft:2},{type:'grenade',x:650,y:570,level:0,active:true}];projectiles=[];hitFx=[];blastFx=[];resourceFx=[];eliteArmorFx=[];starAbsorbFx=[];screenTint=0;spawnGauntletEnemy();updateCamera();return true
+    spawnSelectedCompanions();pickups=[{type:'hammer',x:520,y:570,level:0,active:true,throwsLeft:2},{type:'grenade',x:650,y:570,level:0,active:true}];projectiles=[];hitFx=[];blastFx=[];resourceFx=[];eliteArmorFx=[];starAbsorbFx=[];screenTint=0;spawnGauntletEnemy();updateCamera()
   }
   function consumeHitLink(name){
     if((player.comboLinkT||0)<=0||!playerAttackStates.has(player.state)||!['punch','kick','grab'].includes(name))return false;
@@ -1274,26 +1271,29 @@
     if(player.state==='jumpCrouch'&&name==='punch'&&!player.held){if(hasSkill('risingPunch')&&player.risingCooldown<=0&&!player.risingQueued){player.risingQueued=true;player.risingAirInv=false;player.risingInvT=0;player.timer=Math.max(player.timer,.48);message='蹲住……这一拳不能急';messageT=.75}return}
     if(player.state==='jumpCrouch'&&name==='kick'){if(hasSkill('launchKick'))startLaunchKick();return}
     if(name==='kick'&&queueLaunchKickChain())return
-    const linked=consumeHitLink(name),locked=['punch1','punch2','punch3','kick1','kick2','backKick','airBackKick','risingPunch','throwItem','throw','pickup','doorPush','grabAttempt','grabRelease','grabKnee','jumpCrouch','jumpLand','getUp'].includes(player.state)&&player.timer>0;if(locked&&!linked&&!fromQueue){if((['punch','kick','jump'].includes(name)||(name==='grab'&&player.state!=='jumpCrouch'))&&player.inputQueue.length<2)player.inputQueue.push(name);return}
+    const linked=consumeHitLink(name),locked=['punch1','punch2','punch3','kick1','kick2','backKick','airBackKick','risingPunch','throwItem','throw','pickup','doorPush','grabAttempt','grabRelease','grabKnee','jumpCrouch','jumpLand','getUp'].includes(player.state)&&player.timer>0;if(locked&&!linked&&!fromQueue){if(['punch','kick','jump'].includes(name)&&player.inputQueue.length<2)player.inputQueue.push(name);return}
+    if(player.held&&name==='punch'){throwHeld();return}
     if(name==='jump'){if(player.z===0&&!player.grab){const standingPlatform=player.level>0?platformForLevel(player.level):null;jumpSourcePlatform=standingPlatform&&insidePlatform(player.x,player.y,0,standingPlatform)?standingPlatform:null;jumpPlatformCleared=false;player.vz=0;player.airOrigin='self';player.risingQueued=false;player.risingAirInv=false;player.risingInvT=0;player.state='jumpCrouch';player.timer=.14}return}
     if(name==='grab'){
       if(player.grab){message='抓稳了……出拳过胸摔，出腿膝撞';messageT=.9;return}
+      if(player.held){message='手里已经有家伙了……先扔出去';messageT=1;return}
+      let item=null,itemDist=76;for(const p of pickups){if(!p.active||['coin','chicken','fruit'].includes(p.type)||p.level!==player.level)continue;const d=Math.hypot(player.x-p.x,player.y-p.y);if(d<itemDist){item=p;itemDist=d}}if(item){item.active=false;player.held=item.type;player.heldUses=item.type==='hammer'?(item.throwsLeft??2):1;player.state='pickup';player.timer=.48;player.inputQueue.length=0;message=item.type==='grenade'?'蹲下捡起手榴弹……近点扔':`蹲下捡起战锤……还能投 ${player.heldUses} 次`;messageT=1.7;return}
       if(!hasSkill('grapple')){message='我的手劲不够';messageT=1.1;return}
-      const ungrab=nearestUngrabbable(90);player.grabTarget=nearest(96);const targetWindow=enemyGrabWindowState(player.grabTarget,96);player.grabAttemptAir=!!player.grabTarget&&((player.z||0)>8||!!targetWindow?.airborne);player.state='grabAttempt';player.timer=player.grabAttemptAir?.2:.48;player.inputQueue.length=0;message=player.grabTarget?'抓住他！':ungrab?`这家伙不好抓……硬来要吃亏`:'抓空了……破绽太大';messageT=.7;return
+      const ungrab=nearestUngrabbable(90);player.grabTarget=nearest(96);player.state='grabAttempt';player.timer=.48;player.inputQueue.length=0;message=player.grabTarget?'抓住他！':ungrab?`这家伙不好抓……硬来要吃亏`:'抓空了……破绽太大';messageT=.7;return
     }
     if(name==='punch'){
       if(player.state==='jump'||player.z>0)return;
       player.combo=player.comboT>0?(player.combo%3)+1:1;player.comboT=.72;player.state='punch'+player.combo;
-      const punches=[null,{timer:.28,range:78,damage:8,force:90,delay:95,lunge:12,liftZ:3,liftVz:45},{timer:.31,range:78,damage:9,force:120,delay:115,lunge:15,liftZ:4,liftVz:65},{timer:.43,range:78,damage:11,force:260,delay:215,lunge:20,knockdown:true,launchVz:230}];
-      const punch=punches[player.combo],blueFlame=hasSkill('blueFlame');player.timer=punch.timer;combatAttack(punch.range,punch.damage,punch.force,punch.delay,punch.lunge,{knockdown:punch.knockdown,launchVz:punch.launchVz,liftZ:punch.liftZ,liftVz:punch.liftVz,blueFistFlame:blueFlame,bonusDamage:blueFlame?BLUE_FIST_FLAME_BONUS:0});if(player.combo===3){message='击飞不高——看准落点继续接！';messageT=.9}return
+      const punches=[null,{timer:.28,range:78,damage:11,force:145,delay:95,lunge:12},{timer:.31,range:78,damage:14,force:185,delay:115,lunge:15},{timer:.43,range:78,damage:24,force:540,delay:215,lunge:20,knockdown:true,launchVz:520}];
+      const punch=punches[player.combo],blueFlame=hasSkill('blueFlame');player.timer=punch.timer;combatAttack(punch.range,punch.damage,punch.force,punch.delay,punch.lunge,{knockdown:punch.knockdown,launchVz:punch.launchVz,blueFistFlame:blueFlame,bonusDamage:blueFlame?BLUE_FIST_FLAME_BONUS:0});if(player.combo===3){message='下巴露出来了！';messageT=.9}return
     }
     if(name==='kick'){
       if(!hasSkill('legArts'))return;
       if(player.state==='jump'||player.z>0){resetLaunchKickChain();player.launchKick=false;player.launchKickTime=0;player.launchKickSpeed=0;player.launchKickFace=0;player.state='airBackKick';player.timer=.62;combatAttack(legAttackRange(136),15,640,285,24,{knockdown:true,launchVz:420,zReach:128});message='空中也别想近我身！';messageT=.62;return}
       player.kickCombo=player.kickComboT>0?(player.kickCombo%3)+1:1;player.kickComboT=1.08;
-      if(player.kickCombo===1){player.state='kick1';player.timer=.45;combatAttack(legAttackRange(136),8,145,215,15,{liftZ:4,liftVz:70});message='先压住他的步子';messageT=.45;return}
-      if(player.kickCombo===2){player.state='kick2';player.timer=.45;combatAttack(legAttackRange(136),10,185,245,22,{liftZ:5,liftVz:90});message='别让他站稳';messageT=.45;return}
-      player.state='backKick';player.timer=.6;combatAttack(legAttackRange(136),14,360,415,31,{knockdown:true,launchVz:300});message='踢开了——追上去抓！';messageT=.8;return
+      if(player.kickCombo===1){player.state='kick1';player.timer=.45;combatAttack(legAttackRange(136),15,210,215,15);message='先压住他的步子';messageT=.45;return}
+      if(player.kickCombo===2){player.state='kick2';player.timer=.45;combatAttack(legAttackRange(136),21,310,245,22);message='别让他站稳';messageT=.45;return}
+      player.state='backKick';player.timer=.6;combatAttack(legAttackRange(136),35,730,415,31,{knockdown:true,launchVz:460});message='转过去，把力踹透！';messageT=.6;return
     }
   }
   function nearbyBunkerDoor(){
@@ -1306,23 +1306,6 @@
     door.opened=true;door.openedT=.55;
     const before=bunker.rooms[door.index-1],after=bunker.rooms[door.index];if(before)before.opened=true;if(after)after.opened=true;
     player.state='doorPush';player.timer=.42;player.inputQueue.length=0;player.face=1;message=after?'石门被推开，下一间房亮起来了':'最后一道石门打开，出口露出来了';messageT=1.25;hitStop(.05);return true
-  }
-  function nearestThrowablePickup(range=82){
-    let item=null,best=range;for(const candidate of pickups){if(!candidate.active||!['grenade','hammer'].includes(candidate.type)||candidate.level!==player.level)continue;const distance=Math.hypot(player.x-candidate.x,player.y-candidate.y);if(distance<best){item=candidate;best=distance}}
-    return item
-  }
-  function canUseItemAction(){
-    if(!running||player.hp<=0||player.climb||player.grab||player.state==='enemyGrabbed'||['hurt','down','fall','pickup','doorPush','starAbsorbPull','overChestThrow'].includes(player.state))return false;
-    return !playerAttackStates.has(player.state)
-  }
-  function pickupThrowable(item){
-    if(!item||!item.active||player.held)return false;item.active=false;player.held=item.type;player.heldUses=item.type==='hammer'?(item.throwsLeft??2):1;player.state='pickup';player.timer=.48;player.inputQueue.length=0;message=item.type==='grenade'?'捡起手榴弹，挂在腰间……近点扔':`捡起战锤，挂在腰间……还能投 ${player.heldUses} 次`;messageT=1.7;return true
-  }
-  function useItemAction(){
-    if(nearbyBunkerDoor())return tryPushBunkerDoor();
-    if(!canUseItemAction())return false;
-    if(player.held){throwHeld();return true}
-    return pickupThrowable(nearestThrowablePickup())
   }
   function startLaunchKick(){
     const intent=(keys.right?1:0)-(keys.left?1:0);if(intent)player.face=Math.sign(intent);
@@ -1340,12 +1323,13 @@
     const gravity=enemies.includes(actor)?baseGravity:baseGravity*(1+Math.min(1.25,(actor.airFallTime||0)*1.15));
     actor.vz=(actor.vz||0)-gravity*dt
   }
-  function clearAirFall(actor){actor.airFallTime=0;actor.airJuggleTime=0}
+  function clearAirFall(actor){actor.airFallTime=0;actor.airJuggleTime=0;actor.airJuggleRefreshes=0}
   function updateEnemyAirJuggle(actor,dt){
     actor.airJuggleTime=(actor.airJuggleTime||0)+dt
   }
   function refreshEnemyAirJuggle(actor,liftVz){
-    const airborneSeconds=Math.max(0,actor.airJuggleTime||0),liftScale=Math.pow(.5,airborneSeconds/AIR_JUGGLE_LIFT_HALF_LIFE);
+    const refreshes=actor.airJuggleRefreshes||0,liftScale=Math.max(0,1-refreshes*AIR_JUGGLE_LIFT_DECAY);
+    actor.airJuggleRefreshes=refreshes+1;
     actor.vz=(actor.vz||0)+liftVz*liftScale;return liftScale
   }
   function triggerCounterGrab(e){
@@ -1355,10 +1339,7 @@
     message=technical?'擒拿手扣腕转身——反抓！':'胖打手沉肩撑臂——抓被震开了！';messageT=1.05;shake=Math.max(shake,technical?10:13);hitStop(.12)
   }
   function beginPlayerGrab(e){
-    const continuingAir=(e.airJuggleTime||0)>0||(e.z||0)>8;
-    if(continuingAir)refreshEnemyAirJuggle(e,AIR_GRAB_LIFT_REFRESH);
-    player.grab=e;player.grabTarget=null;player.grabT=0;player.grabEscapeT=GRAB_MAX_DURATION;player.grabKickQueue=0;player.grabKickTotal=0;player.grappleInvincible=hasSkill('invincibleGrapple');player.risingAirInv=player.grappleInvincible;
-    e.grabbedAirVz=continuingAir?(e.vz||0):null;e.grabbed=true;e.airLaunch=false;e.throwVx=0;e.knockVx=0;e.airFallTime=0;e.state='grabbed';e.z=player.z||0;e.vz=e.grabbedAirVz??(player.vz||0);player.state='grab';player.timer=.15;hitStop(.06);return continuingAir
+    player.grab=e;player.grabTarget=null;player.grabT=0;player.grabEscapeT=GRAB_MAX_DURATION;player.grabKickQueue=0;player.grabKickTotal=0;player.grappleInvincible=hasSkill('invincibleGrapple');player.risingAirInv=player.grappleInvincible;e.grabbedAirVz=(e.airJuggleTime||0)>0?(e.vz||0):null;e.grabbed=true;e.airLaunch=false;e.throwVx=0;e.knockVx=0;e.airFallTime=0;e.state='grabbed';e.z=player.z||0;e.vz=e.grabbedAirVz??(player.vz||0);player.state='grab';player.timer=.15;hitStop(.06)
   }
   function enemiesInStarAbsorbCone(range=350){const coneSlope=Math.tan(35*Math.PI/180);return enemies.filter(e=>{if(e.dead||e.hp<=0||e.grabbed||e.level!==player.level||defeatedReviveStates.has(e.state))return false;const forward=(e.x-player.x)*player.face,lateral=(e.y-player.y)*1.35,distance=Math.hypot(forward,lateral);return forward>0&&distance<=range&&Math.abs(lateral)<=forward*coneSlope})}
   function useStarAbsorb(){
@@ -1382,10 +1363,10 @@
     return{airborne}
   }
   function finishGrabAttempt(){
-    const e=player.grabTarget,airAttempt=!!player.grabAttemptAir,finishRange=airAttempt?148:96,grabWindow=enemyGrabWindowState(e,finishRange),ungrab=nearestUngrabbable(finishRange),blockedByAxeArmor=e?.type==='axe'&&axeArmorStates.has(e.state);player.grabTarget=null;player.grabAttemptAir=false;
+    const e=player.grabTarget,grabWindow=enemyGrabWindowState(e,96),ungrab=nearestUngrabbable(96),blockedByAxeArmor=e?.type==='axe'&&axeArmorStates.has(e.state);player.grabTarget=null;
     if(!grabWindow){player.state='grabRelease';player.timer=.28;message=blockedByAxeArmor?'斧王正处于霸体……抓不住':ungrab?'这家伙不好抓……硬来只会露出破绽':'手空了……得挨打了';messageT=.65;return}
     if(!grabWindow.airborne&&counterGrabTypes.has(e.type)){triggerCounterGrab(e);return}
-    const airCatch=beginPlayerGrab(e);message=airCatch?'空中接住了——衰减升力稍微续上！':'抓住后不能移动……五秒内出手';messageT=airCatch?1.1:2.4
+    beginPlayerGrab(e);message='抓住后不能移动……五秒内出手';messageT=2.4
   }
   function nearest(range){let best=null,d=range;for(const e of enemies){if(!enemyGrabWindowState(e,range))continue;const q=dist(player,e);if(q<d){d=q;best=e}}return best}
   function nearestUngrabbable(range){let best=null,d=range;for(const e of enemies){if(canGrabEnemy(e)||e.dead||e.state==='down'||e.state==='slamAir'||e.state==='thrown'||e.level!==player.level||!zReach(player,e,108))continue;const q=dist(player,e);if(q<d){d=q;best=e}}return best}
@@ -1431,27 +1412,7 @@
       e.z=0;e.vz=0;
       const breakStun=Math.random()<(e.elite?.5:.32);e.state=breakStun?'idle':'hurt';e.timer=breakStun?.06:.28;if(breakStun){message='糟了，这家伙抗住了！';messageT=.45}return
     }
-    const kneeChain=!!options.kneeChain;
-    if(kneeChain)placeEnemyAtChainKnee(e);else e.x+=kx*.045;
-    if((e.airLaunch||e.state==='thrown'||e.state==='grappleThrown')&&e.hp>0){
-      e.state='knockdown';e.airLaunch=true;e.timer=Math.max(e.timer,.48);e.knockdownDuration=Math.max(e.knockdownDuration||0,.9);
-      e.knockVx=kneeChain?e.knockVx:options.launchKickCarry?Math.sign(kx||player.face)*Math.max(Math.abs(e.knockVx||0),options.launchKickCarry):(e.knockVx||0)+kx*.18;e.throwVx=0;
-      refreshEnemyAirJuggle(e,options.airJuggleVz||260);message='空中追打！';messageT=.35
-    }else if(options.knockdown){
-      const launchVz=Math.max(0,Number(options.launchVz)||0);
-      if(launchVz&&!wasAirborne)clearAirFall(e);
-      e.state='knockdown';e.timer=.9;e.knockdownDuration=.9;e.knockVx=kneeChain?e.knockVx:options.launchKickCarry?Math.sign(kx||player.face)*options.launchKickCarry:kx*.5;
-      e.z=launchVz?Math.max(e.z||0,18):0;
-      if(launchVz){if(wasAirborne)refreshEnemyAirJuggle(e,launchVz);else e.vz=Math.max(e.vz||0,launchVz)}else e.vz=0;
-      e.airLaunch=!!launchVz
-    }else{
-      e.state=e.hp<=0?'down':'hurt';e.timer=e.hp<=0?1.5:.38;
-      if(e.hp>0){
-        const liftVz=options.liftVz||Math.min(280,Math.abs(kx)*.5);e.z=Math.max(e.z||0,options.liftZ||10);
-        if(wasAirborne)refreshEnemyAirJuggle(e,liftVz);else{clearAirFall(e);e.vz=Math.max(e.vz||0,liftVz)}
-      }else e.vz=0
-    }
-    if(e.hp<=0){e.dead=true;if(wasAirborne)continueEnemyDeathFall(e,kx,airZ,airVz,airCarryX);player.kills++;message='倒下一个……后面还有';messageT=1}return true
+    const kneeChain=!!options.kneeChain;if(kneeChain)placeEnemyAtChainKnee(e);else e.x+=kx*.045;if((e.airLaunch||e.state==='thrown'||e.state==='grappleThrown')&&e.hp>0){e.state='knockdown';e.airLaunch=true;e.timer=Math.max(e.timer,.48);e.knockdownDuration=Math.max(e.knockdownDuration||0,.9);e.knockVx=kneeChain?e.knockVx:options.launchKickCarry?Math.sign(kx||player.face)*Math.max(Math.abs(e.knockVx||0),options.launchKickCarry):(e.knockVx||0)+kx*.18;e.throwVx=0;refreshEnemyAirJuggle(e,options.airJuggleVz||260);message='空中追打！';messageT=.35}else if(options.knockdown){if(options.launchVz&&!wasAirborne)clearAirFall(e);e.state='knockdown';e.timer=.9;e.knockdownDuration=.9;e.knockVx=kneeChain?e.knockVx:options.launchKickCarry?Math.sign(kx||player.face)*options.launchKickCarry:kx*.5;e.z=options.launchVz?Math.max(e.z||0,18):0;e.vz=options.launchVz?Math.max(e.vz||0,options.launchVz):0;e.airLaunch=!!options.launchVz}else{e.state=e.hp<=0?'down':'hurt';e.timer=e.hp<=0?1.5:.38;if(e.hp>0){e.z=Math.max(e.z||0,options.liftZ||10);e.vz=Math.max(e.vz||0,options.liftVz||Math.min(280,Math.abs(kx)*.5))}else e.vz=0}if(e.hp<=0){e.dead=true;if(wasAirborne)continueEnemyDeathFall(e,kx,airZ,airVz,airCarryX);player.kills++;message='倒下一个……后面还有';messageT=1}return true
   }
   function queueKneeStrike(){if(!player.grab)return;if(player.state==='grabKnee'&&player.timer>0){if(player.grabKickTotal<3){player.grabKickQueue++;player.grabKickTotal++;message=`等我收腿……再顶一次`;messageT=.55}return}if(player.grabKickTotal>=3){message='不能贪，三下够了';messageT=.65;return}player.grabKickTotal++;startKneeStrike()}
   function startKneeStrike(){if(!player.grab)return;const strikeNo=Math.max(1,player.grabKickTotal-player.grabKickQueue);player.state='grabKnee';player.timer=.56;setTimeout(()=>strikeGrab(11,`膝撞 ${strikeNo}`),190/playerAttackSpeedMul())}
@@ -1459,8 +1420,8 @@
   function strikeGrab(dmg,label){const e=player.grab;if(!e)return;applyPlayerDirectDamage(e,dmg);window.TieJieAudio?.hitEnemy(e.type,dmg,e.elite);impact(e.x,e.y-96,dmg,false,player.face*120);hitStop(.09);message=label+'！';messageT=.5;if(e.hp<=0){e.grabbed=false;if(!beginBarbarianRevive(e)){e.dead=true;e.state=e.type==='heavy'?'heavyDefeated':'down';e.timer=1.05;e.z=0;e.vz=0;player.kills++}clearGrab();player.state='grabRelease';player.timer=.28}}
   function clearGrab(){player.grab=null;player.grabTarget=null;player.grabT=0;player.grabEscapeT=0;player.grabKickQueue=0;player.grabKickTotal=0;player.grappleInvincible=false;player.risingAirInv=false}
   function shoulderThrow(){const e=player.grab;if(!e)return;const damage=e.type==='heavy'?22:34,carriedVz=e.grabbedAirVz??(e.vz||0),continuingAir=(e.airJuggleTime||0)>0;applyPlayerDirectDamage(e,damage);e.grabbed=false;window.TieJieAudio?.hitEnemy(e.type,damage,e.elite);e.throwHits=new Set();e.grabbedAirVz=null;if(e.type==='heavy'){e.x=player.x-player.face*62;e.z=0;e.vz=0;e.state=e.hp<=0?'heavyDefeated':'hurt';e.timer=e.hp<=0?1.2:.3;if(e.hp<=0){e.dead=true;player.kills++}}else{e.state='thrown';e.playerThrown=true;e.timer=.82;e.throwVx=-player.face*560;e.z=48;e.vz=carriedVz;if(continuingAir)refreshEnemyAirJuggle(e,600);else{clearAirFall(e);e.vz=600}}clearGrab();player.state='throw';player.timer=.32;player.inv=Math.max(player.inv,.82);impact(player.x-player.face*12,player.y-105,damage,false,-player.face*420);message=e.type==='heavy'?'太沉了……只能拽到身后':'给我飞过去！';messageT=.9;hitStop(.14)}
-  function overChestThrow(){const e=player.grab;if(!e)return;if(e.type==='heavy'){shoulderThrow();return}const durationMs=OVER_CHEST_THROW_MS/playerAttackSpeedMul(),contactMs=durationMs*OVER_CHEST_CONTACT_RATIO;player.inputQueue.length=0;player.state='overChestThrow';player.timer=OVER_CHEST_THROW_DURATION;player.inv=Math.max(player.inv,1.12);e.overChestThrow=true;e.overChestThrowStart=performance.now();e.overChestDuration=durationMs;e.overChestContact=false;e.overChestAngle=0;message='过胸摔！落点要自己追';messageT=1.1;hitStop(.1);setTimeout(()=>{if(!running||player.state!=='overChestThrow'||player.grab!==e||e.overChestContact)return;e.overChestContact=true;const damage=12;applyPlayerDirectDamage(e,damage);window.TieJieAudio?.hitEnemy(e.type,damage,e.elite);impact(e.x,e.y-18,damage,false,-player.face*420);shake=15;hitStop(.14)},contactMs);setTimeout(()=>{if(!running||player.state!=='overChestThrow'||player.grab!==e)return;e.overChestThrow=false;e.overChestContact=false;e.overChestAngle=0;e.grabbed=false;e.throwHits=new Set();e.x=player.x-player.face*58;e.y=player.y-2;e.grabbedAirVz=null;if(!beginBarbarianRevive(e)){e.state='thrown';e.playerThrown=true;e.timer=.82;e.throwVx=-player.face*560;e.z=30;e.vz=OVER_CHEST_THROW_LIFT;if(e.hp<=0){e.dead=true;player.kills++}}clearGrab();player.state='idle';player.timer=0},durationMs)}
-  function releaseGrab(kick=false,escaped=false){const e=player.grab;if(!e)return;const carriedVz=e.grabbedAirVz??(e.vz||0),continuingAir=(e.airJuggleTime||0)>0;e.grabbedAirVz=null;e.grabbed=false;e.state=kick?'down':'hurt';e.timer=kick?.9:.32;e.vz=carriedVz;if(kick){applyPlayerDirectDamage(e,28);e.x+=player.face*82;if(continuingAir)refreshEnemyAirJuggle(e,GRAB_KICK_LIFT);else{clearAirFall(e);e.vz+=GRAB_KICK_LIFT}window.TieJieAudio?.hitEnemy(e.type,28,e.elite);impact(e.x,e.y-80,28,false,player.face*340);shake=17;hitStop(.13)}clearGrab();player.state='grabRelease';player.timer=.28;if(escaped){message='抓不稳了……他挣开了！';messageT=1.1}}
+  function overChestThrow(){const e=player.grab;if(!e)return;if(e.type==='heavy'){shoulderThrow();return}const durationMs=OVER_CHEST_THROW_MS/playerAttackSpeedMul(),contactMs=durationMs*OVER_CHEST_CONTACT_RATIO;player.inputQueue.length=0;player.state='overChestThrow';player.timer=OVER_CHEST_THROW_DURATION;player.inv=Math.max(player.inv,1.12);e.overChestThrow=true;e.overChestThrowStart=performance.now();e.overChestDuration=durationMs;e.overChestContact=false;e.overChestAngle=0;message='过胸摔！';messageT=.9;hitStop(.1);setTimeout(()=>{if(!running||player.state!=='overChestThrow'||player.grab!==e||e.overChestContact)return;e.overChestContact=true;applyPlayerDirectDamage(e,34);window.TieJieAudio?.hitEnemy(e.type,34,e.elite);impact(e.x,e.y-18,34,false,-player.face*420);shake=15;hitStop(.14)},contactMs);setTimeout(()=>{if(!running||player.state!=='overChestThrow'||player.grab!==e)return;e.overChestThrow=false;e.overChestContact=false;e.overChestAngle=0;e.grabbed=false;e.throwHits=new Set();e.x=player.x-player.face*58;e.y=player.y-2;const carriedVz=e.grabbedAirVz??0,continuingAir=(e.airJuggleTime||0)>0;e.grabbedAirVz=null;if(!beginBarbarianRevive(e)){e.state='thrown';e.playerThrown=true;e.timer=.82;e.throwVx=-player.face*560;e.z=30;e.vz=carriedVz;if(continuingAir)refreshEnemyAirJuggle(e,620);else{clearAirFall(e);e.vz=620}if(e.hp<=0){e.dead=true;player.kills++}}clearGrab();player.state='idle';player.timer=0},durationMs)}
+  function releaseGrab(kick=false,escaped=false){const e=player.grab;if(!e)return;const carriedVz=e.grabbedAirVz??(e.vz||0),continuingAir=(e.airJuggleTime||0)>0;e.grabbedAirVz=null;e.grabbed=false;e.state=kick?'down':'hurt';e.timer=kick?.9:.32;e.vz=carriedVz;if(kick){applyPlayerDirectDamage(e,28);e.x+=player.face*82;if(continuingAir)refreshEnemyAirJuggle(e,300);else{clearAirFall(e);e.vz+=300}window.TieJieAudio?.hitEnemy(e.type,28,e.elite);impact(e.x,e.y-80,28,false,player.face*340);shake=17;hitStop(.13)}clearGrab();player.state='grabRelease';player.timer=.28;if(escaped){message='抓不稳了……他挣开了！';messageT=1.1}}
   function throwHeld(){
     const type=player.held;if(!type)return;const throwsLeft=type==='hammer'?Math.max(0,player.heldUses-1):0;player.held=null;player.heldUses=0;player.state='throwItem';player.timer=.32;player.inputQueue.length=0;
     if(type==='grenade')projectiles.push({type,x:player.x+player.face*38,y:player.y,z:92,vx:player.face*330,vz:330,level:player.level,spin:0,life:1.2});
@@ -1882,7 +1843,7 @@
     if(Math.abs(dy)>5)e.y+=Math.sign(dy)*Math.min(sp*.58*dt,Math.abs(dy));
     e.state='run'
   }
-  function updateEnemy(e,dt){if(e.grabbed&&e.grabbedAirVz!=null)updateEnemyAirJuggle(e,dt);e.inv=Math.max(0,e.inv-dt);e.faceHold=Math.max(0,(e.faceHold||0)-dt);updateEliteArmor(e,dt);if(updateGrappleThrownActor(e,dt,true))return;if(e.state==='knockdown'){const b=actorTravelBounds(18);e.timer-=dt;e.x=clamp(e.x+e.knockVx*dt,b.left,b.right);e.knockVx*=Math.pow(.07,dt);if(e.airLaunch){updateEnemyAirJuggle(e,dt);e.z+=e.vz*dt;applyAcceleratingGravity(e,dt,1450);if(catchEnemyOnPlatform(e))return;if(e.z<=0&&e.vz<0){for(const pit of currentPits())if(insidePit(e,pit))return dropEnemyIntoPit(e,pit);e.z=0;e.vz=0;clearAirFall(e);e.airLaunch=false;e.timer=Math.min(e.timer,.14);impact(e.x,e.y-18,null,false,e.knockVx)}}if(e.timer<=0&&!e.airLaunch){e.state='down';e.timer=e.dead?3:2.2;e.knockVx=0}return}if(e.state==='thrown'){const b=actorTravelBounds(18);e.timer-=dt;e.x=clamp(e.x+e.throwVx*dt,b.left,b.right);e.throwVx*=Math.pow(.22,dt);updateEnemyAirJuggle(e,dt);e.z+=e.vz*dt;applyAcceleratingGravity(e,dt,1450);if(catchEnemyOnPlatform(e))return;for(const other of enemies){if(other===e||other.dead||other.grabbed||other.level!==e.level||e.throwHits?.has(other))continue;if(Math.abs(other.x-e.x)<82&&Math.abs(other.y-e.y)<50){e.throwHits?.add(other);hurtEnemy(other,22,Math.sign(e.throwVx||-player.face)*310,e.playerThrown?{playerHit:true}:{});impact(other.x,other.y-75,22,false,e.throwVx);message='砸中了！身后也不安全';messageT=.85}}if(e.z<=0&&e.vz<0){for(const pit of currentPits())if(insidePit(e,pit))return dropEnemyIntoPit(e,pit);e.z=0;e.vz=0;clearAirFall(e);e.throwVx=0;e.playerThrown=false;e.state='down';e.timer=1.05;impact(e.x,e.y-18,34,false,-player.face*220);if(e.hp<=0&&!e.dead){e.dead=true;player.kills++}}return}if(e.dead){if(e.timer>0)e.timer-=dt;return}e.attackT=Math.max(0,e.attackT-dt);e.slamT=Math.max(0,e.slamT-dt);if(e.grabbed)return;
+  function updateEnemy(e,dt){e.inv=Math.max(0,e.inv-dt);e.faceHold=Math.max(0,(e.faceHold||0)-dt);updateEliteArmor(e,dt);if(updateGrappleThrownActor(e,dt,true))return;if(e.state==='knockdown'){const b=actorTravelBounds(18);e.timer-=dt;e.x=clamp(e.x+e.knockVx*dt,b.left,b.right);e.knockVx*=Math.pow(.07,dt);if(e.airLaunch){updateEnemyAirJuggle(e,dt);e.z+=e.vz*dt;applyAcceleratingGravity(e,dt,1450);if(catchEnemyOnPlatform(e))return;if(e.z<=0&&e.vz<0){for(const pit of currentPits())if(insidePit(e,pit))return dropEnemyIntoPit(e,pit);e.z=0;e.vz=0;clearAirFall(e);e.airLaunch=false;e.timer=Math.min(e.timer,.14);impact(e.x,e.y-18,null,false,e.knockVx)}}if(e.timer<=0&&!e.airLaunch){e.state='down';e.timer=e.dead?3:2.2;e.knockVx=0}return}if(e.state==='thrown'){const b=actorTravelBounds(18);e.timer-=dt;e.x=clamp(e.x+e.throwVx*dt,b.left,b.right);e.throwVx*=Math.pow(.22,dt);updateEnemyAirJuggle(e,dt);e.z+=e.vz*dt;applyAcceleratingGravity(e,dt,1450);if(catchEnemyOnPlatform(e))return;for(const other of enemies){if(other===e||other.dead||other.grabbed||other.level!==e.level||e.throwHits?.has(other))continue;if(Math.abs(other.x-e.x)<82&&Math.abs(other.y-e.y)<50){e.throwHits?.add(other);hurtEnemy(other,22,Math.sign(e.throwVx||-player.face)*310,e.playerThrown?{playerHit:true}:{});impact(other.x,other.y-75,22,false,e.throwVx);message='砸中了！身后也不安全';messageT=.85}}if(e.z<=0&&e.vz<0){for(const pit of currentPits())if(insidePit(e,pit))return dropEnemyIntoPit(e,pit);e.z=0;e.vz=0;clearAirFall(e);e.throwVx=0;e.playerThrown=false;e.state='down';e.timer=1.05;impact(e.x,e.y-18,34,false,-player.face*220);if(e.hp<=0&&!e.dead){e.dead=true;player.kills++}}return}if(e.dead){if(e.timer>0)e.timer-=dt;return}e.attackT=Math.max(0,e.attackT-dt);e.slamT=Math.max(0,e.slamT-dt);if(e.grabbed)return;
     if(e.level<0&&e.subPit?.bunker!==player.subPit?.bunker){e.state='idle';return}
     e.slideT=Math.max(0,e.slideT-dt);e.specialT=Math.max(0,e.specialT-dt);e.suitDaggerT=Math.max(0,(e.suitDaggerT||0)-dt);e.suitBackflipT=Math.max(0,(e.suitBackflipT||0)-dt);const aim=enemyCombatTarget(e);
     if(e.level<0&&e.bunkerRoom&&!e.bunkerRoom.opened){e.state='idle';e.awake=false;return}
@@ -2286,7 +2247,7 @@
     for(const p of currentPlatforms()){if(p.maxX+90<viewLeft||p.minX-90>viewRight)continue;const b1=platformBoundsAtY(p.minY,p),b2=platformBoundsAtY(p.maxY,p);if(t==='沙漠'){drawDesertPlatform(p,b1,b2);continue}if(t==='草地'){drawGrassPlatform(p,b1,b2);drawImpassableBoundary(0,b1.left-34,b1.right+34,p.minY+6,300,148);continue}drawGenericWallPlatform(p,b1,b2,t,style)}
     for(const b of currentBridges()){if(Math.max(b.x1,b.x2)+90<viewLeft||Math.min(b.x1,b.x2)-90>viewRight)continue;drawPlatformBridge(b,style,t)}
     for(const c of currentCollapseClimbs()){if(c.x+c.w+90<viewLeft||c.x-90>viewRight)continue;drawGrassCollapse(c)}
-    for(const s of currentStairs()){const stairLeft=s.x-80,stairRight=s.x+s.bottomW+80;if(stairRight<viewLeft||stairLeft>viewRight)continue;if(t==='沙漠'){drawDesertStoneStairs(s);continue}if(t==='草地'){drawGrassRamp(s);continue}if(t==='街区'){drawIronStreetStairs(s);continue}if(t==='高楼'){drawSkyShelterStairs(s,style);continue}if(t==='水中避难所'){drawWaterShelterStairs(s,style);continue}if(t==='森林'){drawForestLogStairs(s);continue}const c=s.x+s.bottomW*.5,top=s.topY,bot=s.bottomY,steps=fixedStairStepCount(top,bot);g.fillStyle=style.stair;g.beginPath();g.moveTo(c-s.topW*.5,top);g.lineTo(c+s.topW*.5,top);g.lineTo(c+s.bottomW*.5,bot);g.lineTo(c-s.bottomW*.5,bot);g.closePath();g.fill();g.strokeStyle=style.step;g.lineWidth=4;for(let i=1;i<steps;i++){const y=top+(bot-top)*i/steps,b=stairBoundsAtY(s,y,0);g.beginPath();g.moveTo(b.left+12,y);g.lineTo(b.right-12,y);g.stroke()}}
+    for(const s of currentStairs()){const stairLeft=s.x-80,stairRight=s.x+s.bottomW+80;if(stairRight<viewLeft||stairLeft>viewRight)continue;if(t==='沙漠'){drawDesertDuneRamp(s);continue}if(t==='草地'){drawGrassRamp(s);continue}if(t==='街区'){drawIronStreetStairs(s);continue}if(t==='高楼'){drawSkyShelterStairs(s,style);continue}if(t==='水中避难所'){drawWaterShelterStairs(s,style);continue}if(t==='森林'){drawForestLogStairs(s);continue}const c=s.x+s.bottomW*.5,top=s.topY,bot=s.bottomY,steps=fixedStairStepCount(top,bot);g.fillStyle=style.stair;g.beginPath();g.moveTo(c-s.topW*.5,top);g.lineTo(c+s.topW*.5,top);g.lineTo(c+s.bottomW*.5,bot);g.lineTo(c-s.bottomW*.5,bot);g.closePath();g.fill();g.strokeStyle=style.step;g.lineWidth=4;for(let i=1;i<steps;i++){const y=top+(bot-top)*i/steps,b=stairBoundsAtY(s,y,0);g.beginPath();g.moveTo(b.left+12,y);g.lineTo(b.right-12,y);g.stroke()}}
     g.restore()
   }
   function tracePlatformSurface(p){
@@ -2451,20 +2412,22 @@
     g.strokeStyle='#f0c98299';g.lineWidth=3;g.beginPath();g.moveTo(crestL+12,topY+4);for(let x=crestL+12;x<=crestR-12;x+=110)g.quadraticCurveTo(x+55,topY-12+jit(x,21)*3,x+110,topY+4+jit(x,22)*2);g.stroke();
     g.restore()
   }
-  function drawDesertStoneStairs(s){
-    const e=stairEnds(s),c=s.x+s.bottomW*.5,top=e.topY,bot=e.bottomY,steps=fixedStairStepCount(top,bot),stepY=(bot-top)/steps;
-    const edge=(i,side)=>{const t=i/steps,w=s.topW+(s.bottomW-s.topW)*t;return{x:c+side*w*.5,y:top+stepY*i}};
-    g.save();g.lineJoin='round';
-    for(let i=steps-1;i>=0;i--){
-      const a=edge(i,-1),b=edge(i,1),na=edge(i+1,-1),nb=edge(i+1,1),riser=Math.max(6,stepY*.38);
-      const tread=g.createLinearGradient(0,a.y-3,0,a.y+riser);tread.addColorStop(0,'#e5bb78');tread.addColorStop(.55,'#bd8148');tread.addColorStop(1,'#795034');g.fillStyle=tread;
-      g.beginPath();g.moveTo(a.x+5,a.y);g.lineTo(b.x-5,b.y);g.lineTo(nb.x-9,Math.min(nb.y,a.y+riser));g.lineTo(na.x+9,Math.min(na.y,a.y+riser));g.closePath();g.fill();
-      g.strokeStyle='#5c3927aa';g.lineWidth=2.4;g.beginPath();g.moveTo(a.x+7,a.y+riser);g.lineTo(b.x-7,b.y+riser);g.stroke();
-      g.strokeStyle='#f0ca8aaa';g.lineWidth=1.8;g.beginPath();g.moveTo(a.x+7,a.y);g.lineTo(b.x-7,b.y);g.stroke()
-    }
-    const leftTop=edge(0,-1),leftBottom=edge(steps,-1),rightTop=edge(0,1),rightBottom=edge(steps,1);
-    g.strokeStyle='#68432c';g.lineWidth=10;g.beginPath();g.moveTo(leftTop.x,leftTop.y);g.lineTo(leftBottom.x,leftBottom.y+3);g.moveTo(rightTop.x,rightTop.y);g.lineTo(rightBottom.x,rightBottom.y+3);g.stroke();
-    g.strokeStyle='#d79c5e';g.lineWidth=3;g.stroke();g.restore()
+  function drawDesertDuneRamp(s){
+    const e=stairEnds(s),c=s.x+s.bottomW*.5,top=e.topY,bot=e.bottomY,seed=(s.x*.015+s.bottomW*.021)%9.9,jit=(i,a)=>Math.sin(seed+i*11.27+a*39.41);
+    const topL=c-s.topW*.5,topR=c+s.topW*.5,botL=c-s.bottomW*.5,botR=c+s.bottomW*.5;
+    const steps=fixedStairStepCount(top,bot);
+    g.save();
+    const dune=g.createLinearGradient(0,top-20,0,bot+8);dune.addColorStop(0,'#e7b66c');dune.addColorStop(.36,'#c98b4c');dune.addColorStop(.78,'#8b5833');dune.addColorStop(1,'#533522');g.fillStyle=dune;
+    g.beginPath();
+    for(let i=0;i<=steps;i++){const t=i/steps,y=top+(bot-top)*t,w=s.topW+(s.bottomW-s.topW)*t,x=c-w*.5-18-jit(i,1)*16;i?g.lineTo(x,y+jit(i,2)*7):g.moveTo(x,y+jit(i,2)*7)}
+    for(let i=steps;i>=0;i--){const t=i/steps,y=top+(bot-top)*t,w=s.topW+(s.bottomW-s.topW)*t;g.lineTo(c+w*.5+18+jit(i,3)*16,y+jit(i,4)*7)}
+    g.closePath();g.fill();
+    const shade=g.createLinearGradient(topR,top,botL,bot+8);shade.addColorStop(0,'#8a573000');shade.addColorStop(.58,'#6b432a38');shade.addColorStop(1,'#3b251a66');g.fillStyle=shade;
+    g.beginPath();g.moveTo(c-18+jit(30,1)*8,top);g.lineTo(botR+18+jit(steps,3)*16,bot+jit(steps,4)*7);g.lineTo(c-26+jit(31,1)*12,bot);g.closePath();g.fill();
+    for(let i=1;i<steps;i++){const t=i/steps,y=top+(bot-top)*t,w=s.topW+(s.bottomW-s.topW)*t,left=c-w*.5+12,right=c+w*.5-12,drift=jit(i,12)*3;g.strokeStyle='#71462b77';g.lineWidth=7;g.beginPath();g.moveTo(left,y+4);g.quadraticCurveTo(c+drift,y+9,right,y+4);g.stroke();g.strokeStyle='#f0c57f99';g.lineWidth=2.2;g.beginPath();g.moveTo(left,y);g.quadraticCurveTo(c+drift,y+4,right,y);g.stroke()}
+    g.strokeStyle='#62402a66';g.lineWidth=2;for(let i=0;i<3;i++){const x=topL+45+i*Math.max(48,(topR-topL)/2);g.beginPath();g.moveTo(x+jit(i,4)*8,top+18+jit(i,5)*3);g.quadraticCurveTo(x+18+jit(i,6)*18,(top+bot)*.5,x+8+jit(i,7)*18,bot-2);g.stroke()}
+    g.fillStyle='#8f6139aa';for(let i=0;i<9;i++){const t=(i+.3)/9,w=s.topW+(s.bottomW-s.topW)*t,x=c+(jit(i,8))*w*.48,y=top+(bot-top)*t+jit(i,9)*7,r=4+Math.abs(jit(i,10))*10;g.beginPath();g.ellipse(x,y,r,r*.45,jit(i,11),0,6.3);g.fill()}
+    g.restore()
   }
   function drawGreatWallBricks(l,r,top,bottom,seed=0,alpha=1){
     const patternLeft=l,visibleLeft=Math.max(l,cameraX-80),visibleRight=Math.min(r,cameraX+W+80);
@@ -2629,10 +2592,6 @@
       const dw=w*1.9,dh=Math.max(110,w*.76)*(pit.visualScaleY||1),cx=x+w*.5;
       g.save();g.translate(cx,y-32);if(pit.visualFlipX)g.scale(-1,1);g.drawImage(oldAlleyRoadCollapseSprite,-dw*.5,0,dw,dh);g.restore();return
     }
-    if(isDesert&&atlasReady(desertYardangArchitectureAtlas)){
-      const dw=w*1.82,dh=Math.max(118,w*.88)*(pit.visualScaleY||1),cx=x+w*.5;
-      g.save();g.translate(cx,y-35);if(pit.visualFlipX)g.scale(-1,1);drawDesertAtlasCell(desertYardangArchitectureAtlas,1,1,-dw*.5,0,dw,dh);g.restore();return
-    }
     if(t==='水中避难所'&&atlasReady(waterShelterStructureAtlas)){
       const dw=w*1.35,dh=Math.max(92,w*.68),cx=x+w*.5,left=cx-dw*.5,top=y-26;g.save();g.beginPath();g.moveTo(left+dw*.09,top+dh*.17);g.lineTo(left+dw*.28,top+dh*.04);g.lineTo(left+dw*.76,top+dh*.05);g.lineTo(left+dw*.94,top+dh*.22);g.lineTo(left+dw*.98,top+dh*.72);g.lineTo(left+dw*.77,top+dh*.94);g.lineTo(left+dw*.22,top+dh*.92);g.lineTo(left+dw*.03,top+dh*.67);g.closePath();g.clip();drawWaterShelterAtlasCell(waterShelterStructureAtlas,1,1,left,top,dw,dh);g.restore();return
     }
@@ -2752,13 +2711,11 @@
       }
       return true
     }
-    if(stone&&currentStageTheme==='沙漠'&&atlasReady(desertYardangArchitectureAtlas)){
+    if(stone&&currentStageTheme==='沙漠'&&atlasReady(desertYardangArchitectureAtlas)&&atlasReady(desertYardangTerrainAtlas)){
       const first=Math.max(0,Math.floor((cameraX-room.left-tileSize)/tileSize));let x=room.left+first*tileSize;
       while(x<room.right-.5&&x<cameraX+W+tileSize){
-        const w=Math.min(tileSize,room.right-x),tileCenter=x+w*.5,climbCenter=Number.isFinite(room.climbX)?room.climbX:room.right-190,useClimb=room.climbable&&Math.abs(tileCenter-climbCenter)<tileSize*.62;
-        if(useClimb&&atlasReady(desertYardangCaveClimbTexture))g.drawImage(desertYardangCaveClimbTexture,x-.75,top,w+1.5,tileSize);
-        else drawDesertAtlasCell(desertYardangArchitectureAtlas,0,1,x-.75,top,w+1.5,tileSize);
-        g.fillStyle='rgba(25,14,8,.30)';g.fillRect(x-.75,top,w+1.5,tileSize);x+=w
+        const w=Math.min(tileSize,room.right-x),tileCenter=x+w*.5,climbCenter=room.right-190,useClimb=room.climbable&&Math.abs(tileCenter-climbCenter)<tileSize*.62;
+        drawDesertAtlasCell(useClimb?desertYardangTerrainAtlas:desertYardangArchitectureAtlas,useClimb?1:0,1,x-.75,top,w+1.5,tileSize);x+=w
       }
       return true
     }
@@ -2817,10 +2774,9 @@
       g.drawImage(bunkerModernRoomStrips,0,sourceH*3,sourceW,sourceH,room.left-bleed,floorTop-bleed,room.right-room.left+floorShift+bleed*2,floorBottom-floorTop+bleed*2);g.restore();return true
     }
     g.save();g.beginPath();g.moveTo(room.left-.75,floorTop-.75);g.lineTo(room.right+.75,floorTop-.75);g.lineTo(room.right+floorShift+.75,floorBottom+.75);g.lineTo(room.left+floorShift-.75,floorBottom+.75);g.closePath();g.clip();g.transform(1,0,BUNKER_FLOOR_SKEW,1,-BUNKER_FLOOR_SKEW*floorTop,0);
-    if(currentStageTheme==='沙漠'&&stone&&atlasReady(desertYardangTerrainAtlas)){
+    if(currentStageTheme==='沙漠'&&atlasReady(desertYardangArchitectureAtlas)){
       const tileSize=320,visibleLeft=cameraX-floorShift-tileSize,first=Math.max(0,Math.floor((visibleLeft-room.left)/tileSize));
-      for(let x=room.left+first*tileSize;x<room.right&&x<cameraX+W+tileSize;x+=tileSize){const w=Math.min(tileSize,room.right-x);drawDesertAtlasCell(desertYardangTerrainAtlas,0,0,x-.75,floorTop,w+1.5,tileSize)}
-      g.fillStyle='rgba(25,14,8,.24)';g.fillRect(room.left-.75,floorTop,room.right-room.left+1.5,tileSize);
+      for(let x=room.left+first*tileSize;x<room.right&&x<cameraX+W+tileSize;x+=tileSize){const w=Math.min(tileSize,room.right-x);drawDesertAtlasCell(desertYardangArchitectureAtlas,1,1,x-.75,floorTop,w+1.5,tileSize)}
       g.restore();return true
     }
     const plain=bunkerCavePlainTexture;if(!plain||!(window.TieJieAssets?.imageReady?.(plain)||plain.complete&&plain.naturalWidth)){g.restore();return false}
@@ -2937,13 +2893,8 @@
     if(b.bunker){drawBunkerLowerLayer(b);return}
     g.save();
     g.fillStyle='#080706e8';g.fillRect(b.left-120,y-138,b.right-b.left+240,244);
-    const desertLower=theme==='沙漠'&&atlasReady(desertYardangTerrainAtlas),lowerFloorTile=theme==='草地'?greatWallPitFloorTile:theme==='街区'?oldAlleyStreetGround:theme==='高楼'?skyShelterRooftopGround:null;
-    if(desertLower&&atlasReady(desertYardangArchitectureAtlas)){
-      drawTiledDesertAtlasCell(desertYardangArchitectureAtlas,0,1,b.left-120,y-138,b.right+120,y+106,360,300,1);
-      g.fillStyle='rgba(24,13,8,.34)';g.fillRect(b.left-120,y-138,b.right-b.left+240,244)
-    }
-    const texturedLowerFloor=desertLower?drawTiledDesertAtlasCell(desertYardangTerrainAtlas,0,0,b.left-95,y-84,b.right+95,y+72,320,240,1):!!lowerFloorTile&&drawTiledImage(lowerFloorTile,b.left-95,y-84,b.right+95,y+72,280,280,.92);
-    if(desertLower&&texturedLowerFloor){g.fillStyle='rgba(24,13,8,.22)';g.fillRect(b.left-95,y-84,b.right-b.left+190,156)}
+    const desertLower=theme==='沙漠'&&atlasReady(desertYardangArchitectureAtlas),lowerFloorTile=theme==='草地'?greatWallPitFloorTile:theme==='街区'?oldAlleyStreetGround:theme==='高楼'?skyShelterRooftopGround:null;
+    const texturedLowerFloor=desertLower?drawTiledDesertAtlasCell(desertYardangArchitectureAtlas,1,1,b.left-95,y-84,b.right+95,y+72,320,240,1):!!lowerFloorTile&&drawTiledImage(lowerFloorTile,b.left-95,y-84,b.right+95,y+72,280,280,.92);
     if(theme==='草地'&&texturedLowerFloor){
       g.fillStyle='#050606';g.beginPath();g.ellipse(b.backX-28,y-42,58,34,0,0,6.3);g.fill();g.beginPath();g.ellipse(b.exitX+34,y-44,70,40,0,0,6.3);g.fill();
       if(window.TieJieAssets?.imageReady?.(greatWallCollapseSprite)||greatWallCollapseSprite?.complete&&greatWallCollapseSprite.naturalWidth){const dw=250,dh=252;g.drawImage(greatWallCollapseSprite,b.climbX-dw*.5,y+58-dh,dw,dh)}
@@ -2961,11 +2912,6 @@
     }
     g.fillStyle='#050606';g.beginPath();g.ellipse(b.backX-28,y-42,58,34,0,0,6.3);g.fill();g.beginPath();g.ellipse(b.exitX+34,y-44,70,40,0,0,6.3);g.fill();
     const climbX=b.climbX,rock=theme==='高楼'||theme==='室内'?'#8b8980':'#9a7248',dark=theme==='高楼'||theme==='室内'?'#3f4443':'#46301f',hi=theme==='高楼'||theme==='室内'?'#d5d1c5':'#d8b176';
-    if(desertLower&&atlasReady(desertYardangCaveClimbTexture)){
-      const climbW=270,climbH=240;g.drawImage(desertYardangCaveClimbTexture,climbX-climbW*.5,y-190,climbW,climbH);
-      g.fillStyle='rgba(24,13,8,.25)';g.fillRect(climbX-climbW*.5,y-190,climbW,climbH);
-      g.fillStyle='#f2d18d66';g.font='700 12px sans-serif';g.textAlign='center';g.fillText('↑',climbX,y-198);g.restore();return
-    }
     const rubbleSeed=(b.climbX*.017+b.left*.013)%8.4,rand=(i,a)=>Math.sin(rubbleSeed+i*12.731+a*61.17);
     const block=(cx,cy,w,h,c,shade=0)=>{
       g.fillStyle=c;g.beginPath();g.moveTo(cx-w*.52,cy+h*.35);g.lineTo(cx-w*.34,cy-h*.38);g.lineTo(cx+w*.28,cy-h*.48);g.lineTo(cx+w*.55,cy+h*.18);g.lineTo(cx+w*.18,cy+h*.48);g.closePath();g.fill();
@@ -3268,7 +3214,7 @@
     }
     else if(state==='jump')paint(heroKickSheet,1,.243,1,0,0,0,1,'none');
     else paint(heroKickSheet,0,.243,1,0,0,0,1,'none');
-    if(player.held&&state!=='pickup')drawWaistItem(player.held)
+    if(player.held&&state!=='pickup')drawItemShape(player.held,37,-122,0,.9)
     g.filter='none';g.restore()
   }
   function drawWalkSprite(a,x,y,face,phase,paintGroundShadow){
@@ -3284,7 +3230,7 @@
     g.filter='none';
     g.drawImage(heroWalkSheet,frame*sw,0,sw,sh,-dw*.5+frameShifts[frame],-dh+40*scale,dw,dh);
     g.filter='none';g.restore();
-    if(player.held){g.save();g.translate(x,y);g.scale(face,1);drawWaistItem(player.held);g.restore()}
+    if(player.held){g.save();g.translate(x,y);g.scale(face,1);drawItemShape(player.held,37,-122,0,.9);g.restore()}
   }
   function drawMovementSprite(a,x,y,face,state,phase,isEnemy){
     const sw=heroKickSheet.naturalWidth/3,sh=heroKickSheet.naturalHeight,scale=enemyFrameScale('heroIdle',0,1),[offsetX,offsetY]=enemyFrameOffset('heroIdle',0),dw=sw*scale,dh=sh*scale;
@@ -3292,7 +3238,7 @@
     g.save();g.translate(x,y);g.scale(face*(enemyFrameFlip('heroIdle',0)?-1:1),1);g.translate(offsetX,offsetY);
     if(isEnemy)drawEnemySpriteFrame(a,heroKickSheet,0,0,sw,sh,-dw*.5,-dh+40,dw,dh,a.elite?'grayscale(.35) sepia(.75) hue-rotate(350deg) brightness(.72) contrast(1.2)':'grayscale(.7) sepia(.4) hue-rotate(125deg) brightness(.58) contrast(1.25)');
     else{g.filter='none';g.drawImage(heroKickSheet,0,0,sw,sh,-dw*.5,-dh+40,dw,dh)}
-    if(!isEnemy&&player.held)drawWaistItem(player.held);
+    if(!isEnemy&&player.held)drawItemShape(player.held,37,-122,0,.9);
     g.filter='none';g.restore();
     if(isEnemy){g.save();bar(x-38,y-dh-9,76,6,a.hp/a.maxHp,a.elite?'#bf7b2f':'#8f2c2b');g.fillStyle='#c9c3b7';g.font='12px sans-serif';g.textAlign='center';g.fillText(a.name,x,y-dh-15);g.restore()}
   }
@@ -3349,12 +3295,6 @@
   defaultEnemyFrameScales.barbarianSprint=[.77,.77];
   defaultEnemyFrameOffsets.barbarianSprint=[[0,0],[0,0]];
   defaultEnemyFrameFlips.barbarianSprint=[false,false];
-
-  // frame-size-adjuster:begin
-  Object.assign(defaultEnemyFrameScales,{"heroIdle":[1.0,1.0,1.0],"heroWalk":[0.83,0.81,0.8,0.89,0.8,0.86,0.89,0.91],"heroCombat":[1.0,1.0,1.0],"heroPunch":[1.0,1.0,1.0,1.0,1.0,1.0],"heroHurt":[1.0,1.0,1.0,1.0,1.0],"heroKnockdown":[1.0,1.0,1.0,1.0,1.0],"heroJumpTransition":[1.0,1.0],"heroBackThrow1":[1.0],"heroBackThrow2":[1.0],"heroBackThrow3":[1.0],"heroBackThrow4":[1.0],"heroGrab":[1.0,1.0,1.0],"heroGrabKnee":[1.0,1.0,1.0],"heroOverChestThrow":[0.55,0.58,0.54,0.61],"heroKick1":[1.0,1.0,1.0,1.0],"heroKick2":[1.0,1.0,1.0,1.0,1.0],"heroKick3":[1.0,1.0,1.0,1.0],"heroJumpKick":[1.0,1.0,1.0,1.0,1.0,1.0],"heroJumpKickChain":[0.64,0.69,0.72,0.65],"heroRisingPunch":[1.0,1.0,1.0,1.0],"skinnyBase":[1.0,1.0,1.0,1.0,1.16],"skinnyWalk":[1.0,1.0,1.0,1.0],"skinnySlide":[1.0],"heavyBase":[1.0,1.0,1.0,1.0,1.0,1.0],"heavyWalk":[1.0,1.0,1.0,1.0],"heavyDeath":[0.7],"heavyCounterGrab":[0.81],"spinnerBase":[0.86,0.86,0.86,0.86],"spinnerSpin":[0.66,0.57,0.67,0.77],"spinnerRun":[0.59,0.75],"grapplerBase":[1.0,1.0,1.0,1.0,1.0],"grapplerWrestling":[0.77,0.76,0.76,0.77],"grapplerCounterGrab":[0.61],"grapplerRun":[0.8,0.88],"axeBase":[1.0,1.0,1.0,1.0,1.0],"axeRun":[0.99,1.0],"assassinBase":[1.0,1.0,0.72,1.0,1.0],"assassinRun":[0.85,0.92],"suitBase":[1.0,1.0,1.0,1.0,0.82],"suitDagger":[0.89,0.88,0.86,0.88],"suitBackflip":[0.71,0.72,0.75,0.72],"suitRun":[1.0,1.0,1.0],"breakerBase":[1.0,1.0,1.0,1.0,1.0],"breakerRun":[0.84,0.91],"whipBase":[1.0,1.0,1.0,1.0,1.0],"whipRun":[0.95,0.96],"barbarianBase":[0.95,0.86,1.22,0.88,1.1],"barbarianRevive":[1.0,0.98,1.06,1.04],"barbarianSprint":[0.77,0.77]});
-  Object.assign(defaultEnemyFrameOffsets,{"heroIdle":[[0,0],[0,0],[0,0]],"heroWalk":[[-1,0],[0,0],[3,0],[-11,0],[-3,0],[-12,0],[-9,0],[-20,0]],"heroCombat":[[0,0],[0,0],[0,0]],"heroPunch":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"heroHurt":[[0,0],[0,0],[0,0],[0,0],[0,0]],"heroKnockdown":[[0,0],[0,0],[0,0],[0,0],[0,0]],"heroJumpTransition":[[0,0],[0,0]],"heroBackThrow1":[[0,0]],"heroBackThrow2":[[0,0]],"heroBackThrow3":[[0,0]],"heroBackThrow4":[[0,0]],"heroGrab":[[0,0],[0,0],[0,0]],"heroGrabKnee":[[0,0],[0,0],[0,0]],"heroOverChestThrow":[[0,0],[0,0],[0,0],[0,0]],"heroKick1":[[0,0],[0,0],[0,0],[0,0]],"heroKick2":[[0,0],[0,0],[0,0],[0,0],[0,0]],"heroKick3":[[0,0],[0,0],[0,0],[0,0]],"heroJumpKick":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"heroJumpKickChain":[[0,0],[71,-6],[5,14],[79,4]],"heroRisingPunch":[[0,0],[0,0],[0,0],[0,0]],"skinnyBase":[[0,0],[0,0],[0,0],[0,0],[0,0]],"skinnyWalk":[[0,0],[0,0],[0,0],[0,0]],"skinnySlide":[[0,0]],"heavyBase":[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"heavyWalk":[[0,0],[0,0],[0,0],[0,0]],"heavyDeath":[[0,0]],"heavyCounterGrab":[[0,0]],"spinnerBase":[[0,0],[0,0],[0,0],[0,0]],"spinnerSpin":[[0,0],[0,0],[0,0],[0,0]],"spinnerRun":[[0,0],[0,0]],"grapplerBase":[[0,0],[0,0],[0,0],[0,0],[0,0]],"grapplerWrestling":[[0,0],[0,0],[0,0],[0,0]],"grapplerCounterGrab":[[0,0]],"grapplerRun":[[0,0],[0,0]],"axeBase":[[0,0],[0,0],[0,0],[0,0],[0,0]],"axeRun":[[0,0],[0,0]],"assassinBase":[[0,0],[0,0],[0,0],[0,0],[0,0]],"assassinRun":[[0,0],[0,0]],"suitBase":[[0,0],[0,0],[0,0],[0,0],[0,0]],"suitDagger":[[0,0],[0,0],[0,0],[0,0]],"suitBackflip":[[0,0],[0,0],[0,0],[0,0]],"suitRun":[[0,0],[0,0],[0,0]],"breakerBase":[[0,0],[0,0],[0,0],[0,0],[0,0]],"breakerRun":[[0,0],[0,0]],"whipBase":[[0,0],[0,0],[0,0],[0,0],[0,0]],"whipRun":[[0,0],[0,0]],"barbarianBase":[[0,0],[0,0],[0,0],[0,0],[0,0]],"barbarianRevive":[[0,0],[0,0],[0,0],[0,0]],"barbarianSprint":[[0,0],[0,0]]});
-  Object.assign(defaultEnemyFrameFlips,{"heroIdle":[false,false,false],"heroWalk":[false,false,false,false,false,false,false,false],"heroCombat":[false,false,false],"heroPunch":[false,false,false,false,false,false],"heroHurt":[false,false,false,false,false],"heroKnockdown":[false,false,false,false,false],"heroJumpTransition":[false,false],"heroBackThrow1":[false],"heroBackThrow2":[false],"heroBackThrow3":[false],"heroBackThrow4":[false],"heroGrab":[false,false,false],"heroGrabKnee":[false,false,false],"heroOverChestThrow":[false,false,false,false],"heroKick1":[false,false,false,false],"heroKick2":[false,false,false,false,false],"heroKick3":[false,false,false,false],"heroJumpKick":[false,false,false,false,false,false],"heroJumpKickChain":[false,false,false,false],"heroRisingPunch":[false,false,false,false],"skinnyBase":[false,false,false,false,false],"skinnyWalk":[false,false,false,false],"skinnySlide":[false],"heavyBase":[false,false,false,false,false,false],"heavyWalk":[false,false,false,false],"heavyDeath":[false],"heavyCounterGrab":[false],"spinnerBase":[false,false,false,false],"spinnerSpin":[false,false,false,false],"spinnerRun":[false,false],"grapplerBase":[false,false,false,false,false],"grapplerWrestling":[false,false,false,false],"grapplerCounterGrab":[false],"grapplerRun":[false,false],"axeBase":[false,false,false,false,false],"axeRun":[false,false],"assassinBase":[false,false,false,false,false],"assassinRun":[false,false],"suitBase":[false,false,false,false,false],"suitDagger":[false,false,false,false],"suitBackflip":[false,true,true,true],"suitRun":[false,false,false],"breakerBase":[false,false,false,false,false],"breakerRun":[false,false],"whipBase":[false,false,false,false,false],"whipRun":[false,false],"barbarianBase":[false,false,false,false,false],"barbarianRevive":[false,false,false,false],"barbarianSprint":[false,false]});
-  // frame-size-adjuster:end
   const enemyFrameScales=Object.fromEntries(Object.entries(defaultEnemyFrameScales).map(([key,values])=>[key,[...values]]));
   const enemyFrameOffsets=Object.fromEntries(Object.entries(defaultEnemyFrameScales).map(([key,values])=>[key,values.map((_,index)=>{
     const pair=defaultEnemyFrameOffsets[key]?.[index];
@@ -3799,7 +3739,6 @@
     }
     g.restore()
   }
-  function drawWaistItem(type){drawItemShape(type,-30,-78,type==='hammer'?1.05:0,type==='hammer'?.56:.62)}
   function drawPickup(p){g.save();g.translate(p.x,p.y);if(['coin','chicken','fruit'].includes(p.type)){const bob=Math.sin(p.bob||0)*4;drawGroundShadow(20,6,4,'#020202aa');g.translate(0,-(p.z||14)+bob);if(p.type==='coin')g.scale(.65+Math.abs(Math.cos(p.spin||0))*.35,1);else g.rotate(Math.sin(p.spin||0)*.09);drawItemShape(p.type,0,0,0,p.type==='fruit'?.82:.88)}else{drawGroundShadow(p.type==='grenade'?22:34,7,5,'#020202aa');g.strokeStyle='#684a3daa';g.lineWidth=3;g.beginPath();g.ellipse(0,-8,p.type==='grenade'?24:34,18,0,0,6.3);g.stroke();drawItemShape(p.type,0,-7,p.type==='hammer'?-.28:0,p.type==='hammer'?.9:.82)}g.restore()}
   function drawProjectile(p){g.save();g.translate(p.x,p.y);drawGroundShadow(p.type==='grenade'?18:25,6,4,'#03050677');g.translate(0,-p.z);drawItemShape(p.type,0,0,p.spin*(p.vx<0?-1:1),p.type==='grenade'?.88:1);g.restore()}
   function drawStunIndicator(x,y){const t=performance.now()/180;g.save();g.translate(x,y);for(let i=0;i<3;i++){const a=t+i*2.094,s=5+(i===0?1:0);g.save();g.translate(Math.cos(a)*25,Math.sin(a)*7);g.rotate(a);g.fillStyle='#f2c34f';g.strokeStyle='#5b351a';g.lineWidth=2;g.beginPath();for(let k=0;k<10;k++){const r=k%2?s*.45:s,ang=-Math.PI/2+k*Math.PI/5;g.lineTo(Math.cos(ang)*r,Math.sin(ang)*r)}g.closePath();g.fill();g.stroke();g.restore()}g.restore()}
@@ -3810,7 +3749,7 @@
     else{g.fillStyle=ready?'#ffd083':'#bd6439';g.beginPath();g.moveTo(5,4);g.lineTo(11,5);g.lineTo(13,12);g.lineTo(19,15);g.lineTo(17,19);g.lineTo(8,16);g.lineTo(5,10);g.closePath();g.fill();g.strokeStyle='#4a2418';g.lineWidth=1.5;g.stroke()}
     g.restore()
   }
-  function hud(){const showStarAbsorb=hasSkill('starAbsorb'),showLaunchKick=hasSkill('launchKickChain'),meterCount=(showStarAbsorb?1:0)+(showLaunchKick?1:0),hudHeight=106+meterCount*25;g.fillStyle='#091014dd';g.fillRect(28,24,460,hudHeight);g.strokeStyle='#8a5638';g.strokeRect(28,24,460,hudHeight);g.fillStyle='#e8d5b3';g.font='800 21px sans-serif';g.textAlign='left';g.fillText('陆骁',48,54);bar(48,67,270,15,player.hp/player.maxHp,'#c84932');g.fillStyle='#96a5a5';g.font='14px sans-serif';g.fillText(`HP ${Math.max(0,Math.floor(player.hp))} / ${player.maxHp}`,328,80);g.fillStyle='#d5a467';g.fillText(player.held?(player.held==='grenade'?'腰间：手榴弹':`腰间：战锤（剩 ${player.heldUses} 次）`):'徒手格斗',48,94);
+  function hud(){const showStarAbsorb=hasSkill('starAbsorb'),showLaunchKick=hasSkill('launchKickChain'),meterCount=(showStarAbsorb?1:0)+(showLaunchKick?1:0),hudHeight=106+meterCount*25;g.fillStyle='#091014dd';g.fillRect(28,24,460,hudHeight);g.strokeStyle='#8a5638';g.strokeRect(28,24,460,hudHeight);g.fillStyle='#e8d5b3';g.font='800 21px sans-serif';g.textAlign='left';g.fillText('陆骁',48,54);bar(48,67,270,15,player.hp/player.maxHp,'#c84932');g.fillStyle='#96a5a5';g.font='14px sans-serif';g.fillText(`HP ${Math.max(0,Math.floor(player.hp))} / ${player.maxHp}`,328,80);g.fillStyle='#d5a467';g.fillText(player.held?(player.held==='grenade'?'手持：手榴弹':`手持：战锤（剩 ${player.heldUses} 次）`):'徒手格斗',48,94);
     const topGold=document.querySelector('#top-gold'),topChicken=document.querySelector('#top-chicken'),topFruit=document.querySelector('#top-fruit');if(topGold)topGold.textContent=String(progress.gold);if(topChicken)topChicken.textContent=String(progress.chicken);if(topFruit)topFruit.textContent=String(progress.fruit);
     const hpNow=vitalityStat(),atkNow=strengthStat(),defNow=defenseStat(),hpNext=hpNow+pendingGrowthUpgrades.hp,atkNext=atkNow+pendingGrowthUpgrades.atk,defNext=defNow+pendingGrowthUpgrades.def,preview=(now,next,pending)=>pending?`${now} → ${next}（待 +${pending}）`:String(now);const growthValues={hp:`属性 ${preview(hpNow,hpNext,pendingGrowthUpgrades.hp)} · HP ${Math.round(16*hpNext)}`,atk:`${preview(atkNow,atkNext,pendingGrowthUpgrades.atk)} · 伤害 ×${(atkNext/10).toFixed(2)}`,def:`${preview(defNow,defNext,pendingGrowthUpgrades.def)} · 减伤${Math.round((1-10/defNext)*100)}%`};for(const [kind,value] of Object.entries(growthValues)){const node=document.querySelector(`#growth-${kind}`);if(node)node.textContent=value}
     g.fillStyle='#d8c39a';g.font='13px sans-serif';g.fillText(`金币 ${progress.gold}  鸡腿 ${progress.chicken}  果实 ${progress.fruit}`,48,113);g.fillStyle='#91a0a1';g.fillText(`1血${vitalityStat()} 2力${strengthStat()} 3防${defenseStat()}  无伤${player.cleanHits%5}/5 攻速×${playerAttackSpeedMul().toFixed(1)}`,248,113);
@@ -3851,19 +3790,16 @@
     }
   }
   function effects(){if(!running)return;drawStarAbsorbEffects();for(const f of resourceFx){const q=1-f.t/f.max,color=f.type==='coin'?'#8b6835':f.type==='chicken'?'#75402d':'#6f3040';g.save();g.translate(f.x,f.y-(f.mode==='collect'?q*42:0));g.globalAlpha=clamp(f.t/f.max,0,1);g.strokeStyle=color;g.lineWidth=3;g.beginPath();g.ellipse(0,0,14+q*38,6+q*16,0,0,6.3);g.stroke();for(let i=0;i<8;i++){const a=i*Math.PI/4,len=10+q*36;g.beginPath();g.moveTo(Math.cos(a)*8,Math.sin(a)*5);g.lineTo(Math.cos(a)*len,Math.sin(a)*len*.55);g.stroke()}if(f.mode==='collect'){g.fillStyle='#b9aa91';g.font='900 18px sans-serif';g.textAlign='center';g.fillText(`+${f.value}`,0,-18)}g.restore()}for(const f of blastFx){const q=1-f.t/f.max;g.save();g.translate(f.x,f.y);g.globalAlpha=clamp(f.t/f.max,0,1);g.fillStyle='#d85a2428';g.strokeStyle='#f1a646';g.lineWidth=8*(1-q)+2;g.beginPath();g.ellipse(0,0,f.radius*q,f.radius*q*.32,0,0,6.3);g.fill();g.stroke();g.strokeStyle='#ffd27a';g.lineWidth=3;for(let i=0;i<12;i++){const a=i*Math.PI/6,len=24+q*90;g.beginPath();g.moveTo(Math.cos(a)*12,Math.sin(a)*7);g.lineTo(Math.cos(a)*len,Math.sin(a)*len*.4);g.stroke()}g.restore()}for(const f of hitFx){const q=1-f.t/f.max,r=12+q*48,fade=clamp(f.t/f.max,0,1);g.save();g.translate(f.x,f.y);g.globalAlpha=fade;if(f.blueFistFlame){g.globalAlpha=fade*f.blueFistFlame;g.globalCompositeOperation='screen';g.shadowColor='#29b8ff';g.shadowBlur=18;g.fillStyle='#bff6ff';g.beginPath();g.arc(0,0,9+q*15,0,6.3);g.fill();for(let i=0;i<7;i++){const a=f.seed+i*.897,len=18+q*(40+(i%2)*16);g.strokeStyle=i%2?'#2c8cff':'#8fefff';g.lineWidth=i%3===0?6:3;g.beginPath();g.moveTo(Math.cos(a)*6,Math.sin(a)*6);g.lineTo(Math.cos(a)*len,Math.sin(a)*len);g.stroke()}g.shadowBlur=0;g.globalCompositeOperation='source-over'}g.globalAlpha=fade;g.strokeStyle=f.onPlayer?'#b62f29':'#f1bb69';g.lineWidth=5*(1-q)+1;g.beginPath();g.arc(0,0,r,0,6.3);g.stroke();for(let i=0;i<9;i++){const a=f.seed+i*.698,len=18+q*(28+(i%3)*9);g.strokeStyle=i%2?'#eee2c5':f.onPlayer?'#d63d31':'#df7737';g.lineWidth=i%3===0?4:2;g.beginPath();g.moveTo(Math.cos(a)*8,Math.sin(a)*8);g.lineTo(Math.cos(a)*len,Math.sin(a)*len);g.stroke()}if(f.dmg!=null){g.globalAlpha=Math.min(1,f.t*6);g.fillStyle=f.onPlayer?'#ef8171':'#ffe0a1';g.font='900 20px sans-serif';g.textAlign='center';g.fillText('-'+f.dmg,0,-30-q*25)}g.restore()}}
-  function refreshContextActionVisibility(){
-    const doorVisible=!!(running&&player.hp>0&&nearbyBunkerDoor());if(doorActionButton)doorActionButton.hidden=!doorVisible;
-    if(!itemActionButton)return;const pickup=!player.held&&nearestThrowablePickup(),itemVisible=!!(!doorVisible&&running&&player.hp>0&&(player.held||pickup));itemActionButton.hidden=!itemVisible;if(itemVisible){itemActionButton.textContent=player.held?'投掷':'拾取';itemActionButton.disabled=!canUseItemAction()}
-  }
-  function loop(now){const dt=Math.min(.033,(now-last)/1000||0);last=now;if(running)update(dt);refreshContextActionVisibility();render();window.TieJieNativeUi?.presentFrame?.();requestAnimationFrame(loop)}
+  function refreshDoorActionVisibility(){if(!doorActionButton)return;doorActionButton.hidden=!(running&&player.hp>0&&nearbyBunkerDoor())}
+  function loop(now){const dt=Math.min(.033,(now-last)/1000||0);last=now;if(running)update(dt);refreshDoorActionVisibility();render();window.TieJieNativeUi?.presentFrame?.();requestAnimationFrame(loop)}
   const heldActions=new Set();let grabHoldPending=null;const GRAB_LONG_PRESS_SECONDS=.24;
-  function canPrepareStarAbsorb(){if(!running||player.hp<=0||player.climb||player.grab||player.state==='enemyGrabbed'||['hurt','down','fall'].includes(player.state)||!hasSkill('starAbsorb')||(player.starAbsorbHits||0)<SKILL_CHARGE_MAX)return false;return !playerAttackStates.has(player.state)}
+  function canPrepareStarAbsorb(){if(!running||player.hp<=0||player.climb||player.grab||player.held||player.state==='enemyGrabbed'||['hurt','down','fall'].includes(player.state)||!hasSkill('starAbsorb')||(player.starAbsorbHits||0)<SKILL_CHARGE_MAX)return false;return !playerAttackStates.has(player.state)}
   function pressAction(name){if(wave===2&&name==='grab'){if(gauntletMode)startGauntlet();else reset();return}if(name==='grab'&&canPrepareStarAbsorb()){heldActions.add(name);grabHoldPending={elapsed:0};return}act(name)}
   function releaseAction(name){heldActions.delete(name);if(name!=='grab')return;if(player.starAbsorbPull){cancelStarAbsorbPull(true);return}if(grabHoldPending){grabHoldPending=null;act('grab')}}
   function updateGrabHoldPending(dt){if(!grabHoldPending)return;if(!heldActions.has('grab')){grabHoldPending=null;return}if(!canPrepareStarAbsorb()){grabHoldPending=null;return}grabHoldPending.elapsed+=dt;if(grabHoldPending.elapsed<GRAB_LONG_PRESS_SECONDS)return;grabHoldPending=null;useStarAbsorb()}
   function key(e,on){const m={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down'};if(m[e.code]){keys[m[e.code]]=on;e.preventDefault()}if(!on&&e.code==='KeyL'){releaseAction('grab');return}if(on&&!e.repeat){if(e.code==='KeyR'){restartCurrentStage();return}if(failurePopupT>0)return;if(e.code==='Digit1')tryUpgrade('hp');if(e.code==='Digit2')tryUpgrade('atk');if(e.code==='Digit3')tryUpgrade('def');if(e.code==='KeyJ'&&player.hp>0)pressAction('punch');if(e.code==='KeyK')pressAction('kick');if(e.code==='KeyL')pressAction('grab');if(e.code==='Space')pressAction('jump')}}
   addEventListener('keydown',e=>key(e,true));addEventListener('keyup',e=>key(e,false));
-  const touchUi=document.querySelector('#touch-ui'),dpad=touchUi?.querySelector('.dpad'),joystickKnob=dpad?.querySelector('.joystick-knob'),actionPad=touchUi?.querySelector('.actions'),itemActionButton=document.querySelector('#item-action'),doorActionButton=document.querySelector('#open-door-action');
+  const touchUi=document.querySelector('#touch-ui'),dpad=touchUi?.querySelector('.dpad'),joystickKnob=dpad?.querySelector('.joystick-knob'),actionPad=touchUi?.querySelector('.actions'),doorActionButton=document.querySelector('#open-door-action');
   const joystickTouch={id:null,startX:0,startY:0,pressed:new Set()};
   function setTouchDirection(value,on){keys[value]=on;if(on)joystickTouch.pressed.add(value);else joystickTouch.pressed.delete(value)}
   function updateTouchJoystick(e){
@@ -3895,7 +3831,6 @@
   actionPad?.addEventListener('pointerdown',e=>{const button=e.target.closest('[data-action]:not([hidden])');if(!button)return;e.preventDefault();const gesture={values:new Set(),buttons:new Set()};actionGestures.set(e.pointerId,gesture);actionPad.setPointerCapture(e.pointerId);triggerTouchAction(button,gesture)});
   actionPad?.addEventListener('pointermove',e=>{const gesture=actionGestures.get(e.pointerId);if(gesture)triggerTouchAction(actionButtonAt(e.clientX,e.clientY),gesture)});
   actionPad?.addEventListener('pointerup',releaseTouchActions);actionPad?.addEventListener('pointercancel',releaseTouchActions);
-  itemActionButton?.addEventListener('pointerdown',event=>{event.preventDefault();event.stopPropagation();if(useItemAction())haptic(20)});
   doorActionButton?.addEventListener('pointerdown',event=>{event.preventDefault();event.stopPropagation();if(tryPushBunkerDoor())haptic(20)});
   let battleStarting=false;
   async function beginFromMenu(starter,allowFreeTour=true,rankedRun=true,testMode=false){
@@ -3935,7 +3870,6 @@
   document.querySelectorAll('[data-map]').forEach(b=>b.addEventListener('click',()=>{const stage=Number(b.dataset.stage)||1;if(stage>maxSelectableStage())return;beginFromMenu(()=>{player.kills=0;setStagePosition(stage);loadMap(mapIndex)},true,true)}));
   const gauntletSelected=new Set();
   (function buildGauntletPanel(){
-    if(!isTestBuild)return;
     const box=document.querySelector('#gauntlet-enemies');
     gauntletEnemyTypes.forEach(t=>{
       const d=document.createElement('button');d.className='gauntlet-enemy';d.dataset.type=t;
@@ -3952,9 +3886,8 @@
     closeMenuPages();document.querySelector('#gauntlet-panel').hidden=false};
   document.querySelector('#gauntlet-back').onclick=()=>{document.querySelector('#gauntlet-panel').hidden=true};
   document.querySelector('#gauntlet-start').onclick=()=>{
-    if(!isTestBuild||gauntletSelected.size===0)return;
+    if(gauntletSelected.size===0)return;
     gauntletEliteMode=!!document.querySelector('#gauntlet-elite')?.checked;
-    gauntletDifficulty=clamp(Number(document.querySelector('#gauntlet-difficulty')?.value)||1,.5,5);
     gauntletEnemyTypes.splice(0,gauntletEnemyTypes.length,...gauntletSelected);
     beginFromMenu(startGauntlet,false,false)};
   function refreshRecruitPanel(override=''){
@@ -3971,7 +3904,7 @@
   })();
   document.querySelector('#recruit-action').onclick=async()=>{
     const type=[...selectedRecruitTypes][0],info=recruitInfo(type),button=document.querySelector('#recruit-action');if(!type||!info||recruitUnlocked(type))return;
-    if(progress.gold>=info.price){if(button)button.disabled=true;const result=await authorization.api?.post?.('/v1/player/recruit',{type});if(button)button.disabled=false;if(applyAuthoritativePlayer(result)){if(progress.tempRecruit?.type===type)progress.tempRecruit=null;pendingRecruitType=null;refreshRecruitPanel(`${enemyCatalog[type].name} 已永久解锁`);return}refreshRecruitPanel(result?.reason==='insufficient-gold'?'服务器记录的金币不足':'招募保存失败，请检查网络');return}
+    if(progress.gold>=info.price){progress.gold-=info.price;progress.unlockedRecruits.push(type);progress.unlockedRecruits=[...new Set(progress.unlockedRecruits)];if(progress.tempRecruit?.type===type)progress.tempRecruit=null;pendingRecruitType=null;saveProgress();refreshRecruitPanel(`${enemyCatalog[type].name} 已永久解锁`);return}
     refreshRecruitPanel('金币不足，暂时无法招募')
   };
   document.querySelector('#recruit-btn').onclick=()=>{closeMenuPages();document.querySelector('#recruit-panel').hidden=false;refreshRecruitPanel()};
@@ -3987,11 +3920,6 @@
   document.querySelector('#settings-btn').onclick=openSettings;
   document.querySelector('#settings-back').onclick=()=>{document.querySelector('#settings-panel').hidden=true};
   document.querySelector('#settings-save').onclick=async()=>{const name=String(playerNameInput?.value||'').trim().replace(/\s+/g,' ');if(!validDisplayName(name)){settingsStatus.textContent=tr('nameInvalid');return}progress.displayName=name;saveProgress(false);settingsStatus.textContent=authorization.offline?tr('offline'):tr('syncing');const ok=await syncProgressToServer();settingsStatus.textContent=ok?tr('nameSaved'):tr('offline')};
-  const deleteAccountModal=document.querySelector('#delete-account-modal'),deleteAccountForm=document.querySelector('#delete-account-form'),deleteAccountPassword=document.querySelector('#delete-account-password'),deleteAccountStatus=document.querySelector('#delete-account-status'),deleteAccountConfirm=document.querySelector('#delete-account-confirm');
-  function closeDeleteAccount(){deleteAccountModal.hidden=true;deleteAccountForm?.reset();if(deleteAccountStatus)deleteAccountStatus.textContent=''}
-  document.querySelector('#delete-account-open').onclick=()=>{deleteAccountModal.hidden=false;if(deleteAccountStatus)deleteAccountStatus.textContent='';setTimeout(()=>deleteAccountPassword?.focus(),50)};
-  document.querySelector('#delete-account-cancel').onclick=closeDeleteAccount;
-  deleteAccountForm?.addEventListener('submit',async event=>{event.preventDefault();const password=deleteAccountPassword?.value||'';if(password.length<8){deleteAccountStatus.textContent=tr('deleteAccountWrongPassword');return}deleteAccountConfirm.disabled=true;document.querySelector('#delete-account-cancel').disabled=true;deleteAccountStatus.textContent=tr('deleteAccountDeleting');const result=await authorization.api?.deleteAccount?.(password);if(result?.ok){try{localStorage.removeItem('tiejie-progress')}catch{}deleteAccountStatus.textContent='';location.reload();return}deleteAccountConfirm.disabled=false;document.querySelector('#delete-account-cancel').disabled=false;deleteAccountStatus.textContent=result?.reason==='login-failed'?tr('deleteAccountWrongPassword'):tr('deleteAccountFailed')});
   function renderLeaderboard(entries){const box=document.querySelector('#rank-list');box.innerHTML='';if(!entries.length){const empty=document.createElement('p');empty.textContent=tr('rankEmpty');box.appendChild(empty);return}entries.forEach((entry,index)=>{const row=document.createElement('article');row.className='rank-row';const position=document.createElement('span');position.className='rank-position';position.textContent=`#${index+1}`;const name=document.createElement('strong');name.className='rank-name';name.textContent=String(entry.name||'').slice(0,12);const stage=document.createElement('span');stage.className='rank-stage';stage.textContent=`${tr('rankStage')} ${Math.max(0,Number(entry.bestStage)||0)}`;const build=document.createElement('span');build.className='rank-build';const mask=Math.max(0,Number(entry.skillMask)||0),skillNames=syncedSkillIds.filter((_,skillIndex)=>mask&(1<<skillIndex)).map(id=>skillCatalog.find(skill=>skill.id===id)?.name).filter(Boolean);build.textContent=`${tr('hp')} ${Number(entry.hp)||0} · ${tr('atk')} ${Number(entry.atk)||0} · ${tr('def')} ${Number(entry.def)||0} | ${tr('rankSkills')}: ${skillNames.join('、')||tr('noSkills')}`;row.append(position,name,stage,build);box.appendChild(row)})}
   document.querySelector('#rank-btn').onclick=async()=>{closeMenuPages();const panel=document.querySelector('#rank-panel'),box=document.querySelector('#rank-list');panel.hidden=false;box.innerHTML='';const loading=document.createElement('p');loading.textContent=tr('rankLoading');box.appendChild(loading);const result=await authorization.api?.post?.('/v1/leaderboard');if(result?.ok)renderLeaderboard(Array.isArray(result.entries)?result.entries:[]);else{loading.textContent=tr('feedbackFailed')}};
   document.querySelector('#rank-back').onclick=()=>{document.querySelector('#rank-panel').hidden=true};
@@ -4015,7 +3943,6 @@
   document.querySelector('#growth-confirm').addEventListener('click',confirmGrowthUpgrades);
   document.querySelector('#growth-close').addEventListener('click',closeGrowthPanel);
   function handleNativeBack(){
-    if(deleteAccountModal&&!deleteAccountModal.hidden){closeDeleteAccount();return}
     const rewardModal=document.querySelector('#reward-modal');
     if(rewardModal&&!rewardModal.hidden){document.querySelector('#reward-cancel')?.click();return}
     const growthPanel=document.querySelector('#growth-panel');
