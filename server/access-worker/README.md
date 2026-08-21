@@ -1,6 +1,6 @@
 # TieJie Access Worker
 
-铁街格斗登录与授权服务，部署到 Cloudflare Workers，使用 D1 数据库 `tiejie-access`。
+避难所格斗登录与授权服务，部署到 Cloudflare Workers，使用 D1 数据库 `tiejie-access`。
 
 ## 本地准备
 

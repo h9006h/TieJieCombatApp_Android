@@ -12,6 +12,10 @@ npm run open:android
 
 `build:web` 会将核心 JavaScript 合并、压缩和变量混淆，生成带内容哈希的单一脚本，不生成 source map。`sync:android` 会先执行发布构建，再把本地资源同步到 Android 工程。
 
+## 玩法规则文档
+
+- [击飞与空中连击规则](docs/knockback-and-air-combo-rules.md)
+
 ## Android Studio 试玩
 
 1. 使用 Android Studio 打开本目录下的 `android/`。

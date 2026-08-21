@@ -7,6 +7,7 @@
 - Never commit signing keys, service-account files, ad-network secrets, store credentials, or source maps.
 - Release builds must load bundled local assets and must not download executable JavaScript.
 - Preserve character color, scale, frame timing, world coordinates and collision behavior unless the user explicitly requests a gameplay change.
+- Do not add or restore a browser-based character frame adjuster in this App project. Character frame adjustment is maintained only by the macOS tool at `../TieJieCombat/dist/tools/TieJieFrameAdjuster.app` and its source files in `../TieJieCombat/tools/`.
 
 ## Collaboration preferences
 

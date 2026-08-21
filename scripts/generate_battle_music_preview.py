@@ -6,7 +6,6 @@ noise.  It does not import recordings, loops, melodies, or third-party assets.
 
 from __future__ import annotations
 
-import json
 import math
 import wave
 from hashlib import sha256
@@ -26,9 +25,8 @@ TOTAL_SAMPLES = int(DURATION * SAMPLE_RATE)
 RNG = np.random.default_rng(0x1A0B_2026)
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT_DIR = ROOT / "previews" / "audio"
-OUTPUT_WAV = OUTPUT_DIR / "iron-blood-uprising-v4-majestic-suona.wav"
-OUTPUT_META = OUTPUT_DIR / "iron-blood-uprising-v4-majestic-suona.json"
+OUTPUT_DIR = ROOT / "src-web" / "assets" / "audio" / "music"
+OUTPUT_WAV = OUTPUT_DIR / "01-iron-alley.wav"
 
 master = np.zeros((2, TOTAL_SAMPLES), dtype=np.float32)
 music_bus = np.zeros_like(master)
@@ -409,17 +407,4 @@ with wave.open(str(OUTPUT_WAV), "wb") as output:
     output.writeframes(pcm.tobytes())
 
 digest = sha256(OUTPUT_WAV.read_bytes()).hexdigest()
-metadata = {
-    "title": "铁血沸腾",
-    "file": OUTPUT_WAV.name,
-    "sampleRate": SAMPLE_RATE,
-    "channels": 2,
-    "seconds": round(DURATION, 3),
-    "bpm": BPM,
-    "key": "D minor / Phrygian inflection",
-    "direction": "激情、热血、战斗、东方工业史诗",
-    "copyright": "Original deterministic synthesis; no recordings, samples, loops, or prior game melodies used.",
-    "sha256": digest,
-}
-OUTPUT_META.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 print(f"Generated {OUTPUT_WAV} ({DURATION:.1f}s, {BPM} BPM, sha256={digest[:12]})")

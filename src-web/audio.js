@@ -3,14 +3,9 @@
   const root=typeof globalThis!=='undefined'?globalThis:window;
   const ttApi=root.tt;
   const musicFiles=[
-    'assets/audio/music/01-iron-alley.wav',
-    'assets/audio/music/02-dunhuang-wall.wav',
-    'assets/audio/music/03-beacon-wall.wav',
-    'assets/audio/music/04-highrise-pulse.wav',
-    'assets/audio/music/05-close-quarters.wav',
-    'assets/audio/music/06-ancient-battle.wav'
+    'assets/audio/music/01-iron-alley.wav'
   ];
-  const musicBpms=[148,92,112,126,108,96];
+  const musicBpms=[148];
   const enemyTypes=new Set(['skinny','heavy','spinner','grappler','axe','assassin','suit','breaker','whip','barbarian']);
   const hasDouyinAudio=!!ttApi?.createInnerAudioContext;
   const musicDisabled=hasDouyinAudio;

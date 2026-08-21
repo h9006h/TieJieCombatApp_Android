@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
   username TEXT NOT NULL UNIQUE,
   password_salt TEXT NOT NULL,
   password_hash TEXT NOT NULL,
-  password_iterations INTEGER NOT NULL DEFAULT 600000,
+  password_iterations INTEGER NOT NULL DEFAULT 10000,
   enabled INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
   mode TEXT NOT NULL CHECK (mode IN ('test', 'normal')),
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,

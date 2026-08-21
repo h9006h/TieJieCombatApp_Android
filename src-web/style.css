@@ -76,8 +76,8 @@ button:disabled { opacity: .38; cursor: default; filter: none; }
 
 /* Main menu */
 #start-card {
-  position: absolute; z-index: 12; left: 50%; top: 52%; transform: translate(-50%, -50%);
-  width: min(600px, 78vw); max-height: min(650px, 88vh); overflow: auto;
+  position: absolute; z-index: 12; left: 50%; top: calc(50% + 30px); transform: translate(-50%, -50%);
+  width: min(600px, 78vw); max-height: min(650px, calc(100dvh - 86px)); overflow: auto;
   padding: 24px 28px 22px; text-align: center; color: #d6d9d4; clip-path: var(--cut);
   border: 1px solid #87533a; border-left: 6px solid var(--rust);
   background:
@@ -104,15 +104,16 @@ button:disabled { opacity: .38; cursor: default; filter: none; }
 .menu-actions #rank-btn { border-color: #6f5c36; }
 .menu-actions #feedback-btn { color: #b7c1be; }
 .menu-actions #settings-btn { grid-column: 1 / -1; min-height: 42px; border-color: #4f6668; color: #aebcba; }
-.menu-mode #resource-ad-bar, .menu-mode #battle-menu-toggle { opacity: 0; visibility: hidden; pointer-events: none; }
+.menu-mode #battle-menu-toggle { opacity: 0; visibility: hidden; pointer-events: none; }
 
 /* Top resource rail */
 #resource-ad-bar {
   position: absolute; z-index: 8; left: 50%; top: max(8px, env(safe-area-inset-top)); transform: translateX(-50%);
-  display: flex; gap: 5px; align-items: stretch; padding: 5px; pointer-events: auto; clip-path: var(--cut);
+  display: flex; gap: 5px; align-items: stretch; padding: 5px; pointer-events: none; clip-path: var(--cut);
   border: 1px solid #70472f; background: linear-gradient(180deg, #263135f4, #080d0ff4 58%); box-shadow: 0 7px 22px #000b;
-  transition: opacity .15s, visibility .15s;
+  opacity: 0; visibility: hidden; transition: opacity .15s, visibility .15s;
 }
+.menu-mode #resource-ad-bar { opacity: 1; visibility: visible; pointer-events: auto; }
 .resource-chip { position: relative; display: flex; align-items: center; gap: 7px; min-width: 100px; padding: 4px 5px 4px 7px; border: 1px solid #3c494c; background: #0a1012e8; white-space: nowrap; }
 .resource-icon { width: 29px; height: 29px; flex: none; filter: drop-shadow(0 2px 1px #000a); }
 .resource-chip b { min-width: 32px; color: #f0dfb5; text-align: center; font: 900 16px/1 Arial, sans-serif; font-variant-numeric: tabular-nums; }
@@ -214,13 +215,26 @@ button:disabled { opacity: .38; cursor: default; filter: none; }
 .battle-menu-card header strong { color: #ead2a7; font-size: 23px; letter-spacing: 4px; }
 .battle-menu-card > button { width: 100%; min-height: 46px; margin-top: 9px; font-weight: 900; }
 #battle-menu-resume { background: linear-gradient(180deg, #963f27, #672316); border-color: #bd6845; color: #ffe1bf; }
+#battle-menu-reset-gauntlet { border-color: #8b7044; background: linear-gradient(180deg, #40341e, #21190f); color: #f1d499; }
 .battle-menu-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 9px; }
 .battle-menu-settings button { display: flex; justify-content: space-between; gap: 8px; padding: 10px; font-size: 12px; font-weight: 800; }
 .battle-menu-settings b { color: #f0bb72; }
 .battle-menu-settings .muted { opacity: .55; }
 #battle-menu-end { border-color: #78382c; background: #351816; color: #dca796; }
-#battle-menu-toggle { position: absolute; z-index: 9; left: max(12px, env(safe-area-inset-left)); top: max(12px, env(safe-area-inset-top)); padding: 9px 13px; border: 1px solid #875336; background: linear-gradient(155deg, #29363a, #101719); color: #ead8b5; font-weight: 900; clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px); transition: opacity .15s, visibility .15s; }
-#battle-menu-toggle span { color: var(--rust-hi); }
+#battle-menu-toggle {
+  position: absolute; z-index: 9;
+  left: calc(34.7vw - 18px); top: calc((100vh - 56.25vw) / 2 + 2.15vw);
+  width: 36px; height: 36px; padding: 8px; border: 0; border-radius: 7px;
+  background: transparent; color: #d8ddd7; opacity: .62; box-shadow: none;
+  transition: opacity .15s, visibility .15s, background-color .12s;
+}
+#battle-menu-toggle:hover, #battle-menu-toggle:focus-visible { opacity: .95; background: #10171959; outline: 1px solid #8a563866; }
+#battle-menu-toggle:active { opacity: 1; background: #8f3d253d; transform: translateY(1px); }
+.menu-lines { display: flex; width: 20px; height: 16px; flex-direction: column; justify-content: space-between; }
+.menu-lines i { display: block; width: 100%; height: 2px; border-radius: 2px; background: currentColor; box-shadow: 0 1px 2px #000b; }
+@media (min-aspect-ratio: 16/9) {
+  #battle-menu-toggle { left: calc((100vw - 177.7778vh) / 2 + 61.67vh - 18px); top: 3.82vh; }
+}
 
 #growth-panel { position: absolute; z-index: 16; left: 50%; top: max(66px, calc(env(safe-area-inset-top) + 58px)); transform: translateX(-50%); width: min(500px, 92vw); padding: 15px; border: 1px solid #86613d; background: #081013f4; box-shadow: 0 15px 44px #000d; color: #e6d5ae; pointer-events: auto; }
 #growth-panel header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
@@ -311,7 +325,7 @@ button:disabled { opacity: .38; cursor: default; filter: none; }
 
 @media (hover: hover) and (pointer: fine) { #touch-ui.active { display: none; } }
 @media (max-width: 1000px), (max-height: 620px) {
-  #auth-gate { place-items: start center; padding: 8px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left)); }
+  #auth-gate { place-items: center; padding: 8px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left)); }
   .auth-card { width: min(520px, 88vw); max-height: none; padding: 12px 18px; }
   .auth-card strong { font-size: 19px; }
   .auth-card p { min-height: 18px; margin: 7px 0; }
@@ -319,7 +333,7 @@ button:disabled { opacity: .38; cursor: default; filter: none; }
   .auth-card button { padding: 8px 12px; }
   .auth-card small { margin-top: 7px; }
   #resource-ad-bar { top: max(3px, env(safe-area-inset-top)); transform: translateX(-50%) scale(.72); transform-origin: top center; }
-  #start-card { width: min(510px, 75vw); max-height: 86vh; padding: 15px 20px 14px; }
+  #start-card { top: calc(50% + 24px); width: min(510px, 75vw); max-height: calc(100dvh - 58px); padding: 15px 20px 14px; }
   .brand-icon { left: 17px; top: 13px; width: 49px; height: 49px; }
   .badge { margin-left: 46px; font-size: 8px; }
   #start-card h1 { margin-top: 10px; font-size: 34px; }

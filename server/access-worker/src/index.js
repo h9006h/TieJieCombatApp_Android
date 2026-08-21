@@ -1,11 +1,11 @@
 const LEGACY_PASSWORD_ITERATIONS = 10000;
-const CURRENT_PASSWORD_ITERATIONS = 600000;
+const CURRENT_PASSWORD_ITERATIONS = 10000;
+const MAX_STORED_PASSWORD_ITERATIONS = 600000;
 const SESSION_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 const LOGIN_WINDOW_SECONDS = 15 * 60;
 const LOGIN_MAX_FAILURES = 5;
 const STAGE_RUN_LIFETIME_SECONDS = 6 * 60 * 60;
 const MAX_UPGRADES_PER_REQUEST = 100;
-const STAGE_ENEMY_COUNT = 14;
 const SKILLS = [
   { id: 'risingPunch', cost: 1 },
   { id: 'lifeSteal', cost: 3, requires: 'risingPunch' },
@@ -58,7 +58,7 @@ function withCors(response, origin) {
 
 function accountDeletionPage() {
   const nonce = randomHex(16);
-  const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>铁街格斗账号删除</title><style nonce="${nonce}">:root{color-scheme:dark;font-family:system-ui,"Microsoft YaHei",sans-serif}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#050708;color:#ead9b8}.card{width:min(520px,100%);padding:28px;border:1px solid #805238;border-left:6px solid #8f3d25;background:#11181b}h1{margin-top:0}p,li{color:#b8c0bd;line-height:1.65}label{display:grid;gap:6px;margin:14px 0;font-weight:700}input,button{width:100%;padding:12px;font:inherit}input{border:1px solid #596a69;background:#05090b;color:#ffe0ad}button{margin-top:10px;border:1px solid #c86448;background:#7b291f;color:#fff1db;font-weight:800}button:disabled{opacity:.5}#status{min-height:24px;margin-top:14px}.ok{color:#84d39d}.error{color:#ff9a88}</style></head><body><main class="card"><h1>铁街格斗账号删除</h1><p>此页面可在不安装游戏的情况下永久删除账号。删除后将无法恢复。</p><ul><li>删除用户名、密码凭据和所有登录会话</li><li>删除关卡、资源、属性、技能、队友与排行榜记录</li><li>删除该账号提交的反馈和关卡校验记录</li></ul><form id="delete-form"><label>用户名<input id="username" autocomplete="username" minlength="3" maxlength="24" required></label><label>密码<input id="password" type="password" autocomplete="current-password" minlength="8" maxlength="64" required></label><button id="submit" type="submit">永久删除我的账号</button></form><p id="status" role="status"></p></main><script nonce="${nonce}">const form=document.querySelector('#delete-form'),button=document.querySelector('#submit'),status=document.querySelector('#status');form.addEventListener('submit',async event=>{event.preventDefault();if(!confirm('账号及全部游戏数据将永久删除，确定继续吗？'))return;button.disabled=true;status.className='';status.textContent='正在验证并删除……';try{const response=await fetch('/v1/account/delete',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:document.querySelector('#username').value,password:document.querySelector('#password').value})}),result=await response.json();if(!response.ok||!result.ok)throw new Error(result.reason==='too-many-attempts'?'尝试次数过多，请15分钟后再试':result.reason==='login-failed'?'用户名或密码错误':'删除失败，请稍后重试');form.hidden=true;status.className='ok';status.textContent='账号及关联数据已永久删除。'}catch(error){status.className='error';status.textContent=error.message}finally{button.disabled=false}});</script></body></html>`;
+  const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>避难所格斗账号删除</title><style nonce="${nonce}">:root{color-scheme:dark;font-family:system-ui,"Microsoft YaHei",sans-serif}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#050708;color:#ead9b8}.card{width:min(520px,100%);padding:28px;border:1px solid #805238;border-left:6px solid #8f3d25;background:#11181b}h1{margin-top:0}p,li{color:#b8c0bd;line-height:1.65}label{display:grid;gap:6px;margin:14px 0;font-weight:700}input,button{width:100%;padding:12px;font:inherit}input{border:1px solid #596a69;background:#05090b;color:#ffe0ad}button{margin-top:10px;border:1px solid #c86448;background:#7b291f;color:#fff1db;font-weight:800}button:disabled{opacity:.5}#status{min-height:24px;margin-top:14px}.ok{color:#84d39d}.error{color:#ff9a88}</style></head><body><main class="card"><h1>避难所格斗账号删除</h1><p>此页面可在不安装游戏的情况下永久删除账号。删除后将无法恢复。</p><ul><li>删除用户名、密码凭据和所有登录会话</li><li>删除关卡、资源、属性、技能、队友与排行榜记录</li><li>删除该账号提交的反馈和关卡校验记录</li></ul><form id="delete-form"><label>用户名<input id="username" autocomplete="username" minlength="3" maxlength="24" required></label><label>密码<input id="password" type="password" autocomplete="current-password" minlength="8" maxlength="64" required></label><button id="submit" type="submit">永久删除我的账号</button></form><p id="status" role="status"></p></main><script nonce="${nonce}">const form=document.querySelector('#delete-form'),button=document.querySelector('#submit'),status=document.querySelector('#status');form.addEventListener('submit',async event=>{event.preventDefault();if(!confirm('账号及全部游戏数据将永久删除，确定继续吗？'))return;button.disabled=true;status.className='';status.textContent='正在验证并删除……';try{const response=await fetch('/v1/account/delete',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:document.querySelector('#username').value,password:document.querySelector('#password').value})}),result=await response.json();if(!response.ok||!result.ok)throw new Error(result.reason==='too-many-attempts'?'尝试次数过多，请15分钟后再试':result.reason==='login-failed'?'用户名或密码错误':'删除失败，请稍后重试');form.hidden=true;status.className='ok';status.textContent='账号及关联数据已永久删除。'}catch(error){status.className='error';status.textContent=error.message}finally{button.disabled=false}});</script></body></html>`;
   return new Response(html, { headers: {
     'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store',
     'content-security-policy': `default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'`,
@@ -104,14 +104,15 @@ function randomUnit() {
 }
 
 function stageRewards(user, stage) {
-  const gold = STAGE_ENEMY_COUNT * (8 + Math.floor(stage * 1.6)) + 28;
+  const enemyCount = Math.min(12, Math.max(4, stage + 3));
+  const gold = enemyCount * (8 + Math.floor(stage * 1.6)) + (stage >= 6 ? 28 : 0);
   const expectedChicken = (30 + boundedInteger(user.stat_hp, 9999) + boundedInteger(user.stat_atk, 9999)
     + boundedInteger(user.stat_def, 9999) + boundedInteger(user.ascend_level, 9999) * 3) * 0.08;
   const chickenWhole = Math.floor(expectedChicken);
   const chicken = Math.max(1, chickenWhole + (randomUnit() < expectedChicken - chickenWhole ? 1 : 0));
   const fruitChance = Math.min(0.18, 0.025 + stage * 0.002);
   let fruit = 1;
-  for (let index = 1; index < STAGE_ENEMY_COUNT; index += 1) {
+  for (let index = 1; index < enemyCount; index += 1) {
     if (randomUnit() < fruitChance) fruit += 1;
   }
   return { gold, chicken, fruit };
@@ -120,7 +121,7 @@ function stageRewards(user, stage) {
 function minimumStageSeconds(stage, env) {
   const configured = Number(env.MIN_STAGE_SECONDS);
   if (Number.isFinite(configured) && configured >= 0) return Math.floor(configured);
-  return Math.min(180, 45 + Math.max(0, stage - 1) * 3);
+  return Math.min(90, 15 + Math.max(0, stage - 1) * 5);
 }
 
 function bytesToHex(bytes) {
@@ -373,18 +374,16 @@ async function login(request, env) {
     FROM users WHERE username = ?
   `).bind(username).first();
   if (!user) { await recordLoginFailure(env, throttleKey); return json({ allowed: false, reason: 'login-failed' }, 401); }
-  const storedIterations = boundedInteger(user.password_iterations || LEGACY_PASSWORD_ITERATIONS, CURRENT_PASSWORD_ITERATIONS);
+  const storedIterations = boundedInteger(user.password_iterations || LEGACY_PASSWORD_ITERATIONS, MAX_STORED_PASSWORD_ITERATIONS) || LEGACY_PASSWORD_ITERATIONS;
   const hash = await passwordHash(password, user.password_salt, env.PASSWORD_PEPPER, storedIterations);
   if (!constantTimeHexEqual(hash, user.password_hash)) { await recordLoginFailure(env, throttleKey); return json({ allowed: false, reason: 'login-failed' }, 401); }
   if (user.enabled !== 1) return json({ allowed: false, reason: 'disabled' }, 403);
 
   const now = new Date().toISOString();
-  // Do not synchronously rehash legacy accounts here. The current Worker CPU
-  // budget cannot complete the 600,000-round upgrade in the same request, so a
-  // valid password would otherwise end in HTTP 500. Existing hashes are never
-  // downgraded; new registrations still use CURRENT_PASSWORD_ITERATIONS. Move
-  // legacy rehashing to a separately provisioned migration when more CPU is
-  // available.
+  // Password verification always honors the work factor stored with the account.
+  // Do not synchronously rehash on login: this deployment intentionally uses a
+  // 10,000-round registration work factor to stay within the free Worker CPU
+  // budget, while retaining compatibility with any previously stronger hashes.
   await env.DB.prepare(`
     UPDATE users SET last_seen_at = ?, updated_at = ?, client_version = ? WHERE id = ?
   `).bind(now, now, String(body?.clientVersion || '').slice(0, 48), user.id).run();
@@ -610,7 +609,7 @@ async function deleteAccount(request, env) {
     await recordLoginFailure(env, throttleKey);
     return json({ ok: false, reason: 'login-failed' }, 401);
   }
-  const iterations = boundedInteger(user.password_iterations || LEGACY_PASSWORD_ITERATIONS, CURRENT_PASSWORD_ITERATIONS);
+  const iterations = boundedInteger(user.password_iterations || LEGACY_PASSWORD_ITERATIONS, MAX_STORED_PASSWORD_ITERATIONS) || LEGACY_PASSWORD_ITERATIONS;
   const hash = await passwordHash(password, user.password_salt, env.PASSWORD_PEPPER, iterations);
   if (!constantTimeHexEqual(hash, user.password_hash)) {
     await recordLoginFailure(env, throttleKey);

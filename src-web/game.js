@@ -4,7 +4,7 @@
   await window.TieJieViewportReady;
   const W=window.TieJieViewport?.width||1280,H=window.TieJieViewport?.height||720,WORLD_W=8600,SURFACE_WORLD_W=6200,WORLD_BOTTOM=1320,GROUND_Y=570,UNDER_Y=1460,GROUND_MIN_Y=490,GROUND_MAX_Y=760,BUNKER_ROOM_MODULE_W=1280,BUNKER_DEPTH=200,BUNKER_FLOOR_SKEW=1.12, canvas=document.querySelector('#game'), g=canvas.getContext('2d');
   const {
-    heroKickSheet,heroKick1Sheet,heroKick2Sheet,heroKick3Sheet,heroJumpKickSheet,heroJumpKickChainSheet,
+    heroKickSheet,heroGroundKickComboSheet,heroJumpKickSheet,heroJumpKickChainSheet,
     heroCombatSheet,heroWalkSheet,heroPunchComboSheet,heroBlueFistFlameSheet,heroHurtSheet,enemyKnockdownSheet,
     heavyEnemySheet,heavyEnemyDeathSheet,skinnyEnemySheet,heavyEnemyWalkSheet,skinnyEnemyWalkSheet,
     skinnySlideSheet,heroGrabSheet,heroGrabKneeSheet,heroOverChestThrowSheet,heroBackThrowFrames,heroJumpTransitionSheet,heroClimbOutSheet,heroRisingPunchSheet,heroRisingFlameSheet,
@@ -17,8 +17,7 @@
   }=window.TieJieAssets;
   const nativeDouyinRuntime=!!window.TieJieAssets?.runtimeUsesLocalPaths;
   const fighterShadowMap=new Map([
-    [heroKickSheet,fighterShadows.heroKickSheet],[heroKick1Sheet,fighterShadows.heroKick1Sheet],
-    [heroKick2Sheet,fighterShadows.heroKick2Sheet],[heroKick3Sheet,fighterShadows.heroKick3Sheet],
+    [heroKickSheet,fighterShadows.heroKickSheet],[heroGroundKickComboSheet,fighterShadows.heroGroundKickComboSheet],
     [heroJumpKickSheet,fighterShadows.heroJumpKickSheet],[heroJumpKickChainSheet,fighterShadows.heroJumpKickChainSheet],[heroCombatSheet,fighterShadows.heroCombatSheet],
     [heroWalkSheet,fighterShadows.heroWalkSheet],
     [heroPunchComboSheet,fighterShadows.heroPunchComboSheet],[heroHurtSheet,fighterShadows.heroHurtSheet],
@@ -321,7 +320,7 @@
       if(signature!==previous)break
     }
     lastTerrainSignatureByTheme.set(theme,signature);
-    return terrain
+    return applyStageTerrainProgression(terrain,currentStageNumber())
   }
   function generateThemePits(theme,platforms,stairs,rng){
     const count=2;
@@ -688,9 +687,14 @@
   }
   function lowerPitBounds(pit){
     const bunker=pit.bunker;
-    if(bunker){const firstRoom=bunker.rooms[0],lastRoom=bunker.rooms[bunker.rooms.length-1],exitPit=bunker.rightPit;return{left:bunker.left,right:bunker.right,backX:firstRoom.left+180,exitX:lastRoom.right-190,climbX:lastRoom.right-190,surfaceExitX:exitPit.x+exitPit.w*.5,y:bunker.y,pit,bunker,entersLeft:true,exitDoor:null}}
+    if(bunker){
+      const firstRoom=bunker.rooms[0],lastRoom=bunker.rooms[bunker.rooms.length-1],leftClimbX=firstRoom.left+180,rightClimbX=lastRoom.right-190,entersLeft=pit!==bunker.rightPit;
+      const climbPoints=[{x:leftClimbX,surfaceExitX:bunker.leftPit.x+bunker.leftPit.w*.5,roomIndex:0},{x:rightClimbX,surfaceExitX:bunker.rightPit.x+bunker.rightPit.w*.5,roomIndex:bunker.rooms.length-1}];
+      return{left:bunker.left,right:bunker.right,backX:entersLeft?leftClimbX:rightClimbX,exitX:rightClimbX,climbX:rightClimbX,surfaceExitX:bunker.rightPit.x+bunker.rightPit.w*.5,climbPoints,y:bunker.y,pit,bunker,entersLeft,exitDoor:null}
+    }
     const left=clamp(pit.x-210,stageLockX+25,stageRightX-180),right=clamp(pit.x+pit.w+560,left+420,stageRightX-60);return{left,right,backX:left+48,exitX:right-62,climbX:clamp(pit.x+pit.w*.5,left+95,right-95),y:pit.lowerY||UNDER_Y,pit}
   }
+  function pitClimbPoints(b){return b.climbPoints?.length?b.climbPoints:[{x:b.climbX,surfaceExitX:b.surfaceExitX??b.climbX}]}
   function pitSlopeFor(b){
     return{x:b.exitX-220,bottomW:310,topW:170,bottomY:b.y+44,topY:b.y-96,fromLevel:-1,toLevel:0,pit:b.pit}
   }
@@ -761,8 +765,8 @@
   const dist=(a,b)=>Math.hypot(a.x-b.x,(a.y-b.y)*1.35);
   const PLAYER_MOVE_SPEED_X=320,PLAYER_MOVE_SPEED_Y=206,ENEMY_MOVE_SPEED_MUL=2.4,ENEMY_ALERT_X=675,ENEMY_ALERT_Y=270,SKILL_CHARGE_MAX=12;
   const PLAYER_BASE_ATTACK_SPEED_MUL=.8,BLUE_FLAME_SPEED_PER_TIER=.16,BLUE_FLAME_MAX_TIERS=5;
-  const AIR_JUGGLE_LIFT_HALF_LIFE=.65;
-  const AIR_GRAB_LIFT_REFRESH=120,OVER_CHEST_THROW_LIFT=720,GRAB_KICK_LIFT=180;
+  const AIR_JUGGLE_LIFT_HALF_LIFE=1.5;
+  const AIR_GRAB_LIFT_REFRESH=120,OVER_CHEST_THROW_LIFT=700,OVER_CHEST_THROW_SPEED=500,OVER_CHEST_FOLLOWUP_Z_REACH=220,GRAB_KICK_LIFT=180;
   const player={x:270,y:566,z:0,vz:0,airFallTime:0,knockVx:0,level:0,face:1,hp:160,maxHp:160,state:'idle',timer:0,combo:0,comboT:0,comboLinkT:0,attackEpoch:0,attackSequence:0,kickCombo:0,kickComboT:0,cleanHits:0,attackSpeedTier:0,starAbsorbHits:0,launchKickChargeHits:0,starAbsorbPull:null,grab:null,grabTarget:null,grabT:0,grabEscapeT:0,grabKickQueue:0,grabKickTotal:0,risingQueued:false,risingCooldown:0,risingAirInv:false,risingInvT:0,held:null,heldUses:0,inv:0,kills:0,inputQueue:[],climb:null,fallDamage:0,fallFromLevel:null,fallStartY:null,subPit:null,pitSafeT:0,launchKickChainCount:0,launchKickChainQueued:0};
   let enemies=[],companions=[],pickups=[],projectiles=[],forestHives=[];
   const pendingGrowthUpgrades={hp:0,atk:0,def:0};
@@ -804,7 +808,7 @@
   }
   let progressHydrationPromise=hydrateProgressFromServer();
   const skillCatalog=[
-    {id:'basicPunch',branch:'拳击分支',icon:'拳',name:'普通三段拳',cost:0,requires:null,desc:'三拳基础伤害依次为 8、9、11；前两拳只有微小浮空，第三拳小幅击飞。拳、腿与抓摔完整衔接才能快速解决普通敌人。',release:'连续按“拳”：左直拳→右直拳→上勾拳；根据敌人的落点衔接腿技、空抓与过胸摔。',story:'主角机缘巧合下获得了能让拳头力大无穷的神器果实，从此掌握普通三段拳。'},
+    {id:'basicPunch',branch:'拳击分支',icon:'拳',name:'普通三段拳',cost:0,requires:null,desc:'三拳基础伤害依次为 8、9、11，基础升力依次为 150、200、250。拳、腿与抓摔完整衔接才能快速解决普通敌人。',release:'连续按“拳”：左直拳→右直拳→上勾拳；根据敌人的落点衔接腿技、空抓与过胸摔。',story:'主角机缘巧合下获得了能让拳头力大无穷的神器果实，从此掌握普通三段拳。'},
     {id:'risingPunch',branch:'拳击分支',icon:'升',name:'升龙拳',cost:1,requires:'basicPunch',desc:'起飞后的前 0.34 秒处于无敌状态，可以穿过敌人的攻击；下蹲蓄力阶段没有无敌。',release:'在地面进入跳跃下蹲时按“拳”，完成蓄力后自动起飞出拳；技能冷却 1 秒。',story:''},
     {id:'lifeSteal',branch:'拳击分支',icon:'血',name:'吸血',cost:3,requires:'risingPunch',desc:'主角造成伤害时，将敌人实际损失生命的 10% 转化为自己的生命。',release:'点亮后被动生效；主角的拳脚、擒拿、摔投和投掷道具造成伤害时均可吸血。',story:''},
     {id:'downRisingPunch',branch:'拳击分支',icon:'躺',name:'地躺升龙拳',cost:3,requires:'risingPunch',desc:'被击倒且已经落地时，可以瞬间用升龙拳反击。',release:'主角倒地并接触地面后按“拳”；仍在空中被击飞时无效。',story:''},
@@ -911,7 +915,14 @@
   // always streams behind the punch instead of leading it.
   const BLUE_FIST_FLAME_ROTATIONS=[-2.25,.1,-2.95,.5,2.61,2.04];
   const LEG_FLAME_SOURCE_HEAD_ANGLE=Math.atan2(1,-1);
-  const OVER_CHEST_THROW_DURATION=1,OVER_CHEST_THROW_MS=900,OVER_CHEST_LIFT_RATIO=.55,OVER_CHEST_CONTACT_RATIO=.78;
+  const GROUND_KICK_FRAME_COUNT=14;
+  const GROUND_KICK_FLAME_ANCHORS=[
+    [262,320,-1.9,.7],[227,288,-1.7,.82],[306,232,-1.52,1.18],[251,289,-1.7,.82],
+    [276,321,-1.9,.7],[216,283,-1.72,.82],[311,230,-1.5,1.2],[242,275,-1.62,.9],
+    [266,318,-1.9,.7],[227,287,-1.7,.82],[228,274,-1.62,.88],[296,263,-1.45,1.2],
+    [292,258,-1.45,1.22],[238,278,-1.65,.9]
+  ];
+  const OVER_CHEST_THROW_DURATION=.78,OVER_CHEST_THROW_MS=700,OVER_CHEST_LIFT_RATIO=.55,OVER_CHEST_CONTACT_RATIO=.72;
   // Pixel anchors of the hero's clasped hands in the four 384 px source cells.
   // Enemy placement is solved from these points so its waist stays in the grip.
   const OVER_CHEST_HAND_ANCHORS=[[270,180],[225,135],[130,55],[67,270]];
@@ -922,6 +933,20 @@
   const OVER_CHEST_ENEMY_WAIST_ANCHORS={skinny:[194,266],spinner:[194,276],grappler:[190,263],axe:[190,267],assassin:[192,263],suit:[192,263],breaker:[192,263],whip:[192,263],barbarian:[192,266]};
   const overChestHeroFrame=progress=>progress<.18?0:progress<.36?1:progress<OVER_CHEST_LIFT_RATIO?2:3;
   function currentStageNumber(){return mapCycle*trialMaps.length+mapIndex+1}
+  const STAGE_ENEMY_UNLOCK_ORDER=['skinny','heavy','spinner','grappler','axe','assassin','suit','breaker','whip','barbarian'];
+  function stageEnemyTypes(stage=currentStageNumber()){return STAGE_ENEMY_UNLOCK_ORDER.slice(0,Math.min(STAGE_ENEMY_UNLOCK_ORDER.length,Math.max(2,stage+1)))}
+  function stageEnemyCount(stage=currentStageNumber()){return Math.min(12,Math.max(4,stage+3))}
+  function stageMapEnd(stage=currentStageNumber()){return Math.min(SURFACE_WORLD_W,1900+Math.max(0,stage-1)*600)}
+  function stageEnemySpecs(stage=currentStageNumber()){
+    const pool=stageEnemyTypes(stage),count=stageEnemyCount(stage),types=pool.slice();
+    while(types.length<count)types.push(pool[(types.length-pool.length)%Math.min(2,pool.length)]);
+    return types.map((type,index)=>({type,dx:240+index*260,y:570,elite:stage>=6&&index===types.length-1}))
+  }
+  function applyStageTerrainProgression(terrain,stage){
+    const mapEnd=stageMapEnd(stage),pits=stage<=3?[]:(terrain.pits||[]).filter(pit=>pit.x+pit.w<mapEnd-120),pitSet=new Set(pits);
+    const bunkers=(terrain.bunkers||[]).filter(bunker=>pitSet.has(bunker.leftPit)&&pitSet.has(bunker.rightPit));
+    return{...terrain,pits,bunkers}
+  }
   function stageDifficulty(stage=currentStageNumber()){return 1+(Math.max(1,stage)-1)*.1}
   function maxSelectableStage(){return Math.max(1,progress.currentStage,progress.bestStage+1)}
   function setStagePosition(stage,persist=true,allowAny=false){const upper=allowAny?Number.MAX_SAFE_INTEGER:maxSelectableStage(),value=clamp(Math.floor(Number(stage)||1),1,upper),zero=value-1;mapCycle=Math.floor(zero/trialMaps.length);mapIndex=zero%trialMaps.length;if(persist){progress.currentStage=value;saveProgress()}return value}
@@ -1213,36 +1238,43 @@
     return spots;
   }
   function spawnBunkerResidents(rank){
+    const allowedTypes=stageEnemyTypes(rank),limit=Math.min(4,Math.max(0,rank-5));let spawned=0;
     for(const bunker of activeTerrain().bunkers||[])for(const room of bunker.rooms)for(const resident of room.residents){
-      const e=enemy(resident.x,resident.y,resident.type,enemyName(resident.type,rank+room.index+resident.x,false),false,rank);
+      if(spawned>=limit)return;const type=allowedTypes[(room.index+spawned)%allowedTypes.length];
+      const e=enemy(resident.x,resident.y,type,enemyName(type,rank+room.index+resident.x,false),false,rank);
       e.level=-1;e.subPit={left:bunker.left,right:bunker.right,y:bunker.y,bunker,pit:bunker.leftPit};e.spawnKind='bunker';e.bunkerRoom=room;e.homeX=e.x;e.homeY=e.y;e.awake=false;enemies.push(e)
+      spawned++
     }
   }
   function spawnGate(){
-    const map=trialMaps[mapIndex],gate={start:120,end:6040,boss:true,enemies:map.gates.flatMap(g=>g.enemies)},rank=currentStageNumber();currentStageTheme=map.theme;gatePhase='combat';stageLockX=35;stageRightX=SURFACE_WORLD_W-35;cameraLockX=0;enemies=[];
-    if(freeTourMode){gatePhase='tour';stageLockX=70;stageRightX=SURFACE_WORLD_W-70;cameraLockX=0;powerSwitch=null;message=`自由游览：${map.name}，敌人已关闭`;messageT=2;return}
-    const spots=enemyStandSpots(gate,gate.enemies.length),platformSpots=spots.filter(s=>s.kind==='platform').sort((a,b)=>a.x-b.x),pitSpots=spots.filter(s=>s.kind==='pit'),used=[];
+    const map=trialMaps[mapIndex],rank=currentStageNumber(),gate={start:120,end:stageMapEnd(rank),boss:rank>=6,enemies:stageEnemySpecs(rank)};currentStageTheme=map.theme;gatePhase='combat';stageLockX=35;stageRightX=gate.end-35;cameraLockX=0;enemies=[];
+    if(freeTourMode){gatePhase='tour';stageLockX=70;stageRightX=gate.end-70;cameraLockX=0;powerSwitch=null;message=`自由游览：${map.name}，敌人已关闭`;messageT=2;return}
+    const spots=enemyStandSpots(gate,gate.enemies.length),groundSpots=spots.filter(s=>s.kind==='ground').sort((a,b)=>a.x-b.x),platformSpots=spots.filter(s=>s.kind==='platform').sort((a,b)=>a.x-b.x),pitSpots=spots.filter(s=>s.kind==='pit'),used=[];
     const specs=gate.enemies.slice();
     const selectedPitSpots=pitSpots.filter(()=>Math.random()<.5);
-    while(specs.length<platformSpots.length+selectedPitSpots.length){const index=specs.length;specs.push({type:index%2?'heavy':'skinny',dx:220+index*260,y:570})}
     const regularIndexes=specs.map((spec,index)=>({spec,index})).filter(({spec})=>!spec.elite).map(({index})=>index);
     for(let i=regularIndexes.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[regularIndexes[i],regularIndexes[j]]=[regularIndexes[j],regularIndexes[i]]}
     const pitAssignments=new Map();selectedPitSpots.slice(0,regularIndexes.length).forEach((spot,index)=>pitAssignments.set(regularIndexes[index],spot));
+    const platformQuota=Math.min(platformSpots.length,3,Math.ceil(specs.length*.4)),platformAssignments=new Map();
+    const platformIndexes=specs.map((spec,index)=>({spec,index})).filter(({spec,index})=>!spec.elite&&!pitAssignments.has(index)).map(({index})=>index).slice(-platformQuota);
+    platformIndexes.forEach((index,order)=>{const spotIndex=Math.min(platformSpots.length-1,Math.floor((order+.5)*platformSpots.length/platformIndexes.length));platformAssignments.set(index,platformSpots[spotIndex])});
+    const groundAssignments=new Map(),groundIndexes=specs.map((_,index)=>index).filter(index=>!pitAssignments.has(index)&&!platformAssignments.has(index));
+    groundIndexes.forEach((index,order)=>{const spotIndex=Math.min(groundSpots.length-1,Math.floor((order+.5)*groundSpots.length/groundIndexes.length));groundAssignments.set(index,groundSpots[spotIndex])});
     for(let i=0;i<specs.length;i++){
-      const spec=specs[i],type=spec.type,elite=!!spec.elite,name=gate.boss&&elite?map.boss:enemyName(type,rank+(spec.dx||i),elite);
-      let spot=pitAssignments.get(i)||platformSpots.find(s=>!used.includes(s))||spots.find(s=>!used.includes(s)&&s.kind==='ground')||spots.find(s=>!used.includes(s)&&s.kind!=='pit')||{x:clamp(gate.start+(spec.dx||220+i*260),gate.start+180,gate.end-160),y:spec.y||570,level:0,kind:'ground'};
+      const spec=specs[i],type=spec.type,elite=!!spec.elite,name=enemyName(type,rank+(spec.dx||i),elite);
+      let spot=pitAssignments.get(i)||platformAssignments.get(i)||groundAssignments.get(i)||spots.find(s=>!used.includes(s)&&s.kind!=='pit')||{x:clamp(gate.start+(spec.dx||220+i*260),gate.start+180,gate.end-160),y:spec.y||570,level:0,kind:'ground'};
       used.push(spot);
       const e=enemy(spot.x,spot.y,type,name,elite,rank);e.level=spot.level;e.subPit=spot.subPit||null;e.spawnKind=spot.kind||'ground';e.homeX=spot.x;e.homeY=spot.y;e.awake=false;enemies.push(e)
     }
     spawnBunkerResidents(rank);
     const breaker=enemies.find(e=>e.type==='breaker'&&e.level>=0);powerSwitch=currentStageTheme==='高楼'?null:breaker?{x:clamp(breaker.x+150,gate.start+210,gate.end-120),y:breaker.y,level:breaker.level,on:true,flash:0}:null;
-    message=breaker?'整张地图已开放；断电工正往电闸走':`${map.name} · 全场开放，无场景隔断`;messageT=2.2
+    message=rank===1?`${map.name} · 短地图教学，敌人已分散到地面与平台`:breaker?'新敌人加入：断电工会切断照明':`${map.name} · 本关敌种 ${stageEnemyTypes(rank).length} 种`;messageT=2.2
   }
   function loadMap(index){
     forestHives=[];player.swampDepth=0;player.swampDead=false;player.swampEscaped=false;
     gauntletMode=false;failureHandled=false;failurePopupT=0;partyDefeatPending=false;lostResources=null;jumpSourcePlatform=null;jumpPlatformCleared=false;closeRewardModal(false);
     const maxHp=playerMaxHp();mapIndex=index;if(!testRunMode){progress.currentStage=currentStageNumber();saveProgress()}stageRewardTotals={gold:0,chicken:0,fruit:0};stageChickenBudget=stageChickenReward();stageChickenDropped=0;stageSettlementOpen=false;stageRewardDoubled=false;window.TieJieAudio?.playMusic(mapIndex);gateIndex=0;gatePhase='combat';stageLockX=70;stageRightX=1050;cameraLockX=0;cameraX=0;currentStageTheme=trialMaps[mapIndex].theme;generatedTerrain=generateFreshTerrain(currentStageTheme,mapIndex);Object.assign(player,{x:220,y:566,z:0,vz:0,airFallTime:0,knockVx:0,throwVx:0,airLaunch:false,level:0,face:1,hp:maxHp,maxHp,state:'idle',timer:0,combo:0,comboT:0,comboLinkT:0,attackEpoch:(player.attackEpoch||0)+1,kickCombo:0,kickComboT:0,cleanHits:0,attackSpeedTier:0,starAbsorbHits:0,launchKickChargeHits:0,starAbsorbPull:null,grab:null,grabTarget:null,grabbed:false,grappleHolder:null,grappleInvincible:false,grabT:0,grabEscapeT:0,grabKickQueue:0,grabKickTotal:0,risingQueued:false,risingCooldown:0,risingAirInv:false,risingInvT:0,held:null,heldUses:0,inv:0,kills:player.kills||0,inputQueue:[],climb:null,fallDamage:0,fallFromLevel:null,fallStartY:null,subPit:null,pitSafeT:0,launchKickChainCount:0,launchKickChainQueued:0});
-    spawnSelectedCompanions();pickups=freeTourMode?[]:[{type:'grenade',x:620,y:570,level:0,active:true},{type:'hammer',x:860,y:570,level:0,active:true,throwsLeft:2},{type:'grenade',x:2350,y:575,level:0,active:true},{type:'hammer',x:3920,y:570,level:0,active:true,throwsLeft:2},{type:'grenade',x:5200,y:570,level:0,active:true}];projectiles=[];hitFx=[];blastFx=[];resourceFx=[];eliteArmorFx=[];starAbsorbFx=[];screenTint=0;wave=1;spawnGate();updateCamera()
+    const mapEnd=stageMapEnd();spawnSelectedCompanions();pickups=freeTourMode?[]:[{type:'grenade',x:620,y:570,level:0,active:true},{type:'hammer',x:860,y:570,level:0,active:true,throwsLeft:2},{type:'grenade',x:2350,y:575,level:0,active:true},{type:'hammer',x:3920,y:570,level:0,active:true,throwsLeft:2},{type:'grenade',x:5200,y:570,level:0,active:true}].filter(item=>item.x<mapEnd-120);projectiles=[];hitFx=[];blastFx=[];resourceFx=[];eliteArmorFx=[];starAbsorbFx=[];screenTint=0;wave=1;spawnGate();updateCamera()
   }
   function reset(){player.kills=0;setStagePosition(progress.currentStage,false);loadMap(mapIndex)}
   async function restartCurrentStage(){if(gauntletMode){startGauntlet();return}const stage=currentStageNumber();running=false;player.kills=0;loadMap(mapIndex);if(!await beginServerStageRun(stage)){returnToStart();return}message=`重新开始第 ${stage} 关`;messageT=1;running=true}
@@ -1263,7 +1295,8 @@
     spawnSelectedCompanions();pickups=[{type:'hammer',x:520,y:570,level:0,active:true,throwsLeft:2},{type:'grenade',x:650,y:570,level:0,active:true}];projectiles=[];hitFx=[];blastFx=[];resourceFx=[];eliteArmorFx=[];starAbsorbFx=[];screenTint=0;spawnGauntletEnemy();updateCamera();return true
   }
   function consumeHitLink(name){
-    if((player.comboLinkT||0)<=0||!playerAttackStates.has(player.state)||!['punch','kick','grab'].includes(name))return false;
+    if(name==='punch'||name==='kick')return false;
+    if((player.comboLinkT||0)<=0||!playerAttackStates.has(player.state)||name!=='grab')return false;
     player.comboLinkT=0;player.attackEpoch=(player.attackEpoch||0)+1;player.inputQueue.length=0;return true
   }
   function act(name,fromQueue=false){if(!running||player.hp<=0||player.climb)return;if(player.state==='starAbsorbPull')return;if(player.state==='down'&&player.z===0&&name==='punch'&&hasSkill('downRisingPunch')){startRisingPunch('down');return}if(player.state==='hurt'||player.state==='down'||player.state==='fall')return;
@@ -1274,7 +1307,7 @@
     if(player.state==='jumpCrouch'&&name==='punch'&&!player.held){if(hasSkill('risingPunch')&&player.risingCooldown<=0&&!player.risingQueued){player.risingQueued=true;player.risingAirInv=false;player.risingInvT=0;player.timer=Math.max(player.timer,.48);message='蹲住……这一拳不能急';messageT=.75}return}
     if(player.state==='jumpCrouch'&&name==='kick'){if(hasSkill('launchKick'))startLaunchKick();return}
     if(name==='kick'&&queueLaunchKickChain())return
-    const linked=consumeHitLink(name),locked=['punch1','punch2','punch3','kick1','kick2','backKick','airBackKick','risingPunch','throwItem','throw','pickup','doorPush','grabAttempt','grabRelease','grabKnee','jumpCrouch','jumpLand','getUp'].includes(player.state)&&player.timer>0;if(locked&&!linked&&!fromQueue){if((['punch','kick','jump'].includes(name)||(name==='grab'&&player.state!=='jumpCrouch'))&&player.inputQueue.length<2)player.inputQueue.push(name);return}
+    const linked=consumeHitLink(name),locked=['punch1','punch2','punch3','kick1','kick2','backKick','airBackKick','risingPunch','throwItem','throw','pickup','doorPush','grabAttempt','grabRelease','grabKnee','jumpCrouch','jumpLand','getUp'].includes(player.state)&&player.timer>0;if(locked&&!linked&&!fromQueue){if((name==='jump'||name==='grab'&&player.state!=='jumpCrouch')&&player.inputQueue.length<2)player.inputQueue.push(name);return}
     if(name==='jump'){if(player.z===0&&!player.grab){const standingPlatform=player.level>0?platformForLevel(player.level):null;jumpSourcePlatform=standingPlatform&&insidePlatform(player.x,player.y,0,standingPlatform)?standingPlatform:null;jumpPlatformCleared=false;player.vz=0;player.airOrigin='self';player.risingQueued=false;player.risingAirInv=false;player.risingInvT=0;player.state='jumpCrouch';player.timer=.14}return}
     if(name==='grab'){
       if(player.grab){message='抓稳了……出拳过胸摔，出腿膝撞';messageT=.9;return}
@@ -1284,16 +1317,16 @@
     if(name==='punch'){
       if(player.state==='jump'||player.z>0)return;
       player.combo=player.comboT>0?(player.combo%3)+1:1;player.comboT=.72;player.state='punch'+player.combo;
-      const punches=[null,{timer:.28,range:78,damage:8,force:90,delay:95,lunge:12,liftZ:3,liftVz:45},{timer:.31,range:78,damage:9,force:120,delay:115,lunge:15,liftZ:4,liftVz:65},{timer:.43,range:78,damage:11,force:260,delay:215,lunge:20,knockdown:true,launchVz:230}];
+      const punches=[null,{timer:.28,range:78,damage:8,force:90,delay:95,lunge:12,liftZ:3,liftVz:150},{timer:.31,range:78,damage:9,force:120,delay:115,lunge:15,liftZ:4,liftVz:200},{timer:.43,range:78,damage:11,force:260,delay:215,lunge:20,knockdown:true,launchVz:250}];
       const punch=punches[player.combo],blueFlame=hasSkill('blueFlame');player.timer=punch.timer;combatAttack(punch.range,punch.damage,punch.force,punch.delay,punch.lunge,{knockdown:punch.knockdown,launchVz:punch.launchVz,liftZ:punch.liftZ,liftVz:punch.liftVz,blueFistFlame:blueFlame,bonusDamage:blueFlame?BLUE_FIST_FLAME_BONUS:0});if(player.combo===3){message='击飞不高——看准落点继续接！';messageT=.9}return
     }
     if(name==='kick'){
       if(!hasSkill('legArts'))return;
       if(player.state==='jump'||player.z>0){resetLaunchKickChain();player.launchKick=false;player.launchKickTime=0;player.launchKickSpeed=0;player.launchKickFace=0;player.state='airBackKick';player.timer=.62;combatAttack(legAttackRange(136),15,640,285,24,{knockdown:true,launchVz:420,zReach:128});message='空中也别想近我身！';messageT=.62;return}
       player.kickCombo=player.kickComboT>0?(player.kickCombo%3)+1:1;player.kickComboT=1.08;
-      if(player.kickCombo===1){player.state='kick1';player.timer=.45;combatAttack(legAttackRange(136),8,145,215,15,{liftZ:4,liftVz:70});message='先压住他的步子';messageT=.45;return}
-      if(player.kickCombo===2){player.state='kick2';player.timer=.45;combatAttack(legAttackRange(136),10,185,245,22,{liftZ:5,liftVz:90});message='别让他站稳';messageT=.45;return}
-      player.state='backKick';player.timer=.6;combatAttack(legAttackRange(136),14,360,415,31,{knockdown:true,launchVz:300});message='踢开了——追上去抓！';messageT=.8;return
+      if(player.kickCombo===1){player.state='kick1';player.timer=.45;combatAttack(legAttackRange(136),8,145,215,15,{liftZ:4,liftVz:400});message='先压住他的步子';messageT=.45;return}
+      if(player.kickCombo===2){player.state='kick2';player.timer=.45;combatAttack(legAttackRange(136),10,185,245,22,{liftZ:5,liftVz:300});message='别让他站稳';messageT=.45;return}
+      player.state='backKick';player.timer=.6;combatAttack(legAttackRange(136),14,360,415,31,{knockdown:true,launchVz:200});message='踢开了——追上去抓！';messageT=.8;return
     }
   }
   function nearbyBunkerDoor(){
@@ -1340,12 +1373,13 @@
     const gravity=enemies.includes(actor)?baseGravity:baseGravity*(1+Math.min(1.25,(actor.airFallTime||0)*1.15));
     actor.vz=(actor.vz||0)-gravity*dt
   }
-  function clearAirFall(actor){actor.airFallTime=0;actor.airJuggleTime=0}
+  function clearAirFall(actor){actor.airFallTime=0;actor.airJuggleTime=0;actor.overChestFollowupAir=false}
   function updateEnemyAirJuggle(actor,dt){
+    if(actor.overChestThrow)return;
     actor.airJuggleTime=(actor.airJuggleTime||0)+dt
   }
   function refreshEnemyAirJuggle(actor,liftVz){
-    const airborneSeconds=Math.max(0,actor.airJuggleTime||0),liftScale=Math.pow(.5,airborneSeconds/AIR_JUGGLE_LIFT_HALF_LIFE);
+    const airborneSeconds=Math.max(0,actor.airJuggleTime||0),liftScale=Math.max(0,1-airborneSeconds/(AIR_JUGGLE_LIFT_HALF_LIFE*2));
     actor.vz=(actor.vz||0)+liftVz*liftScale;return liftScale
   }
   function triggerCounterGrab(e){
@@ -1399,7 +1433,8 @@
         if(e.dead||(e.grabbed&&!e.grappleHolder)||e.state==='down'||(e.state==='knockdown'&&!e.airLaunch)||e.lastPlayerHitKey===hitKey)continue;
         const sameLevel=e.level===player.level,edgeReach=canPlayerHitAcrossLevelEdge(e);if(!sameLevel&&!edgeReach)continue;
         const dx=(e.x-player.x)*player.face,verticalReach=edgeReach||Math.abs(e.y-player.y)<52;
-        if(dx>-35&&dx<range&&verticalReach&&zReach(player,e,options.zReach||112)){
+        const attackZReach=e.overChestFollowupAir?Math.max(options.zReach||112,OVER_CHEST_FOLLOWUP_Z_REACH):(options.zReach||112);
+        if(dx>-35&&dx<range&&verticalReach&&zReach(player,e,attackZReach)){
           const finalDamage=Math.round(damage*playerAtkMul())+Math.max(0,options.bonusDamage||0);
           if(hurtEnemy(e,finalDamage,force*player.face,{...options,playerHit:true})!==false)e.lastPlayerHitKey=hitKey
         }
@@ -1459,7 +1494,25 @@
   function strikeGrab(dmg,label){const e=player.grab;if(!e)return;applyPlayerDirectDamage(e,dmg);window.TieJieAudio?.hitEnemy(e.type,dmg,e.elite);impact(e.x,e.y-96,dmg,false,player.face*120);hitStop(.09);message=label+'！';messageT=.5;if(e.hp<=0){e.grabbed=false;if(!beginBarbarianRevive(e)){e.dead=true;e.state=e.type==='heavy'?'heavyDefeated':'down';e.timer=1.05;e.z=0;e.vz=0;player.kills++}clearGrab();player.state='grabRelease';player.timer=.28}}
   function clearGrab(){player.grab=null;player.grabTarget=null;player.grabT=0;player.grabEscapeT=0;player.grabKickQueue=0;player.grabKickTotal=0;player.grappleInvincible=false;player.risingAirInv=false}
   function shoulderThrow(){const e=player.grab;if(!e)return;const damage=e.type==='heavy'?22:34,carriedVz=e.grabbedAirVz??(e.vz||0),continuingAir=(e.airJuggleTime||0)>0;applyPlayerDirectDamage(e,damage);e.grabbed=false;window.TieJieAudio?.hitEnemy(e.type,damage,e.elite);e.throwHits=new Set();e.grabbedAirVz=null;if(e.type==='heavy'){e.x=player.x-player.face*62;e.z=0;e.vz=0;e.state=e.hp<=0?'heavyDefeated':'hurt';e.timer=e.hp<=0?1.2:.3;if(e.hp<=0){e.dead=true;player.kills++}}else{e.state='thrown';e.playerThrown=true;e.timer=.82;e.throwVx=-player.face*560;e.z=48;e.vz=carriedVz;if(continuingAir)refreshEnemyAirJuggle(e,600);else{clearAirFall(e);e.vz=600}}clearGrab();player.state='throw';player.timer=.32;player.inv=Math.max(player.inv,.82);impact(player.x-player.face*12,player.y-105,damage,false,-player.face*420);message=e.type==='heavy'?'太沉了……只能拽到身后':'给我飞过去！';messageT=.9;hitStop(.14)}
-  function overChestThrow(){const e=player.grab;if(!e)return;if(e.type==='heavy'){shoulderThrow();return}const durationMs=OVER_CHEST_THROW_MS/playerAttackSpeedMul(),contactMs=durationMs*OVER_CHEST_CONTACT_RATIO;player.inputQueue.length=0;player.state='overChestThrow';player.timer=OVER_CHEST_THROW_DURATION;player.inv=Math.max(player.inv,1.12);e.overChestThrow=true;e.overChestThrowStart=performance.now();e.overChestDuration=durationMs;e.overChestContact=false;e.overChestAngle=0;message='过胸摔！落点要自己追';messageT=1.1;hitStop(.1);setTimeout(()=>{if(!running||player.state!=='overChestThrow'||player.grab!==e||e.overChestContact)return;e.overChestContact=true;const damage=12;applyPlayerDirectDamage(e,damage);window.TieJieAudio?.hitEnemy(e.type,damage,e.elite);impact(e.x,e.y-18,damage,false,-player.face*420);shake=15;hitStop(.14)},contactMs);setTimeout(()=>{if(!running||player.state!=='overChestThrow'||player.grab!==e)return;e.overChestThrow=false;e.overChestContact=false;e.overChestAngle=0;e.grabbed=false;e.throwHits=new Set();e.x=player.x-player.face*58;e.y=player.y-2;e.grabbedAirVz=null;if(!beginBarbarianRevive(e)){e.state='thrown';e.playerThrown=true;e.timer=.82;e.throwVx=-player.face*560;e.z=30;e.vz=OVER_CHEST_THROW_LIFT;if(e.hp<=0){e.dead=true;player.kills++}}clearGrab();player.state='idle';player.timer=0},durationMs)}
+  function overChestThrow(){
+    const e=player.grab;if(!e)return;if(e.type==='heavy'){shoulderThrow();return}
+    const durationMs=OVER_CHEST_THROW_MS/playerAttackSpeedMul(),contactMs=durationMs*OVER_CHEST_CONTACT_RATIO;
+    player.inputQueue.length=0;player.state='overChestThrow';player.timer=OVER_CHEST_THROW_DURATION;player.inv=Math.max(player.inv,1.12);
+    e.overChestThrow=true;e.overChestThrowStart=performance.now();e.overChestDuration=durationMs;e.overChestContact=false;e.overChestAngle=0;
+    message='过胸摔！升力重置，落点要自己追';messageT=1.1;hitStop(.1);
+    setTimeout(()=>{
+      if(!running||player.state!=='overChestThrow'||player.grab!==e||e.overChestContact)return;
+      e.overChestContact=true;
+      const damage=12;applyPlayerDirectDamage(e,damage);window.TieJieAudio?.hitEnemy(e.type,damage,e.elite);
+      impact(e.x,e.y-18,damage,false,-player.face*420);shake=15;hitStop(.14)
+    },contactMs);
+    setTimeout(()=>{
+      if(!running||player.state!=='overChestThrow'||player.grab!==e)return;
+      e.airJuggleTime=0;e.overChestThrow=false;e.overChestContact=false;e.overChestAngle=0;e.grabbed=false;e.throwHits=new Set();e.x=player.x-player.face*58;e.y=player.y-2;e.grabbedAirVz=null;
+      if(!beginBarbarianRevive(e)){e.state='thrown';e.playerThrown=true;e.overChestFollowupAir=true;e.timer=.82;e.throwVx=-player.face*OVER_CHEST_THROW_SPEED;e.z=30;e.vz=0;refreshEnemyAirJuggle(e,OVER_CHEST_THROW_LIFT);if(e.hp<=0){e.dead=true;player.kills++}}
+      clearGrab();player.state='idle';player.timer=0
+    },durationMs)
+  }
   function releaseGrab(kick=false,escaped=false){const e=player.grab;if(!e)return;const carriedVz=e.grabbedAirVz??(e.vz||0),continuingAir=(e.airJuggleTime||0)>0;e.grabbedAirVz=null;e.grabbed=false;e.state=kick?'down':'hurt';e.timer=kick?.9:.32;e.vz=carriedVz;if(kick){applyPlayerDirectDamage(e,28);e.x+=player.face*82;if(continuingAir)refreshEnemyAirJuggle(e,GRAB_KICK_LIFT);else{clearAirFall(e);e.vz+=GRAB_KICK_LIFT}window.TieJieAudio?.hitEnemy(e.type,28,e.elite);impact(e.x,e.y-80,28,false,player.face*340);shake=17;hitStop(.13)}clearGrab();player.state='grabRelease';player.timer=.28;if(escaped){message='抓不稳了……他挣开了！';messageT=1.1}}
   function throwHeld(){
     const type=player.held;if(!type)return;const throwsLeft=type==='hammer'?Math.max(0,player.heldUses-1):0;player.held=null;player.heldUses=0;player.state='throwItem';player.timer=.32;player.inputQueue.length=0;
@@ -1558,12 +1611,12 @@
     if(q>.52)player.level=c.targetLevel;
     if(q>=1){player.level=c.targetLevel;player.climb=null;player.state='idle';if(c.kind==='pitOut'){player.subPit=null;player.z=0;player.vz=0;player.pitSafeT=.75;player.inv=Math.max(player.inv,.35);message='抓着岩壁爬上来了';messageT=1.1}else{message=c.up?'上来了……边缘能把人踢下去':'回到地面，脚踏实了';messageT=1.25}}
   }
-  function beginPitClimbOut(b){
+  function beginPitClimbOut(b,point=pitClimbPoints(b)[0]){
     if(player.climb||player.grab||player.z>8)return;
-    player.inputQueue.length=0;player.state='climbOut';player.timer=0;player.face=player.x<b.climbX?1:-1;player.inv=.55;
-    const safeY=GROUND_Y-34,safeX=clamp(b.surfaceExitX??b.climbX,stageLockX+70,stageRightX-70);
+    player.inputQueue.length=0;player.state='climbOut';player.timer=0;player.face=player.x<point.x?1:-1;player.inv=.55;
+    const safeY=GROUND_Y-34,safeX=clamp(point.surfaceExitX??point.x,stageLockX+70,stageRightX-70);
     player.climb={kind:'pitOut',t:0,dur:.82,up:true,anchorX:player.x,anchorY:player.y,fromX:player.x,fromY:player.y,toX:safeX,toY:safeY,targetLevel:0};
-    message='抓住岩壁，往上爬！';messageT:.7;
+    message='抓住岩壁，往上爬！';messageT=.7;
   }
   function beginCollapseClimb(c){
     if(player.climb||player.grab||player.z>8)return;
@@ -1612,7 +1665,7 @@
   function enemyCanFallFromAttack(e){return['hurt','knockdown','thrown','grappleThrown','down','heavyDefeated','stunned'].includes(e.state)}
   function enterPitLowerLevel(pit){
     if(player.hp<=0||player.level<0)return;
-    const oldY=player.y,b=lowerPitBounds(pit),dropY=Math.max(0,b.y-oldY);if(b.bunker)b.bunker.rooms[0].opened=true;player.subPit=b;player.level=-1;player.x=b.backX;player.y=b.y;player.z=dropY;player.vz=-120;player.fallFromLevel='pit';player.fallStartY=oldY;player.fallDamage=0;player.state='jump';player.timer=.56;player.inv=Math.max(player.inv,.45);hitStop(.06);impact(player.x,pit.y-25,null,true,0);message=b.bunker?'落进第一间石室……去右端按“抓”开门':'跳进方坑……下面还能打！';messageT=1.8;
+    const oldY=player.y,b=lowerPitBounds(pit),dropY=Math.max(0,b.y-oldY);if(b.bunker)b.bunker.rooms[b.entersLeft?0:b.bunker.rooms.length-1].opened=true;player.subPit=b;player.level=-1;player.x=b.backX;player.y=b.y;player.z=dropY;player.vz=-120;player.fallFromLevel='pit';player.fallStartY=oldY;player.fallDamage=0;player.state='jump';player.timer=.56;player.inv=Math.max(player.inv,.45);hitStop(.06);impact(player.x,pit.y-25,null,true,0);message=b.bunker?'入口墙面可以直接按“上”原路爬回去':'跳进方坑……入口墙面可以直接爬回去！';messageT=1.8;
   }
   function dropEnemyIntoPit(e,pit){
     const b=lowerPitBounds(pit);e.level=-1;e.subPit=b;e.y=b.y;e.z=0;e.vz=0;e.airLaunch=false;e.throwVx=0;e.knockVx=0;e.state=e.hp<=0?'down':'hurt';e.timer=e.hp<=0?1.1:.55;e.inv=Math.max(e.inv,.18);if(e.hp<=0&&!e.dead){e.dead=true;player.kills++}impact(e.x,b.y-54,null,false,0);message=e.dead?'他摔到下层，没再起来':'他掉到下面一层了，跳下去继续打！';messageT=1.05;return true
@@ -1621,16 +1674,18 @@
     const b=player.subPit;if(!b){player.level=0;player.y=GROUND_Y;return}
     player.y=clamp(player.y,b.y-BUNKER_DEPTH*.5,b.y+BUNKER_DEPTH*.5);player.x=clamp(player.x,b.left,b.right);
     if(b.bunker)blockActorAtClosedBunkerDoors(player,previousX);
-    const climbHalfWidth=28,frontEdgeY=b.y+BUNKER_DEPTH*.5,climbEdgeDepth=8;
-    const nearClimb=(!b.exitDoor||b.exitDoor.opened)&&Math.abs(player.x-b.climbX)<=climbHalfWidth&&player.y>=frontEdgeY-climbEdgeDepth&&player.y<=frontEdgeY;
-    if(nearClimb&&keys.up&&player.state!=='jumpCrouch'){beginPitClimbOut(b);return}
+    // The climbable wall is painted on the rear edge of the corridor. Requiring
+    // that same edge keeps Up from starting a climb in the middle/front lane.
+    const climbHalfWidth=28,wallEdgeY=b.y-BUNKER_DEPTH*.5,climbEdgeDepth=12;
+    const climbPoint=pitClimbPoints(b).find(point=>Math.abs(player.x-point.x)<=climbHalfWidth),nearClimb=(!b.exitDoor||b.exitDoor.opened)&&!!climbPoint&&player.y>=wallEdgeY&&player.y<=wallEdgeY+climbEdgeDepth;
+    if(nearClimb&&keys.up&&player.state!=='jumpCrouch'){beginPitClimbOut(b,climbPoint);return}
   }
   function blockActorAtClosedBunkerDoors(actor,previousX=actor.x){
     const bunker=actor.level<0&&actor.subPit?.bunker;if(!bunker)return;
     actor.y=clamp(actor.y,bunker.y-BUNKER_DEPTH*.5,bunker.y+BUNKER_DEPTH*.5);
     if(actor===player){
-      const nextClosed=bunker.doors.find(door=>!door.opened);if(!nextClosed)return;
-      const limit=nextClosed.x-34;if(actor.x>limit){actor.x=limit;actor.launchKickTime=0;actor.knockVx=0}return
+      const entersLeft=actor.subPit?.entersLeft!==false,nextClosed=entersLeft?bunker.doors.find(door=>!door.opened):bunker.doors.slice().reverse().find(door=>!door.opened);if(!nextClosed)return;
+      const limit=nextClosed.x+(entersLeft?-34:34),crossed=entersLeft?actor.x>limit:actor.x<limit;if(crossed){actor.x=limit;actor.launchKickTime=0;actor.knockVx=0}return
     }
     for(const door of bunker.doors){if(door.opened)continue;const pad=34;if(previousX<=door.x-pad&&actor.x>door.x-pad)actor.x=door.x-pad;else if(previousX>=door.x+pad&&actor.x<door.x+pad)actor.x=door.x+pad}
   }
@@ -1694,13 +1749,9 @@
     e.y=clamp(e.y,ground.min,ground.max);e.x=clamp(e.x,42,WORLD_W-42)
   }
   function catchEnemyOnPlatform(e){
-    if(e.vz>0)return false;
-    const projectedY=e.y-e.z;
-    const target=currentPlatforms().filter(p=>!p.noEnemy&&p.level>e.level&&projectedY>=p.minY-18&&projectedY<=p.maxY+26&&insidePlatform(e.x,clamp(projectedY,p.minY,p.maxY),18,p)).sort((a,b)=>b.level-a.level)[0];
-    if(!target)return false;
-    const carry=e.throwVx||e.knockVx||0;e.level=target.level;e.y=clamp(projectedY,target.minY+20,platformWalkMaxY(target)-8);e.z=0;e.vz=0;clearAirFall(e);e.throwVx=carry*.55;e.knockVx=carry*.72;e.airLaunch=false;e.playerThrown=false;e.state='knockdown';e.timer=.72;e.knockdownDuration=.72;
-    if(e.hp<=0&&!e.dead){e.dead=true;player.kills++}
-    impact(e.x,e.y-20,null,false,e.knockVx);message='这一下居然把他砸上去了';messageT=.85;return true;
+    // Airborne hits never change an enemy's floor. Crossing a higher platform
+    // is only visual overlap; the enemy must land back on its original level.
+    return false
   }
 
   function dropHammer(p){if((p.throwsLeft??0)<=0)return;const b=laneBoundsFor(p.level,p.y,55);pickups.push({type:'hammer',x:clamp(p.x,b.left,b.right),y:p.y,level:p.level,active:true,throwsLeft:p.throwsLeft})}
@@ -1808,7 +1859,7 @@
     }
     }
     updateTemporaryRecruit(dt);for(const c of companions){const previousX=c.x,previousY=c.y;updateSwampActor(c,dt);updateCompanion(c,dt);applySwampTravelDrag(c,previousX,previousY);applyFloodWalkDrag(c,previousX,previousY);constrainEnemyToAccessibleTerrain(c,previousX,previousY);blockActorAtClosedBunkerDoors(c,previousX);if(!c.grabbed&&(currentStageTheme==='森林'||!c.dead))pushOutOfBlockers(c,22,previousX,previousY)}
-    for(const e of enemies){const previousX=e.x,previousY=e.y;updateSwampActor(e,dt);updateEnemy(e,dt);applySwampTravelDrag(e,previousX,previousY);applyFloodWalkDrag(e,previousX,previousY);constrainEnemyToAccessibleTerrain(e,previousX,previousY);blockActorAtClosedBunkerDoors(e,previousX);if(!e.grabbed&&(currentStageTheme==='森林'||!e.dead))pushOutOfBlockers(e,24,previousX,previousY);if(!freeTourMode&&!gauntletMode&&gatePhase==='combat')e.x=clamp(e.x,stageLockX+18,stageRightX-18);grantEnemyReward(e)}updateResourcePickups(dt);
+    for(const e of enemies){const previousX=e.x,previousY=e.y;updateSwampActor(e,dt);updateEnemy(e,dt);applySwampTravelDrag(e,previousX,previousY);applyFloodWalkDrag(e,previousX,previousY);constrainEnemyToAccessibleTerrain(e,previousX,previousY);blockActorAtClosedBunkerDoors(e,previousX);if(!e.grabbed&&(currentStageTheme==='森林'||!e.dead))pushOutOfBlockers(e,24,previousX,previousY);if(e.level>=0&&!freeTourMode&&!gauntletMode&&gatePhase==='combat')e.x=clamp(e.x,stageLockX+18,stageRightX-18);grantEnemyReward(e)}updateResourcePickups(dt);
     updatePartyFailure(dt);if(!partyDefeatPending&&!failureHandled&&!freeTourMode&&wave===1&&gatePhase==='combat'&&stageCleared()){if(gauntletMode)advanceGauntlet();else{collectUnclaimedStageRewards();openStageSettlement()}}updateCamera()
   }
   function heavySlamImpact(e){
@@ -2596,31 +2647,11 @@
     g.restore()
   }
   function drawGrassCollapse(c){
-    const t=collapseClimbTarget(c),x=c.x,w=c.w,top=t.toY+18,bot=t.fromY+4,seed=(x*.017+w*.029+c.toLevel*.7)%9.8;
+    const t=collapseClimbTarget(c),x=c.x,w=c.w,bot=t.fromY+4;
     if(window.TieJieAssets?.imageReady?.(greatWallCollapseSprite)||greatWallCollapseSprite?.complete&&greatWallCollapseSprite.naturalWidth){
       const dw=Math.max(230,w*1.28),dh=dw*1.047,baseY=bot+42;
-      g.drawImage(greatWallCollapseSprite,x+w*.5-dw*.5,baseY-dh*.9,dw,dh);return
+      g.drawImage(greatWallCollapseSprite,x+w*.5-dw*.5,baseY-dh*.9,dw,dh)
     }
-    const rand=(i,a)=>Math.sin(seed+i*14.17+a*42.31);
-    g.save();
-    const grad=g.createLinearGradient(0,top,0,bot+38);grad.addColorStop(0,'#9d9685');grad.addColorStop(.42,'#70695c');grad.addColorStop(1,'#2f2a22');g.fillStyle=grad;
-    g.beginPath();g.moveTo(x+w*.44,top);g.lineTo(x+w*.72,top+32);g.lineTo(x+w+46,bot+22);g.lineTo(x-58,bot+34);g.lineTo(x+w*.18,top+48);g.closePath();g.fill();
-    g.strokeStyle='#2a241bcc';g.lineWidth=5;g.stroke();
-    g.fillStyle='#0b0907bb';g.beginPath();g.moveTo(x+w*.38,top+8);g.lineTo(x+w*.62,top+26);g.lineTo(x+w*.47,top+88);g.lineTo(x+w*.25,top+70);g.closePath();g.fill();
-    const block=(bx,by,bw,bh,col,rot=0)=>{
-      g.save();g.translate(bx,by);g.rotate(rot);g.fillStyle=col;g.fillRect(-bw*.5,-bh*.5,bw,bh);g.strokeStyle='#2c251bcc';g.lineWidth=2;g.strokeRect(-bw*.5,-bh*.5,bw,bh);g.fillStyle='rgba(255,255,255,.10)';g.fillRect(-bw*.38,-bh*.34,bw*.55,3);g.restore();
-    };
-    for(let i=0;i<18;i++){
-      const q=i/17,spread=24+q*w*.42,bx=x+w*.5+rand(i,1)*spread,by=top+q*(bot-top)+rand(i,2)*18;
-      const bw=28+Math.abs(rand(i,3))*36,bh=16+Math.abs(rand(i,4))*24,col=i%3?'#8c8473':'#b0a795';
-      block(bx,by,bw,bh,col,rand(i,5)*.35);
-    }
-    for(let i=0;i<12;i++){
-      const bx=x-24+i*(w+48)/11+rand(i,6)*12,by=bot+16+Math.abs(rand(i,7))*16,s=10+Math.abs(rand(i,8))*18;
-      block(bx,by,s*1.35,s,i%2?'#776d5e':'#a49b88',rand(i,9)*.5);
-    }
-    g.fillStyle='#f2d18d88';g.font='800 14px sans-serif';g.textAlign='center';g.fillText('↑',x+w*.5,top-18);
-    g.restore();
   }
   function drawSquarePit(pit,style){
     const x=pit.x,y=pit.topY??GROUND_Y,w=pit.w,h=Math.max(44,pit.y-y),t=currentStageTheme,isDesert=t==='沙漠',isRoad=t==='街区'||t==='高楼'||t==='室内';
@@ -2740,6 +2771,19 @@
     if(!image||!(window.TieJieAssets?.imageReady?.(image)||image.complete&&image.naturalWidth))return false;
     const cell=(image.naturalWidth||image.width)/2,inset=3,source=cell-inset*2;g.save();g.globalAlpha=alpha;g.drawImage(image,col*cell+inset,row*cell+inset,source,source,x,y,w,h);g.restore();return true
   }
+  function drawClimbTexture(image,x,y,w,h,inset=10){
+    if(!atlasReady(image))return false;
+    const sourceW=image.naturalWidth||image.width,sourceH=image.naturalHeight||image.height,safeInset=Math.min(inset,(Math.min(sourceW,sourceH)-1)*.5);
+    // Climb artwork is image-only. Crop its authored outer frame and overlap
+    // the neighbouring wall slightly so texture filtering cannot expose a
+    // pale one-pixel rectangle around the climbable module.
+    g.drawImage(image,safeInset,safeInset,sourceW-safeInset*2,sourceH-safeInset*2,x-1, y,w+2,h);return true
+  }
+  function drawClimbAtlasCell(image,col,row,x,y,w,h,inset=14){
+    if(!atlasReady(image))return false;
+    const cellW=(image.naturalWidth||image.width)/2,cellH=(image.naturalHeight||image.height)/2,safeInset=Math.min(inset,(Math.min(cellW,cellH)-1)*.5);
+    g.drawImage(image,col*cellW+safeInset,row*cellH+safeInset,cellW-safeInset*2,cellH-safeInset*2,x-1,y,w+2,h);return true
+  }
   function drawBunkerRoomWallTiles(room,top,wallBottom){
     const tileSize=wallBottom-top,flooded=currentStageTheme==='水中避难所',stone=room.kind==='stone'&&!flooded;
     if(flooded&&atlasReady(waterShelterFloodedRoomAtlas)){
@@ -2748,26 +2792,24 @@
         const w=Math.min(tileSize,room.right-x);drawWaterShelterAtlasCell(waterShelterFloodedRoomAtlas,0,0,x-.75,top,w+1.5,tileSize)
       }
       if(Number.isFinite(room.climbX)){
-        const climbLeft=room.climbX-tileSize*.5;if(climbLeft+tileSize>=cameraX-tileSize&&climbLeft<=cameraX+W+tileSize)drawWaterShelterAtlasCell(waterShelterFloodedRoomAtlas,1,0,climbLeft,top,tileSize,tileSize)
+        const climbLeft=room.climbX-tileSize*.5;if(climbLeft+tileSize>=cameraX-tileSize&&climbLeft<=cameraX+W+tileSize)drawClimbAtlasCell(waterShelterFloodedRoomAtlas,1,0,climbLeft,top,tileSize,tileSize,16)
       }
       return true
     }
     if(stone&&currentStageTheme==='沙漠'&&atlasReady(desertYardangArchitectureAtlas)){
       const first=Math.max(0,Math.floor((cameraX-room.left-tileSize)/tileSize));let x=room.left+first*tileSize;
       while(x<room.right-.5&&x<cameraX+W+tileSize){
-        const w=Math.min(tileSize,room.right-x),tileCenter=x+w*.5,climbCenter=Number.isFinite(room.climbX)?room.climbX:room.right-190,useClimb=room.climbable&&Math.abs(tileCenter-climbCenter)<tileSize*.62;
-        if(useClimb&&atlasReady(desertYardangCaveClimbTexture))g.drawImage(desertYardangCaveClimbTexture,x-.75,top,w+1.5,tileSize);
-        else drawDesertAtlasCell(desertYardangArchitectureAtlas,0,1,x-.75,top,w+1.5,tileSize);
-        g.fillStyle='rgba(25,14,8,.30)';g.fillRect(x-.75,top,w+1.5,tileSize);x+=w
+        const w=Math.min(tileSize,room.right-x);drawDesertAtlasCell(desertYardangArchitectureAtlas,0,1,x-.75,top,w+1.5,tileSize);g.fillStyle='rgba(25,14,8,.30)';g.fillRect(x-.75,top,w+1.5,tileSize);x+=w
       }
+      if(Number.isFinite(room.climbX))drawClimbTexture(desertYardangCaveClimbTexture,room.climbX-tileSize*.5,top,tileSize,tileSize,14);
       return true
     }
     if(stone&&currentStageTheme==='高楼'&&atlasReady(skyShelterOuterPitWallsAtlas)){
       const first=Math.max(0,Math.floor((cameraX-room.left-tileSize)/tileSize));let x=room.left+first*tileSize,tileIndex=first;
       while(x<room.right-.5&&x<cameraX+W+tileSize){
-        const remaining=room.right-x,w=Math.min(tileSize,remaining),tileCenter=x+w*.5,climbCenter=room.right-190,useClimb=room.climbable&&Math.abs(tileCenter-climbCenter)<tileSize*.62;
-        drawAtlasCell(skyShelterOuterPitWallsAtlas,tileIndex&1,useClimb?0:1,x-.75,top,w+1.5,tileSize);x+=w;tileIndex++
+        const remaining=room.right-x,w=Math.min(tileSize,remaining);drawAtlasCell(skyShelterOuterPitWallsAtlas,tileIndex&1,1,x-.75,top,w+1.5,tileSize);x+=w;tileIndex++
       }
+      if(Number.isFinite(room.climbX))drawClimbAtlasCell(skyShelterOuterPitWallsAtlas,1,0,room.climbX-tileSize*.5,top,tileSize,tileSize,10);
       return true
     }
     if(!stone&&bunkerModernRoomStrips&&(window.TieJieAssets?.imageReady?.(bunkerModernRoomStrips)||bunkerModernRoomStrips.complete&&bunkerModernRoomStrips.naturalWidth)){
@@ -2786,15 +2828,10 @@
     const first=Math.max(0,Math.floor((cameraX-room.left-tileSize)/tileSize));let x=room.left+first*tileSize,tileIndex=first,ready=false;
     while(x<room.right-.5&&x<cameraX+W+tileSize){
       const remaining=room.right-x,w=Math.min(tileSize,remaining);
-      const tileCenter=x+w*.5,climbCenter=room.right-190,useClimb=room.climbable&&Math.abs(tileCenter-climbCenter)<tileSize*.62;
-      if(useClimb&&climbReady){
-        // Dedicated climb texture shares the exact plain-rock border, so no
-        // rectangular legacy atlas background can appear around the holds.
-        g.drawImage(climb,0,0,climb.naturalWidth||climb.width,climb.naturalHeight||climb.height,x,top,w,tileSize);
-        ready=true
-      }else if(plainReady){g.drawImage(plain,0,0,plain.naturalWidth||plain.width,plain.naturalHeight||plain.height,x-.75,top,w+1.5,tileSize);ready=true}
+      if(plainReady){g.drawImage(plain,0,0,plain.naturalWidth||plain.width,plain.naturalHeight||plain.height,x-.75,top,w+1.5,tileSize);ready=true}
       x+=w;tileIndex++
     }
+    if(Number.isFinite(room.climbX)&&climbReady){drawClimbTexture(climb,room.climbX-tileSize*.5,top,tileSize,tileSize,10);ready=true}
     return ready
   }
   function drawBunkerRoomFloorTiles(room,floorTop,floorBottom,top){
@@ -2854,14 +2891,6 @@
     const water=g.createLinearGradient(0,floorTop-34,0,floorBottom);water.addColorStop(0,'#78b9bd88');water.addColorStop(.3,'#397c869c');water.addColorStop(1,'#103d4bbd');g.fillStyle=water;g.fillRect(room.left-10,floorTop-34,room.right-room.left+floorShift+20,floorBottom-floorTop+40);
     g.strokeStyle='#b9dcda80';g.lineWidth=2;for(let y=floorTop-24;y<floorBottom;y+=32){g.beginPath();for(let x=room.left-20,first=true;x<room.right+floorShift+20;x+=48){const wy=y+Math.sin(now*2+x*.02+y*.03)*2.5;first?(g.moveTo(x,wy),first=false):g.lineTo(x,wy)}g.stroke()}g.restore()
   }
-  function drawBunkerClimbVines(x,top,bottom){
-    g.save();g.lineCap='round';for(let y=top+92,row=0;y<bottom-44;y+=64,row++){
-      if(row%4===2)continue;
-      const left=x-82+(row%3)*9,right=x+76-(row%2)*24,breakAt=row%3===1;
-      g.strokeStyle='#20170f';g.lineWidth=10;g.beginPath();g.moveTo(left,y+Math.sin(row)*5);if(breakAt){g.bezierCurveTo(x-54,y-10,x-30,y+9,x-12,y+2);g.moveTo(x+12,y-4);g.bezierCurveTo(x+28,y+12,x+52,y-8,right,y-3)}else g.bezierCurveTo(x-32,y-12,x+28,y+13,right,y-3);g.stroke();g.strokeStyle='#59442b';g.lineWidth=5;g.stroke();g.strokeStyle='#8a704755';g.lineWidth=1.4;g.stroke();
-      g.fillStyle='#67513a';for(let i=0;i<2;i++){const bx=left+24+i*(right-left-48),by=y+(i?5:-4),bw=22+(row+i)%3*8;g.beginPath();g.moveTo(bx-bw*.55,by+7);g.lineTo(bx-bw*.34,by-8);g.lineTo(bx+bw*.4,by-10);g.lineTo(bx+bw*.55,by+5);g.closePath();g.fill()}
-    }g.restore()
-  }
   function drawBunkerSideDoor(door,floorTop,floorBottom){
     const image=bunkerCivilDefenseDoorAtlas;if(!image||!(window.TieJieAssets?.imageReady?.(image)||image.complete&&image.naturalWidth))return false;
     const cell=(image.naturalWidth||image.width)/2,sourceH=image.naturalHeight||image.height,sourceX=door.opened?cell:0;
@@ -2891,7 +2920,7 @@
     // bunker and then painted every room again, doubling texture work.
     for(let i=0;i<bunker.rooms.length;i++){
       const room=bunker.rooms[i];
-      const wallRoom={...room,climbX:room.climbable?room.right-190:null};
+      const climbPoint=pitClimbPoints(b).find(point=>point.roomIndex===i),wallRoom={...room,climbable:!!climbPoint,climbX:climbPoint?.x??null};
       if(i===0)wallRoom.left=bunker.left-760;
       if(i===bunker.rooms.length-1)wallRoom.right=bunker.right+760;
       if(bunkerVisible(wallRoom.left,wallRoom.right,420))drawBunkerRoomWallTiles(wallRoom,top,floorTop)
@@ -2906,7 +2935,6 @@
       if(currentStageTheme==='水中避难所')drawFloodedBunkerRoom(floorRoom,floorTop,floorBottom);
       else if(room.kind==='stone'&&currentStageTheme!=='沙漠')drawBunkerWater(room,top,floorTop)
     }
-    if(currentStageTheme==='水中避难所')drawBunkerClimbVines(b.climbX,top+30,floorTop+12);
     // Both ends are open cave passages. Their old full-height shaft caps were
     // rectangular overlays, not part of the room wall, so neither is drawn.
     const visibleDoors=bunker.doors.filter(door=>bunkerVisible(door.x,door.x,520));
@@ -2960,27 +2988,15 @@
       const water=g.createLinearGradient(0,y-78,0,y+76);water.addColorStop(0,'#70afb588');water.addColorStop(1,'#123f4dbb');g.fillStyle=water;g.fillRect(b.left-95,y-78,b.right-b.left+190,150)
     }
     g.fillStyle='#050606';g.beginPath();g.ellipse(b.backX-28,y-42,58,34,0,0,6.3);g.fill();g.beginPath();g.ellipse(b.exitX+34,y-44,70,40,0,0,6.3);g.fill();
-    const climbX=b.climbX,rock=theme==='高楼'||theme==='室内'?'#8b8980':'#9a7248',dark=theme==='高楼'||theme==='室内'?'#3f4443':'#46301f',hi=theme==='高楼'||theme==='室内'?'#d5d1c5':'#d8b176';
+    const climbX=b.climbX;
     if(desertLower&&atlasReady(desertYardangCaveClimbTexture)){
-      const climbW=270,climbH=240;g.drawImage(desertYardangCaveClimbTexture,climbX-climbW*.5,y-190,climbW,climbH);
-      g.fillStyle='rgba(24,13,8,.25)';g.fillRect(climbX-climbW*.5,y-190,climbW,climbH);
-      g.fillStyle='#f2d18d66';g.font='700 12px sans-serif';g.textAlign='center';g.fillText('↑',climbX,y-198);g.restore();return
+      const climbW=270,climbH=240;drawClimbTexture(desertYardangCaveClimbTexture,climbX-climbW*.5,y-190,climbW,climbH,14);g.restore();return
     }
-    const rubbleSeed=(b.climbX*.017+b.left*.013)%8.4,rand=(i,a)=>Math.sin(rubbleSeed+i*12.731+a*61.17);
-    const block=(cx,cy,w,h,c,shade=0)=>{
-      g.fillStyle=c;g.beginPath();g.moveTo(cx-w*.52,cy+h*.35);g.lineTo(cx-w*.34,cy-h*.38);g.lineTo(cx+w*.28,cy-h*.48);g.lineTo(cx+w*.55,cy+h*.18);g.lineTo(cx+w*.18,cy+h*.48);g.closePath();g.fill();
-      g.fillStyle=shade?'#00000022':'#ffffff18';g.beginPath();g.moveTo(cx-w*.34,cy-h*.38);g.lineTo(cx+w*.28,cy-h*.48);g.lineTo(cx+w*.1,cy-h*.08);g.lineTo(cx-w*.48,cy+h*.08);g.closePath();g.fill();
-      g.strokeStyle=dark;g.lineWidth=2.5;g.stroke()
-    };
-    g.fillStyle='#050403';g.beginPath();g.moveTo(climbX-126,y+42);g.lineTo(climbX-96,y-34);g.lineTo(climbX-34,y-118);g.lineTo(climbX+20,y-150);g.lineTo(climbX+88,y-92);g.lineTo(climbX+126,y+38);g.closePath();g.fill();
-    const wallGrad=g.createLinearGradient(climbX-110,y-132,climbX+120,y+50);wallGrad.addColorStop(0,hi);wallGrad.addColorStop(.46,rock);wallGrad.addColorStop(1,dark);g.fillStyle=wallGrad;
-    g.beginPath();g.moveTo(climbX-132,y+46);g.lineTo(climbX-104,y-18);g.lineTo(climbX-70,y-86);g.lineTo(climbX-30,y-72);g.lineTo(climbX+8,y-136);g.lineTo(climbX+42,y-104);g.lineTo(climbX+78,y-130);g.lineTo(climbX+112,y-64);g.lineTo(climbX+134,y+34);g.lineTo(climbX+80,y+16);g.lineTo(climbX+28,y+44);g.lineTo(climbX-28,y+22);g.lineTo(climbX-78,y+50);g.closePath();g.fill();
-    g.strokeStyle=dark;g.lineWidth=6;g.stroke();
-    g.strokeStyle='#ffffff20';g.lineWidth=5;g.beginPath();g.moveTo(climbX-82,y-74);g.lineTo(climbX-28,y-70);g.lineTo(climbX+8,y-132);g.moveTo(climbX+44,y-100);g.lineTo(climbX+78,y-124);g.stroke();
-    const bigBlocks=[[-86,22,64,42],[-40,42,72,36],[20,32,76,42],[76,10,58,50],[-102,-26,48,58],[-42,-46,54,50],[32,-68,66,48],[82,-40,44,58]];
-    for(let i=0;i<bigBlocks.length;i++){const q=bigBlocks[i];block(climbX+q[0],y+q[1],q[2],q[3],i%3?rock:hi,i%2)}
-    for(let i=0;i<12;i++){const px=climbX-122+i*22+rand(i,8)*9,py=y+50-Math.abs(rand(i,9))*24,s=10+Math.abs(rand(i,10))*13;block(px,py,s*1.45,s,Math.abs(rand(i,11))>.55?hi:rock,i%2)}
-    g.fillStyle='#f2d18d66';g.font='700 12px sans-serif';g.textAlign='center';g.fillText('↑',climbX,y-164);
+    const climbW=270,climbH=240,climbLeft=climbX-climbW*.5,climbTop=y-190;
+    if(theme==='高楼'&&atlasReady(skyShelterOuterPitWallsAtlas))drawClimbAtlasCell(skyShelterOuterPitWallsAtlas,1,0,climbLeft,climbTop,climbW,climbH,10);
+    else if(theme==='水中避难所'&&atlasReady(waterShelterFloodedRoomAtlas))drawClimbAtlasCell(waterShelterFloodedRoomAtlas,1,0,climbLeft,climbTop,climbW,climbH,16);
+    else if((theme==='草地'||theme==='森林')&&atlasReady(greatWallCollapseSprite))g.drawImage(greatWallCollapseSprite,climbLeft,climbTop,climbW,climbH);
+    else drawClimbTexture(bunkerCaveClimbTexture,climbLeft,climbTop,climbW,climbH,10);
     g.restore()
   }
   function drawUpperLayerMist(){
@@ -3154,7 +3170,7 @@
     drawBunkerRoomFog();drawPowerSwitch();for(const p of pickups)if(p.active)drawPickup(p);
     visibleActors.length=0;for(const o of currentBlockers())if(o.forestProp&&o.x+280>=cameraX&&o.x-280<=cameraX+W)visibleActors.push(o);for(const e of enemies)if((!e.dead||e.timer>0)&&(player.level<0?e.level<0&&e.subPit?.bunker===player.subPit?.bunker:e.level>=0)&&(!e.bunkerRoom||e.bunkerRoom.opened))visibleActors.push(e);for(const c of companions)if((!c.dead||c.timer>0)&&(player.level<0?c.level<0:c.level>=0))visibleActors.push(c);visibleActors.push(player);visibleActors.sort((a,b)=>actorDepth(a)-actorDepth(b));for(const a of visibleActors)if(a.forestProp)drawForestTree(a);else drawSwampClippedFighter(a,a===player);
     drawSwampActorSurfaces();drawForestHives();for(const p of projectiles)drawProjectile(p);drawUpperLayerMist();drawBlackoutOverlay();
-    effects();drawEliteArmorEffects();g.restore();g.beginPath();if(!document.body.classList.contains('menu-mode'))hud()}
+    effects();drawEliteArmorEffects();g.restore();g.beginPath();if(document.body.classList.contains('menu-mode'))refreshTopResourceCounts();else hud()}
   function drawFighter(a,isP){
     const x=a.x,y=a.y-a.z,face=a.face||1,state=a.state,phase=performance.now()/105;
     const imageReady=window.TieJieAssets?.imageReady||((image)=>!!(image?.complete&&(image.naturalWidth||image.width)));
@@ -3241,12 +3257,12 @@
       let frame=2;if(state==='doorPush'){const p=clamp(1-a.timer/.42,0,.9999);frame=Math.min(2,Math.floor(p*3))}else if(state==='grabAttempt'){const p=clamp(1-a.timer/.48,0,.9999);frame=Math.min(2,Math.floor(p*3))}else if(state==='grabRelease'){const p=clamp(1-a.timer/.28,0,.9999);frame=Math.max(0,2-Math.floor(p*3))}paintN(heroGrabSheet,3,frame,.273,0,0,1,'none');
     }else if(state==='grabKnee'&&heroGrabKneeSheet.complete){
       const p=clamp(1-a.timer/.56,0,.9999),frames=[0,1,2,2,1,0],frame=frames[Math.min(frames.length-1,Math.floor(p*frames.length))];paintN(heroGrabKneeSheet,3,frame,.273,0,0,1,'none');
-    }else if(state==='kick1'&&heroKick1Sheet.complete){
-      const p=clamp(1-a.timer/.45,0,.9999),frame=Math.min(3,Math.floor(p*4)),frameY=[-1,0,0,0],anchors=[[230,320,-1.9,.7],[230,287,-1.7,.82],[271,231,-1.52,1.18],[230,288,-1.7,.82]];paintN(heroKick1Sheet,4,frame,.30,0,frameY[frame],1,'none');paintLegFlame(heroKick1Sheet,4,frame,anchors,0,frameY[frame],{prev:Math.max(0,frame-1),next:Math.min(3,frame+1)});
-    }else if(state==='kick2'&&heroKick2Sheet.complete){
-      const p=clamp(1-a.timer/.45,0,.9999),frame=Math.min(4,Math.floor(p*5)),frameY=[0,-1,-1,-1,0],anchors=[[232,320,-1.9,.7],[229,283,-1.72,.82],[279,230,-1.5,1.2],[278,283,-1.55,1.04],[226,320,-1.9,.7]];paintN(heroKick2Sheet,5,frame,.34,0,frameY[frame],1,'none');paintLegFlame(heroKick2Sheet,5,frame,anchors,0,frameY[frame],{prev:Math.max(0,frame-1),next:Math.min(4,frame+1)});
-    }else if(state==='backKick'&&heroKick3Sheet.complete){
-      const p=clamp(1-a.timer/.6,0,.9999),frame=Math.min(3,Math.floor(p*4)),frameY=[-2,-1,-1,-1],anchors=[[226,319,-1.9,.7],[229,288,-1.7,.82],[228,274,-1.62,.88],[281,263,-1.45,1.2]];paintN(heroKick3Sheet,4,frame,.371,0,frameY[frame],1,'none');paintLegFlame(heroKick3Sheet,4,frame,anchors,0,frameY[frame],{prev:Math.max(0,frame-1),next:Math.min(3,frame+1)});
+    }else if(state==='kick1'&&heroGroundKickComboSheet.complete){
+      const p=clamp(1-a.timer/.45,0,.9999),start=0,end=3,frame=start+Math.min(3,Math.floor(p*4));paintN(heroGroundKickComboSheet,GROUND_KICK_FRAME_COUNT,frame,1,0,0,1,'none');paintLegFlame(heroGroundKickComboSheet,GROUND_KICK_FRAME_COUNT,frame,GROUND_KICK_FLAME_ANCHORS,0,0,{prev:Math.max(start,frame-1),next:Math.min(end,frame+1)});
+    }else if(state==='kick2'&&heroGroundKickComboSheet.complete){
+      const p=clamp(1-a.timer/.45,0,.9999),start=4,end=7,frame=start+Math.min(3,Math.floor(p*4));paintN(heroGroundKickComboSheet,GROUND_KICK_FRAME_COUNT,frame,1,0,0,1,'none');paintLegFlame(heroGroundKickComboSheet,GROUND_KICK_FRAME_COUNT,frame,GROUND_KICK_FLAME_ANCHORS,0,0,{prev:Math.max(start,frame-1),next:Math.min(end,frame+1)});
+    }else if(state==='backKick'&&heroGroundKickComboSheet.complete){
+      const p=clamp(1-a.timer/.6,0,.9999),start=8,end=13,frame=start+Math.min(5,Math.floor(p*6));paintN(heroGroundKickComboSheet,GROUND_KICK_FRAME_COUNT,frame,1,0,0,1,'none');paintLegFlame(heroGroundKickComboSheet,GROUND_KICK_FRAME_COUNT,frame,GROUND_KICK_FLAME_ANCHORS,0,0,{prev:Math.max(start,frame-1),next:Math.min(end,frame+1)});
     }else if(state==='airBackKick'&&(heroJumpKickSheet.complete||heroJumpKickChainSheet.complete)){
       const chainActive=!a.launchKick&&(a.launchKickChainCount||0)>0&&heroJumpKickChainSheet.complete,airKickSheet=chainActive?heroJumpKickChainSheet:heroJumpKickSheet,normalFrames=chainActive?[0,1,2,3]:[1,3,4],launchFrames=[0,1,3,5],elapsed=clamp(.5-a.timer,0,.4999),chainDuration=Math.max(.001,a.launchKickChainDuration||LAUNCH_KICK_CHAIN_DURATION*playerAttackSpeedMul()),chainElapsed=clamp((chainDuration-a.timer)/playerAttackSpeedMul(),0,LAUNCH_KICK_CHAIN_DURATION-.0001),frame=chainActive?launchKickChainFrameAt(chainElapsed):a.launchKick?(elapsed<.1?0:elapsed<.2?1:elapsed<.4?3:5):normalFrames[Math.min(normalFrames.length-1,Math.floor(clamp(1-a.timer/.62,0,.9999)*normalFrames.length))],flowFrames=chainActive?normalFrames:(a.launchKick?launchFrames:normalFrames),flowIndex=Math.max(0,flowFrames.indexOf(frame)),flowPrev=flowFrames[Math.max(0,flowIndex-1)],flowNext=chainActive&&frame===1?frame:flowFrames[Math.min(flowFrames.length-1,flowIndex+1)],airKickFrameY=chainActive?[0,0,0,0]:[0,-82,-62,-46,-76,0],normalAnchors=[[205,295,-1.85,.75],[232,284,-1.68,.86],[229,273,-1.6,.9],[282,262,-1.45,1.25],[229,286,-1.7,.86],[212,295,-1.82,.76]],launchAnchors=[[164,325,-1.85,.75],[203,326,-1.68,.86],[229,273,-1.6,.9],[279,274,-1.45,1.25],[229,286,-1.7,.86],[216,324,-1.82,.76]],chainMotionAnchors=[[194,292,-.35,.92],[286,224,-1.34,1.38],[193,304,-2.15,.9],[292,274,-1.48,1.34]],chainAnchors=[[193,300,-.35,.92],[302,128,-1.34,1.38],[207,292,-2.15,.9],[322,201,-1.48,1.34]],anchors=chainActive?chainAnchors:a.launchKick?launchAnchors:normalAnchors,frameCount=chainActive?4:6,kickOutFrame=!chainActive&&frame===3,kickOutFlameRotation=kickOutFrame?-LEG_FLAME_SOURCE_HEAD_ANGLE:null,kickOutFlameY=airKickFrameY[frame]+(kickOutFrame?10:0);paintN(airKickSheet,frameCount,frame,.41,0,airKickFrameY[frame],1,'none');paintLegFlame(airKickSheet,frameCount,frame,anchors,0,kickOutFlameY,{prev:flowPrev,next:flowNext,rotation:kickOutFlameRotation,motionAnchors:chainActive?chainMotionAnchors:a.launchKick?normalAnchors:null});
     }else if(state==='jumpCrouch'&&heroJumpTransitionSheet.complete){
@@ -3367,7 +3383,7 @@
   const characterFrameScaleKeys=new Map([
     [heroKickSheet,'heroIdle'],[heroWalkSheet,'heroWalk'],[heroCombatSheet,'heroCombat'],[heroPunchComboSheet,'heroPunch'],[heroHurtSheet,'heroHurt'],
     [enemyKnockdownSheet,'heroKnockdown'],[heroJumpTransitionSheet,'heroJumpTransition'],[heroGrabSheet,'heroGrab'],[heroGrabKneeSheet,'heroGrabKnee'],[heroOverChestThrowSheet,'heroOverChestThrow'],
-    [heroKick1Sheet,'heroKick1'],[heroKick2Sheet,'heroKick2'],[heroKick3Sheet,'heroKick3'],[heroJumpKickSheet,'heroJumpKick'],[heroJumpKickChainSheet,'heroJumpKickChain'],[heroRisingPunchSheet,'heroRisingPunch']
+    [heroGroundKickComboSheet,'heroGroundKickCombo'],[heroJumpKickSheet,'heroJumpKick'],[heroJumpKickChainSheet,'heroJumpKickChain'],[heroRisingPunchSheet,'heroRisingPunch']
   ]);
   heroBackThrowFrames.forEach((sheet,index)=>characterFrameScaleKeys.set(sheet,`heroBackThrow${index+1}`));
   const characterFrameScale=(sheet,frame)=>enemyFrameScale(characterFrameScaleKeys.get(sheet),frame,1);
@@ -3810,14 +3826,14 @@
     else{g.fillStyle=ready?'#ffd083':'#bd6439';g.beginPath();g.moveTo(5,4);g.lineTo(11,5);g.lineTo(13,12);g.lineTo(19,15);g.lineTo(17,19);g.lineTo(8,16);g.lineTo(5,10);g.closePath();g.fill();g.strokeStyle='#4a2418';g.lineWidth=1.5;g.stroke()}
     g.restore()
   }
+  function refreshTopResourceCounts(){const topGold=document.querySelector('#top-gold'),topChicken=document.querySelector('#top-chicken'),topFruit=document.querySelector('#top-fruit');if(topGold)topGold.textContent=String(progress.gold);if(topChicken)topChicken.textContent=String(progress.chicken);if(topFruit)topFruit.textContent=String(progress.fruit)}
   function hud(){const showStarAbsorb=hasSkill('starAbsorb'),showLaunchKick=hasSkill('launchKickChain'),meterCount=(showStarAbsorb?1:0)+(showLaunchKick?1:0),hudHeight=106+meterCount*25;g.fillStyle='#091014dd';g.fillRect(28,24,460,hudHeight);g.strokeStyle='#8a5638';g.strokeRect(28,24,460,hudHeight);g.fillStyle='#e8d5b3';g.font='800 21px sans-serif';g.textAlign='left';g.fillText('陆骁',48,54);bar(48,67,270,15,player.hp/player.maxHp,'#c84932');g.fillStyle='#96a5a5';g.font='14px sans-serif';g.fillText(`HP ${Math.max(0,Math.floor(player.hp))} / ${player.maxHp}`,328,80);g.fillStyle='#d5a467';g.fillText(player.held?(player.held==='grenade'?'腰间：手榴弹':`腰间：战锤（剩 ${player.heldUses} 次）`):'徒手格斗',48,94);
-    const topGold=document.querySelector('#top-gold'),topChicken=document.querySelector('#top-chicken'),topFruit=document.querySelector('#top-fruit');if(topGold)topGold.textContent=String(progress.gold);if(topChicken)topChicken.textContent=String(progress.chicken);if(topFruit)topFruit.textContent=String(progress.fruit);
     const hpNow=vitalityStat(),atkNow=strengthStat(),defNow=defenseStat(),hpNext=hpNow+pendingGrowthUpgrades.hp,atkNext=atkNow+pendingGrowthUpgrades.atk,defNext=defNow+pendingGrowthUpgrades.def,preview=(now,next,pending)=>pending?`${now} → ${next}（待 +${pending}）`:String(now);const growthValues={hp:`属性 ${preview(hpNow,hpNext,pendingGrowthUpgrades.hp)} · HP ${Math.round(16*hpNext)}`,atk:`${preview(atkNow,atkNext,pendingGrowthUpgrades.atk)} · 伤害 ×${(atkNext/10).toFixed(2)}`,def:`${preview(defNow,defNext,pendingGrowthUpgrades.def)} · 减伤${Math.round((1-10/defNext)*100)}%`};for(const [kind,value] of Object.entries(growthValues)){const node=document.querySelector(`#growth-${kind}`);if(node)node.textContent=value}
-    g.fillStyle='#d8c39a';g.font='13px sans-serif';g.fillText(`金币 ${progress.gold}  鸡腿 ${progress.chicken}  果实 ${progress.fruit}`,48,113);g.fillStyle='#91a0a1';g.fillText(`1血${vitalityStat()} 2力${strengthStat()} 3防${defenseStat()}  无伤${player.cleanHits%5}/5 攻速×${playerAttackSpeedMul().toFixed(1)}`,248,113);
+    g.fillStyle='#91a0a1';g.font='13px sans-serif';g.fillText(`1血${vitalityStat()} 2力${strengthStat()} 3防${defenseStat()}  无伤${player.cleanHits%5}/5 攻速×${playerAttackSpeedMul().toFixed(1)}`,48,113);
     let meterY=133;const drawChargeCounter=(hits,type,label,hint)=>{const ready=hits>=SKILL_CHARGE_MAX,x=48,y=meterY;drawChargeIcon(x,y,type,ready);g.fillStyle=ready?'#ffe1a5':'#e1d7c6';g.font='900 15px sans-serif';g.textAlign='left';g.fillText(`${hits}/${SKILL_CHARGE_MAX}`,x+31,y+16);g.fillStyle=ready?'#efbd78':'#9ca7a4';g.font='12px sans-serif';g.fillText(`${label}${ready?` · ${hint}`:''}`,x+88,y+16);meterY+=25};
     if(showStarAbsorb)drawChargeCounter(Math.min(SKILL_CHARGE_MAX,player.starAbsorbHits||0),'star','聚势之握','长按抓');
     if(showLaunchKick)drawChargeCounter(Math.min(SKILL_CHARGE_MAX,player.launchKickChargeHits||0),'kick','空中飞连踢','飞踢后按腿');
-    const place=levelName(player.level),map=trialMaps[mapIndex],hudRight=W-40,tempSupport=progress.tempRecruit&&!progress.tempRecruit.pending&&progress.tempRecruit.activeStage===currentStageNumber()?` · 临时支援 ${Math.ceil(progress.tempRecruit.remaining)}秒`:'';g.textAlign='right';g.fillStyle='#ddd';g.font='700 17px sans-serif';if(freeTourMode)g.fillText(`自由游览 · 第 ${currentStageNumber()} 关`,hudRight,49);else if(gauntletMode)g.fillText(`${gauntletEliteMode?'精英':''}测试轮战 ${Math.min(gauntletIndex+1,gauntletEnemyTypes.length)} / ${gauntletEnemyTypes.length}`,hudRight,49);else g.fillText(`第 ${currentStageNumber()} 关 · 路段 ${gateIndex+1}/${map.gates.length}`,hudRight,49);g.fillStyle='#91a0a1';g.font='14px sans-serif';g.fillText(`${gauntletMode?'模型测试场':map.name} · ${themeName(currentStageTheme)} · ${place}`,hudRight,72);g.fillText(freeTourMode?`队友 ${companions.length} · 敌人关闭`:`击倒 ${player.kills} · 队友 ${companions.filter(c=>!c.dead).length}/${companions.length}${tempSupport} · 最高 ${progress.bestStage} 关`,hudRight,94);
+    const place=levelName(player.level),map=trialMaps[mapIndex],stage=currentStageNumber(),hudRight=W-40,tempSupport=progress.tempRecruit&&!progress.tempRecruit.pending&&progress.tempRecruit.activeStage===stage?` · 临时支援 ${Math.ceil(progress.tempRecruit.remaining)}秒`:'';g.textAlign='right';g.fillStyle='#ddd';g.font='700 17px sans-serif';if(freeTourMode)g.fillText(`自由游览 · 第 ${stage} 关`,hudRight,49);else if(gauntletMode)g.fillText(`${gauntletEliteMode?'精英':''}测试轮战 ${Math.min(gauntletIndex+1,gauntletEnemyTypes.length)} / ${gauntletEnemyTypes.length}`,hudRight,49);else g.fillText(`第 ${stage} 关 · 敌种 ${stageEnemyTypes(stage).length} · 敌人 ${enemies.length}`,hudRight,49);g.fillStyle='#91a0a1';g.font='14px sans-serif';g.fillText(`${gauntletMode?'模型测试场':map.name} · ${themeName(currentStageTheme)} · ${place}`,hudRight,72);g.fillText(freeTourMode?`队友 ${companions.length} · 敌人关闭`:`击倒 ${player.kills} · 队友 ${companions.filter(c=>!c.dead).length}/${companions.length}${tempSupport} · 最高 ${progress.bestStage} 关`,hudRight,94);
     if(messageT>0){g.textAlign='center';g.font='800 22px sans-serif';const tw=g.measureText(message).width+48;g.fillStyle='#080c0ee8';g.fillRect(W/2-tw/2,112,tw,46);g.strokeStyle='#b26b3b';g.strokeRect(W/2-tw/2,112,tw,46);g.fillStyle='#f0d4a5';g.fillText(message,W/2,143)}
     g.textAlign='center';g.font='14px sans-serif';g.fillStyle='#c9d0cbcc';g.fillText('升龙拳需要可被打断的下蹲蓄力｜膝撞每次命中后必须收腿，最多三次',W/2,H-18)}
   function drawEliteArmorEffects(){
@@ -4008,8 +4024,9 @@
   function refreshVibrationToggle(){const state=vibrationToggle?.querySelector('b');if(state)state.textContent=tr(vibrationEnabled?'on':'off');vibrationToggle?.classList.toggle('muted',!vibrationEnabled);vibrationToggle?.setAttribute('aria-label',tr('vibration'))}
   vibrationToggle?.addEventListener('click',()=>{vibrationEnabled=!vibrationEnabled;try{localStorage.setItem('tiejie-vibration-enabled',vibrationEnabled?'1':'0')}catch{}refreshVibrationToggle();if(vibrationEnabled)haptic(24)});refreshVibrationToggle();
   document.addEventListener('pointerdown',event=>{if(event.target.closest('button')&&!event.target.closest('#touch-ui'))haptic(11)},{capture:true});
-  document.querySelector('#battle-menu-toggle').addEventListener('click',()=>{const panel=document.querySelector('#battle-menu');if(panel.hidden){battleMenuResumeRunning=running;running=false;window.TieJieAudio?.pause();panel.hidden=false}else{panel.hidden=true;running=battleMenuResumeRunning;battleMenuResumeRunning=false;if(running)window.TieJieAudio?.resume()}});
+  document.querySelector('#battle-menu-toggle').addEventListener('click',()=>{const panel=document.querySelector('#battle-menu'),resetGauntlet=document.querySelector('#battle-menu-reset-gauntlet');if(panel.hidden){battleMenuResumeRunning=running;running=false;window.TieJieAudio?.pause();if(resetGauntlet)resetGauntlet.hidden=!gauntletMode;panel.hidden=false}else{panel.hidden=true;running=battleMenuResumeRunning;battleMenuResumeRunning=false;if(running)window.TieJieAudio?.resume()}});
   document.querySelector('#battle-menu-resume').addEventListener('click',()=>{document.querySelector('#battle-menu').hidden=true;running=battleMenuResumeRunning;battleMenuResumeRunning=false;if(running)window.TieJieAudio?.resume()});
+  document.querySelector('#battle-menu-reset-gauntlet').addEventListener('click',()=>{if(!gauntletMode)return;document.querySelector('#battle-menu').hidden=true;battleMenuResumeRunning=false;startGauntlet();running=true;window.TieJieAudio?.resume();message='轮番战已重置，从第一名对手重新开始';messageT=1.4});
   document.querySelector('#battle-menu-end').addEventListener('click',()=>returnToStart());
   document.querySelector('#growth-toggle').addEventListener('click',()=>{if(failurePopupT>0||!canAllocateStats())return;const panel=document.querySelector('#growth-panel');if(panel.hidden)panel.hidden=false;else closeGrowthPanel()});
   document.querySelector('#growth-confirm').addEventListener('click',confirmGrowthUpgrades);

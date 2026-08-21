@@ -164,7 +164,7 @@ test('register creates a verifiable session using the production schema', async 
   assert.equal(grant.mode, 'test');
   assert.match(grant.token, /^[0-9a-f]{64}$/);
   assert.equal(DB.users.length, 1);
-  assert.equal(DB.users[0].password_iterations, 600000);
+  assert.equal(DB.users[0].password_iterations, 10000);
   assert.equal(DB.sessions.length, 1);
 
   const verification = await worker.fetch(new Request('https://example.test/v1/verify', {
@@ -238,7 +238,7 @@ test('client saves cannot overwrite authoritative progression and a timed run aw
   }), env);
   const run = await started.json();
   assert.equal(run.ok, true);
-  assert.equal(run.minimumSeconds, 45);
+  assert.equal(run.minimumSeconds, 15);
 
   const tooFast = await worker.fetch(new Request('https://example.test/v1/stage/complete', {
     method: 'POST', headers, body: JSON.stringify({ stage: 1, runToken: run.runToken }),
@@ -406,7 +406,7 @@ test('public account deletion page works without the app and same-origin request
   const page = await worker.fetch(new Request('https://example.test/account-deletion'), {});
   assert.equal(page.status, 200);
   assert.match(page.headers.get('content-type'), /text\/html/);
-  assert.match(await page.text(), /铁街格斗账号删除/);
+  assert.match(await page.text(), /避难所格斗账号删除/);
 
   const preflight = await worker.fetch(new Request('https://example.test/v1/account/delete', {
     method: 'OPTIONS', headers: { origin: 'https://example.test' },

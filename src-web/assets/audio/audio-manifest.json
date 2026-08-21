@@ -19,51 +19,6 @@
       "bpm": 148
     },
     {
-      "path": "web/assets/audio/music/02-dunhuang-wall.wav",
-      "seconds": 31.304,
-      "channels": 2,
-      "sha256": "c6d4065d14d603ba054d9dd67ba8d444ee2adb29a18a13fda36eba5e8cf2a646",
-      "kind": "music",
-      "title": "敦煌荒壁",
-      "bpm": 92
-    },
-    {
-      "path": "web/assets/audio/music/03-beacon-wall.wav",
-      "seconds": 25.714,
-      "channels": 2,
-      "sha256": "daea4554a5baa8128e5dd4af3d95b2384beda0f4dec70341c5ba8843b50225e4",
-      "kind": "music",
-      "title": "长城烽燧",
-      "bpm": 112
-    },
-    {
-      "path": "web/assets/audio/music/04-highrise-pulse.wav",
-      "seconds": 22.857,
-      "channels": 2,
-      "sha256": "75feb01c012630b68fdb6f5d126a489d7481041b2ba58269577bb167cba69f2e",
-      "kind": "music",
-      "title": "高楼脚手架",
-      "bpm": 126
-    },
-    {
-      "path": "web/assets/audio/music/05-close-quarters.wav",
-      "seconds": 26.667,
-      "channels": 2,
-      "sha256": "e3da49634bccaa8b7a687f1fa6b019583389b837fe04fd31296416c9725615a2",
-      "kind": "music",
-      "title": "室内拳馆",
-      "bpm": 108
-    },
-    {
-      "path": "web/assets/audio/music/06-ancient-battle.wav",
-      "seconds": 30.0,
-      "channels": 2,
-      "sha256": "45a4004f4ff1efdb1e85c392f4110c127961df86fb7aa60d746eb2d6505359c6",
-      "kind": "music",
-      "title": "烽火古战场",
-      "bpm": 96
-    },
-    {
       "path": "web/assets/audio/sfx/hit-skinny-1.wav",
       "seconds": 0.241,
       "channels": 1,

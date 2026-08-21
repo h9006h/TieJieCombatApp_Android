@@ -27,9 +27,7 @@
   };
   const assets={
     heroKickSheet:image('assets/fighter/normalized/hero-kick-clean-strip.webp?v=17.0'),
-    heroKick1Sheet:image('assets/fighter/normalized/hero-kick1-v2-strip.webp?v=17.0'),
-    heroKick2Sheet:image('assets/fighter/normalized/hero-kick2-v2-strip.webp?v=17.0'),
-    heroKick3Sheet:image('assets/fighter/normalized/hero-kick3-v2-strip.webp?v=18.0'),
+    heroGroundKickComboSheet:image('assets/fighter/normalized/hero-ground-kick-combo-14-strip-v1.webp?v=1.0'),
     heroClimbOutSheet:image('assets/fighter/hero-kick3-v2-strip.webp?v=12.0'),
     heroJumpKickSheet:image('assets/fighter/normalized/hero-jump-kick-v2-strip.webp?v=17.0'),
     heroJumpKickChainSheet:image('assets/fighter/normalized/hero-jump-kick-chain-explosive-4-strip-v2.webp?v=2.0'),
@@ -130,9 +128,7 @@
 
   assets.fighterShadows={
     heroKickSheet:image('assets/fighter/normalized/shadows/hero-kick-clean-strip.webp?v=1.0'),
-    heroKick1Sheet:image('assets/fighter/normalized/shadows/hero-kick1-v2-strip.webp?v=1.0'),
-    heroKick2Sheet:image('assets/fighter/normalized/shadows/hero-kick2-v2-strip.webp?v=1.0'),
-    heroKick3Sheet:image('assets/fighter/normalized/shadows/hero-kick3-v2-strip.webp?v=2.0'),
+    heroGroundKickComboSheet:image('assets/fighter/normalized/shadows/hero-ground-kick-combo-14-strip-v1.webp?v=1.0'),
     heroJumpKickSheet:image('assets/fighter/normalized/shadows/hero-jump-kick-v2-strip.webp?v=1.0'),
     heroJumpKickChainSheet:image('assets/fighter/normalized/shadows/hero-jump-kick-chain-explosive-4-strip-v2.webp?v=2.0'),
     heroCombatSheet:image('assets/fighter/normalized/shadows/hero-combat-strip.webp?v=1.0'),

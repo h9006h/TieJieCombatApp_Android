@@ -1,4 +1,4 @@
-# 《铁街格斗》Web 2D 工程
+# 《避难所格斗》Web 2D 工程
 
 这是独立的 HTML5 Canvas 正式版工程。运行时只读取本目录中的 HTML、JavaScript、
 CSS 和 `assets/` 图片，不读取 `../cocos` 的任何内容。
@@ -12,6 +12,10 @@ python3 -m http.server 8000
 ```
 
 操作说明以游戏首页和根目录 `README.md` 为准。
+
+战斗机制说明：
+
+- [击飞与空中连击规则](../docs/knockback-and-air-combo-rules.md)
 
 ## 独立开发约束
 
