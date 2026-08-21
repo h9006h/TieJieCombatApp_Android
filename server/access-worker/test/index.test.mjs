@@ -287,7 +287,7 @@ test('upgrades, skills, and recruits are validated and spent atomically by the s
   }), env);
   const { token } = await registration.json();
   const headers = { 'content-type': 'application/json', authorization: `Bearer ${token}` };
-  Object.assign(DB.users[0], { mode: 'normal', chicken: 3, fruit: 3, gold: 2500 });
+  Object.assign(DB.users[0], { mode: 'normal', chicken: 3, fruit: 4, gold: 2500 });
 
   const rejectedUpgrade = await worker.fetch(new Request('https://example.test/v1/player/upgrade', {
     method: 'POST', headers, body: JSON.stringify({ hp: 4, atk: 0, def: 0 }),
@@ -303,8 +303,14 @@ test('upgrades, skills, and recruits are validated and spent atomically by the s
   assert.equal(upgradedData.chicken, 0);
   assert.deepEqual(upgradedData.stats, [1, 1, 1]);
 
-  const missingPrerequisite = await worker.fetch(new Request('https://example.test/v1/player/skill', {
+  const retiredSkill = await worker.fetch(new Request('https://example.test/v1/player/skill', {
     method: 'POST', headers, body: JSON.stringify({ skillId: 'legFlame', enabled: true }),
+  }), env);
+  assert.equal(retiredSkill.status, 400);
+  assert.equal((await retiredSkill.json()).reason, 'invalid-skill');
+
+  const missingPrerequisite = await worker.fetch(new Request('https://example.test/v1/player/skill', {
+    method: 'POST', headers, body: JSON.stringify({ skillId: 'launchKick', enabled: true }),
   }), env);
   assert.equal(missingPrerequisite.status, 409);
   assert.equal((await missingPrerequisite.json()).reason, 'skill-prerequisite');
@@ -313,12 +319,12 @@ test('upgrades, skills, and recruits are validated and spent atomically by the s
     method: 'POST', headers, body: JSON.stringify({ skillId: 'legArts', enabled: true }),
   }), env);
   assert.equal(legArts.status, 200);
-  assert.equal((await legArts.json()).fruit, 2);
-  const legFlame = await worker.fetch(new Request('https://example.test/v1/player/skill', {
-    method: 'POST', headers, body: JSON.stringify({ skillId: 'legFlame', enabled: true }),
+  assert.equal((await legArts.json()).fruit, 3);
+  const launchKick = await worker.fetch(new Request('https://example.test/v1/player/skill', {
+    method: 'POST', headers, body: JSON.stringify({ skillId: 'launchKick', enabled: true }),
   }), env);
-  assert.equal(legFlame.status, 200);
-  assert.equal((await legFlame.json()).fruit, 0);
+  assert.equal(launchKick.status, 200);
+  assert.equal((await launchKick.json()).fruit, 0);
 
   const recruited = await worker.fetch(new Request('https://example.test/v1/player/recruit', {
     method: 'POST', headers, body: JSON.stringify({ type: 'assassin' }),

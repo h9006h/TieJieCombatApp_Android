@@ -10,10 +10,10 @@ const SKILLS = [
   { id: 'risingPunch', cost: 1 },
   { id: 'lifeSteal', cost: 3, requires: 'risingPunch' },
   { id: 'downRisingPunch', cost: 3, requires: 'risingPunch' },
-  { id: 'blueFlame', cost: 3 },
+  { id: 'blueFlame', cost: 0, retired: true },
   { id: 'legArts', cost: 1 },
-  { id: 'legFlame', cost: 2, requires: 'legArts' },
-  { id: 'launchKick', cost: 3, requires: 'legFlame' },
+  { id: 'legFlame', cost: 0, retired: true },
+  { id: 'launchKick', cost: 3, requires: 'legArts' },
   { id: 'launchKickChain', cost: 4, requires: 'launchKick' },
   { id: 'grapple', cost: 1 },
   { id: 'invincibleGrapple', cost: 3, requires: 'grapple' },
@@ -464,6 +464,7 @@ async function changeSkill(request, env) {
   const index = SKILLS.findIndex(item => item.id === body?.skillId);
   if (index < 0 || typeof body?.enabled !== 'boolean') return json({ ok: false, reason: 'invalid-skill' }, 400);
   const skill = SKILLS[index];
+  if (skill.retired) return json({ ok: false, reason: 'invalid-skill' }, 400);
   const bit = bitForIndex(index);
   const currentMask = boundedInteger(user.skill_mask, (1 << SKILLS.length) - 1);
   const alreadyEnabled = (currentMask & bit) !== 0;

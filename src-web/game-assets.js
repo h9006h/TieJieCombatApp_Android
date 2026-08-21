@@ -128,7 +128,7 @@
 
   assets.fighterShadows={
     heroKickSheet:image('assets/fighter/normalized/shadows/hero-kick-clean-strip.webp?v=1.0'),
-    heroGroundKickComboSheet:image('assets/fighter/normalized/shadows/hero-ground-kick-combo-14-strip-v1.webp?v=1.0'),
+    heroGroundKickComboSheet:image('assets/fighter/normalized/shadows/hero-ground-kick-combo-14-strip-v2.webp?v=1.0'),
     heroJumpKickSheet:image('assets/fighter/normalized/shadows/hero-jump-kick-v2-strip.webp?v=1.0'),
     heroJumpKickChainSheet:image('assets/fighter/normalized/shadows/hero-jump-kick-chain-explosive-4-strip-v2.webp?v=2.0'),
     heroCombatSheet:image('assets/fighter/normalized/shadows/hero-combat-strip.webp?v=1.0'),
