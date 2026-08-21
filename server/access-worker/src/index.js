@@ -6,6 +6,9 @@ const LOGIN_WINDOW_SECONDS = 15 * 60;
 const LOGIN_MAX_FAILURES = 5;
 const STAGE_RUN_LIFETIME_SECONDS = 6 * 60 * 60;
 const MAX_UPGRADES_PER_REQUEST = 100;
+const AD_REWARD_LIFETIME_SECONDS = 15 * 60;
+const ADMOB_VERIFIER_KEYS_URL = 'https://www.gstatic.com/admob/reward/verifier-keys.json';
+let admobVerifierKeysCache = { expiresAt: 0, keys: new Map() };
 const SKILLS = [
   { id: 'risingPunch', cost: 1 },
   { id: 'lifeSteal', cost: 3, requires: 'risingPunch' },
@@ -143,6 +146,55 @@ function hexToBytes(value) {
   const pairs = String(value).match(/.{2}/g);
   if (!pairs) throw new Error('Invalid hexadecimal value');
   return new Uint8Array(pairs.map(byte => parseInt(byte, 16)));
+}
+
+function base64UrlBytes(value) {
+  const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+  return Uint8Array.from(atob(padded), character => character.charCodeAt(0));
+}
+
+function derEcdsaToRaw(signature, size = 32) {
+  const bytes = signature instanceof Uint8Array ? signature : new Uint8Array(signature);
+  if (bytes[0] !== 0x30) throw new Error('invalid-ecdsa-signature');
+  let offset = 2;
+  if (bytes[1] & 0x80) offset = 2 + (bytes[1] & 0x7f);
+  if (bytes[offset++] !== 0x02) throw new Error('invalid-ecdsa-r');
+  const rLength = bytes[offset++]; const r = bytes.slice(offset, offset + rLength); offset += rLength;
+  if (bytes[offset++] !== 0x02) throw new Error('invalid-ecdsa-s');
+  const sLength = bytes[offset++]; const s = bytes.slice(offset, offset + sLength);
+  const raw = new Uint8Array(size * 2);
+  raw.set(r.slice(Math.max(0, r.length - size)), size - Math.min(size, r.length));
+  raw.set(s.slice(Math.max(0, s.length - size)), size * 2 - Math.min(size, s.length));
+  return raw;
+}
+
+async function admobVerifierKeys() {
+  if (admobVerifierKeysCache.expiresAt > Date.now()) return admobVerifierKeysCache.keys;
+  const response = await fetch(ADMOB_VERIFIER_KEYS_URL);
+  if (!response.ok) throw new Error('admob-key-fetch-failed');
+  const payload = await response.json();
+  const keys = new Map();
+  for (const entry of Array.isArray(payload?.keys) ? payload.keys : []) {
+    if (entry?.keyId == null || !entry?.base64) continue;
+    const key = await crypto.subtle.importKey('spki', Uint8Array.from(atob(entry.base64), value => value.charCodeAt(0)), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
+    keys.set(String(entry.keyId), key);
+  }
+  if (!keys.size) throw new Error('admob-keys-empty');
+  admobVerifierKeysCache = { expiresAt: Date.now() + 6 * 60 * 60 * 1000, keys };
+  return keys;
+}
+
+async function verifyAdMobSsv(request) {
+  const url = new URL(request.url), query = url.search.slice(1), marker = '&signature=';
+  const signatureIndex = query.lastIndexOf(marker);
+  if (signatureIndex < 0) return false;
+  const signedContent = query.slice(0, signatureIndex);
+  const signature = url.searchParams.get('signature'), keyId = url.searchParams.get('key_id');
+  if (!signature || !keyId) return false;
+  const key = (await admobVerifierKeys()).get(String(keyId));
+  if (!key) return false;
+  return crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key, derEcdsaToRaw(base64UrlBytes(signature)), new TextEncoder().encode(signedContent));
 }
 
 async function sha256(value) {
@@ -591,6 +643,104 @@ async function completeStage(request, env) {
   });
 }
 
+async function grantAdReward(env, claim, transactionId) {
+  if (!claim || claim.status !== 'pending' || Number(claim.expires_at) < Math.floor(Date.now() / 1000)) return false;
+  const grantedAt = new Date().toISOString();
+  const results = await env.DB.batch([
+    env.DB.prepare(`
+      UPDATE users SET gold = gold + ?, chicken = chicken + ?, fruit = fruit + ?,
+        progress_updated_at = ?, updated_at = ?
+      WHERE id = ? AND EXISTS (SELECT 1 FROM ad_reward_claims WHERE id = ? AND status = 'pending')
+    `).bind(boundedInteger(claim.reward_gold), boundedInteger(claim.reward_chicken), boundedInteger(claim.reward_fruit), grantedAt, grantedAt, claim.user_id, claim.id),
+    env.DB.prepare(`UPDATE ad_reward_claims SET status = 'granted', transaction_id = ?, granted_at = ? WHERE id = ? AND status = 'pending'`)
+      .bind(transactionId, grantedAt, claim.id),
+  ]);
+  return Number(results?.[0]?.meta?.changes) === 1 && Number(results?.[1]?.meta?.changes) === 1;
+}
+
+async function startAdReward(request, env) {
+  const user = await authenticate(request, env);
+  if (!user) return json({ ok: false, reason: 'invalid-session' }, 401);
+  const body = await readBody(request), placement = String(body?.placement || '');
+  const testMode = body?.testMode === true;
+  if (testMode && user.mode !== 'test') return json({ ok: false, reason: 'test-mode-forbidden' }, 403);
+  const claimId = crypto.randomUUID(), claimToken = randomHex(32), tokenHash = await sha256(claimToken);
+  let grantKey = '', gold = 0, chicken = 0, fruit = 0;
+  if (placement === 'resource') {
+    const kind = ['gold', 'chicken', 'fruit'].includes(body?.kind) ? body.kind : '';
+    if (!kind) return json({ ok: false, reason: 'invalid-reward-kind' }, 400);
+    const estimate = stageRewards(user, boundedInteger(user.best_stage, 99999) + 1);
+    ({ gold, chicken, fruit } = { gold: 0, chicken: 0, fruit: 0 });
+    if (kind === 'gold') gold = estimate.gold * 3;
+    if (kind === 'chicken') chicken = estimate.chicken * 3;
+    if (kind === 'fruit') fruit = estimate.fruit * 3;
+    grantKey = `resource:${kind}:${claimId}`;
+  } else if (placement === 'stageDouble') {
+    const stage = boundedInteger(body?.stage, 100000);
+    const receipt = await env.DB.prepare('SELECT reward_gold, reward_chicken, reward_fruit FROM stage_completions WHERE user_id = ? AND stage = ?').bind(user.id, stage).first();
+    if (!receipt) return json({ ok: false, reason: 'stage-not-completed' }, 409);
+    gold = boundedInteger(receipt.reward_gold); chicken = boundedInteger(receipt.reward_chicken); fruit = boundedInteger(receipt.reward_fruit);
+    grantKey = `stage-double:${stage}`;
+  } else if (placement === 'runRecovery') {
+    const stage = boundedInteger(body?.stage, 100000), runToken = String(body?.runToken || '');
+    if (!/^[0-9a-f]{64}$/.test(runToken)) return json({ ok: false, reason: 'invalid-stage-run' }, 400);
+    const runTokenHash = await sha256(runToken);
+    const run = await env.DB.prepare('SELECT stage, token_hash, expires_at, reward_gold, reward_chicken, reward_fruit FROM stage_runs WHERE user_id = ?').bind(user.id).first();
+    if (!run || Number(run.stage) !== stage || !constantTimeHexEqual(run.token_hash, runTokenHash) || Number(run.expires_at) < Math.floor(Date.now() / 1000)) return json({ ok: false, reason: 'invalid-stage-run' }, 409);
+    gold = Math.min(strictBoundedInteger(body?.gold, 999999) ?? 0, boundedInteger(run.reward_gold)) + 50;
+    chicken = Math.min(strictBoundedInteger(body?.chicken, 999999) ?? 0, boundedInteger(run.reward_chicken));
+    fruit = Math.min(strictBoundedInteger(body?.fruit, 999999) ?? 0, boundedInteger(run.reward_fruit));
+    grantKey = `run-recovery:${runTokenHash}`;
+  } else return json({ ok: false, reason: 'invalid-placement' }, 400);
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    await env.DB.prepare(`
+      INSERT INTO ad_reward_claims (id, user_id, token_hash, grant_key, placement, reward_gold, reward_chicken, reward_fruit, test_mode, status, created_at, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+    `).bind(claimId, user.id, tokenHash, grantKey, placement, gold, chicken, fruit, testMode ? 1 : 0, now, now + AD_REWARD_LIFETIME_SECONDS).run();
+  } catch (error) {
+    if (/unique|constraint/i.test(String(error))) return json({ ok: false, reason: 'reward-already-claimed' }, 409);
+    throw error;
+  }
+  return json({ ok: true, claimToken, rewards: { gold, chicken, fruit }, expiresIn: AD_REWARD_LIFETIME_SECONDS });
+}
+
+async function adRewardStatus(request, env) {
+  const user = await authenticate(request, env);
+  if (!user) return json({ ok: false, reason: 'invalid-session' }, 401);
+  const body = await readBody(request), token = String(body?.claimToken || '');
+  if (!/^[0-9a-f]{64}$/.test(token)) return json({ ok: false, reason: 'invalid-claim' }, 400);
+  const claim = await env.DB.prepare('SELECT * FROM ad_reward_claims WHERE user_id = ? AND token_hash = ?').bind(user.id, await sha256(token)).first();
+  if (!claim) return json({ ok: false, reason: 'invalid-claim' }, 404);
+  if (claim.status === 'granted') return json({ ...publicPlayer(await readPlayer(env, user.id)), granted: true, rewards: { gold: claim.reward_gold, chicken: claim.reward_chicken, fruit: claim.reward_fruit } });
+  return json({ ok: true, granted: false, status: Number(claim.expires_at) < Math.floor(Date.now() / 1000) ? 'expired' : claim.status });
+}
+
+async function completeTestAdReward(request, env) {
+  const user = await authenticate(request, env);
+  if (!user) return json({ ok: false, reason: 'invalid-session' }, 401);
+  if (user.mode !== 'test') return json({ ok: false, reason: 'test-mode-forbidden' }, 403);
+  const body = await readBody(request), token = String(body?.claimToken || '');
+  if (!/^[0-9a-f]{64}$/.test(token)) return json({ ok: false, reason: 'invalid-claim' }, 400);
+  const claim = await env.DB.prepare('SELECT * FROM ad_reward_claims WHERE user_id = ? AND token_hash = ?').bind(user.id, await sha256(token)).first();
+  if (!claim || Number(claim.test_mode) !== 1) return json({ ok: false, reason: 'invalid-claim' }, 404);
+  if (claim.status === 'pending') await grantAdReward(env, claim, `test:${claim.id}`);
+  return adRewardStatus(new Request(request.url, { method: 'POST', headers: request.headers, body: JSON.stringify({ claimToken: token }) }), env);
+}
+
+async function admobSsvCallback(request, env) {
+  if (!await verifyAdMobSsv(request)) return json({ ok: false, reason: 'invalid-signature' }, 403);
+  const url = new URL(request.url), token = url.searchParams.get('custom_data') || '', transactionId = url.searchParams.get('transaction_id') || '';
+  const expectedAdUnit = String(env.ADMOB_REWARDED_AD_UNIT_ID || '').trim().split('/').pop();
+  const receivedAdUnit = String(url.searchParams.get('ad_unit') || '').trim().split('/').pop();
+  if (!expectedAdUnit || receivedAdUnit !== expectedAdUnit) return json({ ok: false, reason: 'invalid-ad-unit' }, 403);
+  if (!/^[0-9a-f]{64}$/.test(token) || !/^[0-9a-f]+$/i.test(transactionId)) return json({ ok: false, reason: 'invalid-callback' }, 400);
+  const claim = await env.DB.prepare('SELECT * FROM ad_reward_claims WHERE token_hash = ?').bind(await sha256(token)).first();
+  if (!claim || Number(claim.test_mode) === 1) return json({ ok: false, reason: 'invalid-claim' }, 404);
+  if (claim.status === 'granted') return json({ ok: true, duplicate: true });
+  return await grantAdReward(env, claim, transactionId) ? json({ ok: true }) : json({ ok: false, reason: 'grant-failed' }, 409);
+}
+
 async function deleteAccount(request, env) {
   const body = await readBody(request);
   const password = body?.password;
@@ -665,6 +815,10 @@ export default {
   async fetch(request, env) {
     const path = new URL(request.url).pathname;
     if (request.method === 'GET' && path === '/account-deletion') return accountDeletionPage();
+    if (request.method === 'GET' && path === '/v1/admob/ssv') {
+      try { return await admobSsvCallback(request, env); }
+      catch (error) { console.error(error); return json({ ok: false, reason: 'server-error' }, 500); }
+    }
     const origin = requestOrigin(request, env);
     if (origin === null) return json({ error: 'origin-not-allowed' }, 403);
     if (request.method === 'OPTIONS') return withCors(new Response(null, { status: 204, headers: jsonHeaders }), origin);
@@ -681,6 +835,9 @@ export default {
       else if (path === '/v1/player/recruit') response = await recruitPlayer(request, env);
       else if (path === '/v1/stage/start') response = await startStage(request, env);
       else if (path === '/v1/stage/complete') response = await completeStage(request, env);
+      else if (path === '/v1/ad/reward/start') response = await startAdReward(request, env);
+      else if (path === '/v1/ad/reward/status') response = await adRewardStatus(request, env);
+      else if (path === '/v1/ad/reward/test-complete') response = await completeTestAdReward(request, env);
       else if (path === '/v1/account/delete') response = await deleteAccount(request, env);
       else if (path === '/v1/leaderboard') response = await leaderboard(request, env);
       else if (path === '/v1/feedback') response = await submitFeedback(request, env);

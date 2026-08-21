@@ -3,6 +3,9 @@
   "name": "tiejie-access",
   "main": "src/index.js",
   "compatibility_date": "2026-08-14",
+  "vars": {
+    "ADMOB_REWARDED_AD_UNIT_ID": "ca-app-pub-9700221862086110/9866779514"
+  },
   "d1_databases": [
     {
       "binding": "DB",

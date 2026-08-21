@@ -18,6 +18,7 @@ npx wrangler d1 execute tiejie-access --remote --file migrations/0003-password-w
 npx wrangler d1 execute tiejie-access --remote --file migrations/0004-auth-throttle.sql
 npx wrangler d1 execute tiejie-access --remote --file migrations/0005-stage-run-validation.sql
 npx wrangler d1 execute tiejie-access --remote --file migrations/0006-authoritative-progression.sql
+npx wrangler d1 execute tiejie-access --remote --file migrations/0007-ad-reward-claims.sql
 ```
 
 ## 服务端保存字段
@@ -44,6 +45,18 @@ npx wrangler d1 execute tiejie-access --remote --file migrations/0006-authoritat
 - `POST /v1/account/delete`：再次验证当前密码后，永久删除账号、全部会话、反馈、关卡运行和关卡完成记录。应用内使用 Bearer 令牌并提交 `password`；公开网页提交 `username` 与 `password`。
 
 排行榜最高关不再接受 `/v1/player/save` 上传的数值。正式挑战必须先调用 `/v1/stage/start` 获取一次性凭证，再由 `/v1/stage/complete` 按顺序结算；服务端按关卡要求至少 45 秒并逐关增加，最高 180 秒，可通过 Worker 环境变量 `MIN_STAGE_SECONDS` 覆盖统一阈值。凭证只保存哈希、最长 6 小时且成功后立即删除。
+
+## 激励广告服务端验证
+
+在 AdMob 激励广告单元中把服务器端验证回调网址配置为：
+
+```text
+https://<Worker 域名>/v1/admob/ssv
+```
+
+客户端先通过 `/v1/ad/reward/start` 获取一次性 `claimToken`，Android 在展示广告前把它设置为 SSV `custom_data`。Worker 只接受通过 Google ECDSA 公钥验签的正式回调，并以 AdMob `transaction_id` 和服务端 `grant_key` 防止重复发奖。测试账号切换测试广告后，仍使用相同奖励申请和发奖代码，但由 `/v1/ad/reward/test-complete` 代替 Google 回调；普通账号不能调用该测试确认接口。
+
+`wrangler.jsonc` 中的 `ADMOB_REWARDED_AD_UNIT_ID` 必须与 Android 的 `admob_rewarded_default` 一致；Worker 会同时校验回调里的广告单元，避免其他 AdMob 应用借用合法签名触发本游戏奖励。
 
 ## 管理账号
 

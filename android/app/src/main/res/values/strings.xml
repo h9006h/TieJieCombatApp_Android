@@ -5,6 +5,7 @@
     <string name="package_name">com.tiejiecombat.game</string>
     <string name="custom_url_scheme">com.tiejiecombat.game</string>
     <string name="admob_app_id">ca-app-pub-9700221862086110~9970721297</string>
+    <string name="admob_rewarded_default">ca-app-pub-9700221862086110/9866779514</string>
     <string name="update_ready_title">更新已下载</string>
     <string name="update_ready_message">新版本已经准备好，重新启动游戏即可完成安装。</string>
     <string name="update_restart">立即重启更新</string>

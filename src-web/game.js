@@ -767,7 +767,7 @@
   const PLAYER_BASE_ATTACK_SPEED_MUL=1,GRAB_COOLDOWN_SECONDS=10,FLAME_BOOST_SECONDS=20,FLAME_BOOST_DAMAGE_MUL=2;
   const AIR_JUGGLE_LIFT_HALF_LIFE=3;
   const AIR_GRAB_LIFT_REFRESH=120,OVER_CHEST_THROW_LIFT=700,OVER_CHEST_THROW_SPEED=500,OVER_CHEST_FOLLOWUP_Z_REACH=220,GRAB_KICK_LIFT=180;
-  const BACK_HOP_MAX_CHARGES=3,BACK_HOP_RECHARGE_SECONDS=10,BACK_HOP_MIN_INTERVAL=1,BACK_HOP_DISTANCE=118,BACK_HOP_DURATION=.4,BACK_HOP_HEIGHT=58;
+  const BACK_HOP_MAX_CHARGES=3,BACK_HOP_RECHARGE_SECONDS=10,BACK_HOP_MIN_INTERVAL=1,BACK_HOP_DISTANCE=118,BACK_HOP_DURATION=.34,BACK_HOP_HEIGHT=22;
   const player={x:270,y:566,z:0,vz:0,airFallTime:0,knockVx:0,level:0,face:1,hp:160,maxHp:160,state:'idle',timer:0,combo:0,comboT:0,comboLinkT:0,attackEpoch:0,attackSequence:0,kickCombo:0,kickComboT:0,cleanHits:0,attackSpeedTier:0,starAbsorbHits:0,launchKickChargeHits:0,starAbsorbPull:null,grab:null,grabTarget:null,grabT:0,grabEscapeT:0,grabKickQueue:0,grabKickTotal:0,grabCooldown:0,flameCharge:0,flameBoostT:0,risingQueued:false,risingCooldown:0,risingAirInv:false,risingInvT:0,backHopCharges:BACK_HOP_MAX_CHARGES,backHopRechargeT:0,backHopLockT:0,backHopElapsed:0,backHopStartX:0,backHopTargetX:0,backHopStartZ:0,held:null,heldUses:0,inv:0,kills:0,inputQueue:[],climb:null,fallDamage:0,fallFromLevel:null,fallStartY:null,subPit:null,pitSafeT:0,launchKickChainCount:0,launchKickChainQueued:0};
   let enemies=[],companions=[],pickups=[],projectiles=[],forestHives=[];
   const pendingGrowthUpgrades={hp:0,atk:0,def:0};
@@ -775,6 +775,7 @@
   const defaultProgress={gold:0,chicken:0,fruit:0,hpLv:0,atkLv:0,defLv:0,spdLv:0,ascend:0,bestStage:0,currentStage:1,unlockedRecruits:[],tempRecruit:null,unlockedSkills:[],displayName:authorization.displayName||authorization.username||'陆骁',syncAt:0};
   let progress=loadProgress();
   const isTestBuild=authorization.mode==='test';
+  let adTestMode=false;
   function loadProgress(){try{const saved=JSON.parse(localStorage.getItem('tiejie-progress')||'{}'),next={...defaultProgress,...saved};next.bestStage=Math.max(0,Math.floor(Number(next.bestStage)||0));next.currentStage=Math.max(1,Math.floor(Number(next.currentStage)||next.bestStage||1));next.syncAt=Math.max(0,Math.floor(Number(next.syncAt)||0));next.displayName=String(next.displayName||defaultProgress.displayName).trim().slice(0,12);next.unlockedRecruits=Array.isArray(next.unlockedRecruits)?[...new Set(next.unlockedRecruits.filter(type=>typeof type==='string'))]:[];next.unlockedSkills=Array.isArray(next.unlockedSkills)?[...new Set(next.unlockedSkills.filter(id=>typeof id==='string').map(id=>id==='airRisingPunch'?'lifeSteal':id))]:[];if(!next.tempRecruit||typeof next.tempRecruit.type!=='string'||Number(next.tempRecruit.remaining)<=0)next.tempRecruit=null;return next}catch(e){return{...defaultProgress,unlockedRecruits:[],unlockedSkills:[]}}}
   let progressSyncTimer=0,progressSyncing=false;
   function skillMask(){return syncedSkillIds.reduce((mask,id,index)=>progress.unlockedSkills.includes(id)?mask|(1<<index):mask,0)}
@@ -841,6 +842,7 @@
   function playerAttackSpeedMul(){return PLAYER_BASE_ATTACK_SPEED_MUL}
   function legAttackRange(range){return range}
   function flameBoostDamageMul(){return (player.flameBoostT||0)>0?FLAME_BOOST_DAMAGE_MUL:1}
+  function reduceGrabCooldownFromStrike(){player.grabCooldown=Math.max(0,(player.grabCooldown||0)-1)}
   const LAUNCH_KICK_CHAIN_FRAME_DURATIONS=[.05,.1,.05,.1],LAUNCH_KICK_CHAIN_DURATION=.3,LAUNCH_KICK_CHAIN_MAX_HITS=6,LAUNCH_KICK_CHAIN_ACTIVE_FRAMES=[1,3],LAUNCH_KICK_CHAIN_FORWARD_SPEEDS=[480,520,520,560],LAUNCH_KICK_CHAIN_LIFTS=[3,3,3,3];
   function launchKickChainFrameAt(elapsed){let boundary=0;for(let frame=0;frame<LAUNCH_KICK_CHAIN_FRAME_DURATIONS.length;frame++){boundary+=LAUNCH_KICK_CHAIN_FRAME_DURATIONS[frame];if(elapsed<boundary)return frame}return LAUNCH_KICK_CHAIN_FRAME_DURATIONS.length-1}
   function resetLaunchKickChain(){player.launchKickChainCount=0;player.launchKickChainQueued=0;player.launchKickChainHitCount=0;player.launchKickChainFace=0;player.launchKickChainMotionFrame=-1}
@@ -864,6 +866,7 @@
   }
   function startLaunchKickChainSegment(){
     resetPlayerHitStreak()
+    reduceGrabCooldownFromStrike()
     const continuing=player.launchKickChainCount>0
     if(!continuing)player.launchKickChargeHits=0
     player.launchKick=false
@@ -971,10 +974,25 @@
   function closeRewardModal(resume=true){const modal=document.querySelector('#reward-modal'),summary=document.querySelector('#stage-settlement-summary'),cancel=document.querySelector('#reward-cancel'),exit=document.querySelector('#reward-exit');if(modal)modal.hidden=true;if(summary)summary.hidden=true;if(cancel)cancel.hidden=false;if(exit)exit.hidden=true;pendingReward=null;if(resume)running=rewardResumeRunning;rewardResumeRunning=false}
   function openRewardModal(kind,reason='',mode='resource'){
     const modal=document.querySelector('#reward-modal'),title=document.querySelector('#reward-modal-title'),desc=document.querySelector('#reward-modal-desc'),confirm=document.querySelector('#reward-confirm'),cancel=document.querySelector('#reward-cancel'),exit=document.querySelector('#reward-exit'),summary=document.querySelector('#stage-settlement-summary');if(!modal)return;
-    if(summary)summary.hidden=true;cancel.hidden=false;if(exit)exit.hidden=mode!=='defeat';
-    rewardResumeRunning=running;running=false;pendingReward={kind,mode};title.textContent=mode==='defeat'?'全员阵亡':'资源补给';
-    desc.textContent=mode==='defeat'?'主角和所有队友均已阵亡，本关携带的金币、鸡腿和果实已经掉落。可以满血复活继续此关，或放弃掉落返回初始页。':reason;
-    confirm.hidden=true;cancel.textContent=mode==='defeat'?'满血复活继续此关':'取消';modal.hidden=false
+    if(summary)summary.hidden=true;cancel.hidden=false;if(exit)exit.hidden=true;
+    rewardResumeRunning=running;running=false;pendingReward={kind,mode};title.textContent=mode==='run-loss'?'本关结算':'资源补给';
+    desc.textContent=reason;confirm.hidden=true;cancel.textContent='取消';modal.hidden=false
+  }
+  const rewardNames={gold:'金币',chicken:'鸡腿',fruit:'果实'};
+  const rewardText=rewards=>['gold','chicken','fruit'].filter(key=>Number(rewards?.[key])>0).map(key=>`${rewardNames[key]} +${rewards[key]}`).join('、')||'无道具';
+  async function prepareAdClaim(placement,payload={}){
+    const result=await authorization.api?.post?.('/v1/ad/reward/start',{placement,testMode:adTestMode,...payload});
+    if(!result?.ok)return result||{ok:false,reason:'network-error'};
+    return{...result,placement}
+  }
+  async function openResourceAd(kind){
+    const name=rewardNames[kind];if(!name)return;
+    openRewardModal(kind,`正在向服务器计算下一关 ${name} 的三倍补给量……`,'resource');
+    const confirm=document.querySelector('#reward-confirm'),desc=document.querySelector('#reward-modal-desc'),claim=await prepareAdClaim('resource',{kind});
+    if(pendingReward?.mode!=='resource'||pendingReward.kind!==kind)return;
+    if(!claim?.ok){desc.textContent='暂时无法创建广告奖励，请检查网络后重试。';return}
+    pendingReward={...pendingReward,claim};desc.textContent=`观看完整广告，经过服务端校验后获得 ${rewardText(claim.rewards)}。`;
+    confirm.hidden=false;confirm.disabled=false;confirm.textContent=`看广告获取${name}`
   }
   async function openStageSettlement(){
     if(stageSettlementOpen)return;stageSettlementOpen=true;expireTemporaryRecruitAfterStage();
@@ -986,31 +1004,42 @@
     pendingReward={mode:'stage-settlement'};title.textContent='关卡结算';desc.textContent=`第 ${clearedStage} 关 · ${trialMaps[mapIndex].name} 已清理完毕`;
     if(!testRunMode){applyAuthoritativePlayer(validation);stageRewardTotals={gold:Math.max(0,Number(validation.rewards?.gold)||0),chicken:Math.max(0,Number(validation.rewards?.chicken)||0),fruit:Math.max(0,Number(validation.rewards?.fruit)||0)};if(rankedRunEligible&&validation.bestStage>previousBestStage)window.TieJiePlatform?.rank?.submitHighestStage?.(validation.bestStage)}
     document.querySelector('#settlement-gold').textContent=String(stageRewardTotals.gold);document.querySelector('#settlement-chicken').textContent=String(stageRewardTotals.chicken);document.querySelector('#settlement-fruit').textContent=String(stageRewardTotals.fruit);
-    summary.hidden=false;confirm.hidden=true;confirm.disabled=true;confirm.textContent='服务器校验广告后奖励翻倍';cancel.textContent='领取并分配属性';cancel.hidden=false;if(exit)exit.hidden=true;modal.hidden=false
+    summary.hidden=false;confirm.hidden=true;confirm.disabled=true;confirm.textContent='看广告，通关奖励翻倍';cancel.textContent='直接领取';cancel.hidden=false;if(exit)exit.hidden=true;modal.hidden=false;
+    const claim=await prepareAdClaim('stageDouble',{stage:clearedStage});
+    if(pendingReward?.mode==='stage-settlement'&&claim?.ok){pendingReward.claim=claim;confirm.hidden=false;confirm.disabled=false}
   }
   function continueAfterStageSettlement(){
     if(pendingReward?.mode!=='stage-settlement')return;stageSettlementOpen=false;closeRewardModal(false);pendingGrowthAdvance=true;running=false;const panel=document.querySelector('#growth-panel'),close=document.querySelector('#growth-close');if(panel)panel.hidden=false;if(close){close.textContent='进入下一关';close.classList.add('advance');close.setAttribute('aria-label','完成加点并进入下一关')}
   }
-  let rewardedTestPoll=0;
-  function showSettlementTestRewarded(){
-    if(pendingReward?.mode!=='stage-settlement'||stageRewardDoubled)return;
-    const native=window.TieJieAdMobTestNative,confirm=document.querySelector('#reward-confirm'),cancel=document.querySelector('#reward-cancel'),desc=document.querySelector('#reward-modal-desc');if(!native?.showTestRewarded){if(desc)desc.textContent='测试广告桥不可用';return}
-    confirm.disabled=true;cancel.disabled=true;if(desc)desc.textContent='正在加载 Google 官方测试激励广告……';window.TieJieAudio?.pause();
-    let state='';try{state=native.showTestRewarded()||''}catch{state='failed:bridge-error'}
-    clearInterval(rewardedTestPoll);const started=Date.now();rewardedTestPoll=setInterval(()=>{try{state=native.getRewardedState?.()||state;if(state==='loaded')state=native.showTestRewarded?.()||state}catch{state='failed:bridge-error'}if(state==='loading'&&desc)desc.textContent='正在加载 Google 官方测试激励广告……';else if(state==='showing'&&desc)desc.textContent='测试广告正在播放……';if(!['earned','closed'].includes(state)&&!state.startsWith('failed:')&&Date.now()-started<=65000)return;clearInterval(rewardedTestPoll);rewardedTestPoll=0;confirm.disabled=false;cancel.disabled=false;if(state==='earned'){if(!stageRewardDoubled&&pendingReward?.mode==='stage-settlement'){for(const key of['gold','chicken','fruit'])progress[key]+=stageRewardTotals[key];stageRewardDoubled=true;saveProgress();document.querySelector('#settlement-gold').textContent=String(stageRewardTotals.gold*2);document.querySelector('#settlement-chicken').textContent=String(stageRewardTotals.chicken*2);document.querySelector('#settlement-fruit').textContent=String(stageRewardTotals.fruit*2);message='测试广告完成，双倍奖励已到账';messageT=1.8;continueAfterStageSettlement()}return}if(desc)desc.textContent=state==='closed'?'测试广告未完整观看，奖励没有翻倍':state.startsWith('failed:')?`测试广告失败：${state}`:'测试广告等待超时';window.TieJieAudio?.resume?.()},250)
+  const pollAdState=async(native,claimToken)=>{
+    let state='';const started=Date.now();try{state=native.showRewarded(claimToken,adTestMode)||''}catch{return'failed:bridge-error'}
+    while(Date.now()-started<65000){await wait(250);try{state=native.getRewardedState?.()||state;if(state==='loaded')state=native.showRewarded(claimToken,adTestMode)||state}catch{return'failed:bridge-error'}if(['earned','closed'].includes(state)||state.startsWith('failed:'))return state}
+    return'timeout'
+  };
+  async function waitForServerReward(claimToken){
+    if(adTestMode)return authorization.api?.post?.('/v1/ad/reward/test-complete',{claimToken});
+    for(let attempt=0;attempt<30;attempt++){const result=await authorization.api?.post?.('/v1/ad/reward/status',{claimToken});if(result?.granted)return result;if(result?.status==='expired')return result;await wait(1000)}
+    return{ok:false,reason:'verification-pending'}
   }
-  function revivePartyFull(){
-    lostResources=null;failureHandled=false;failurePopupT=0;partyDefeatPending=false;
-    player.hp=player.maxHp;Object.assign(player,{state:'idle',timer:0,z:0,vz:0,airFallTime:0,knockVx:0,throwVx:0,airLaunch:false,comboLinkT:0,attackEpoch:(player.attackEpoch||0)+1,cleanHits:0,attackSpeedTier:0,starAbsorbHits:0,launchKickChargeHits:0,starAbsorbPull:null,inv:2,grab:null,grabTarget:null,grabbed:false,grappleHolder:null,grappleInvincible:false});starAbsorbFx=[];
-    for(const c of companions){syncCompanionStats(c);Object.assign(c,{hp:c.maxHp,dead:false,state:'idle',timer:0,z:0,vz:0,knockVx:0,throwVx:0,airLaunch:false,inv:2,grabbed:false,grabVictim:null,grappleHolder:null,grappleInvincible:false,revived:false,rage:false})}
-    for(const e of enemies){clearGrapplerHold(e);e.grappleHolder=null;e.grabbed=false;if(enemyAttackStates.has(e.state)){e.state='idle';e.timer=0;e.specialHit=false}}
-    closeRewardModal(false);running=true;message='全队满血复活，继续此关！';messageT=1.8
+  async function showRewardedClaim(){
+    const reward=pendingReward,claim=reward?.claim,native=window.TieJieAdMobNative,confirm=document.querySelector('#reward-confirm'),cancel=document.querySelector('#reward-cancel'),desc=document.querySelector('#reward-modal-desc');if(!claim?.claimToken)return;if(!native?.showRewarded){desc.textContent='当前安装包没有连接广告桥。';return}
+    confirm.disabled=true;cancel.disabled=true;let state='earned';if(!reward.adEarned){desc.textContent=adTestMode?'正在加载 Google 测试广告……':'正在加载正式激励广告……';window.TieJieAudio?.pause();state=await pollAdState(native,claim.claimToken)}if(state!=='earned'){confirm.disabled=false;cancel.disabled=false;desc.textContent=state==='closed'?'广告未完整观看，本次不发放奖励。':`广告暂时无法完成：${state}`;window.TieJieAudio?.resume?.();return}
+    reward.adEarned=true;
+    desc.textContent='广告已完整观看，正在等待服务端校验并发放奖励……';const granted=await waitForServerReward(claim.claimToken);window.TieJieAudio?.resume?.();
+    if(!granted?.granted){confirm.disabled=false;confirm.textContent='重新查询服务端';cancel.disabled=false;desc.textContent='广告回调已收到，但服务端尚未确认。奖励请求仍会保持一段时间，请稍后重试，无需再次观看。';return}
+    applyAuthoritativePlayer(granted);message=`广告奖励到账：${rewardText(granted.rewards)}`;messageT=2;
+    if(reward.mode==='stage-settlement'){stageRewardDoubled=true;document.querySelector('#settlement-gold').textContent=String(stageRewardTotals.gold*2);document.querySelector('#settlement-chicken').textContent=String(stageRewardTotals.chicken*2);document.querySelector('#settlement-fruit').textContent=String(stageRewardTotals.fruit*2);continueAfterStageSettlement()}
+    else if(reward.mode==='run-loss'){lostResources=null;closeRewardModal(false);returnToStart()}
+    else{desc.textContent=`服务端校验成功，${rewardText(granted.rewards)} 已到账。`;confirm.hidden=true;cancel.disabled=false;cancel.textContent='完成'}
   }
-  function abandonDropsAndReturn(){
-    if(pendingReward?.mode!=='defeat')return;
-    lostResources=null;
-    closeRewardModal(false);
-    returnToStart()
+  async function discardRunDropsAndReturn(){lostResources=null;await hydrateProgressFromServer();closeRewardModal(false);returnToStart()}
+  async function openRunLoss(reason){
+    if(!activeStageRun){returnToStart();return}
+    document.querySelector('#battle-menu').hidden=true;lostResources={...stageRewardTotals};openRewardModal('gold','正在向服务器登记本关掉落……','run-loss');
+    const desc=document.querySelector('#reward-modal-desc'),confirm=document.querySelector('#reward-confirm'),cancel=document.querySelector('#reward-cancel'),claim=await prepareAdClaim('runRecovery',{stage:activeStageRun.stage,runToken:activeStageRun.token,...lostResources});
+    if(pendingReward?.mode!=='run-loss')return;if(!claim?.ok){desc.textContent='本关将结束。不看广告会失去本关拾取的全部道具；目前无法创建广告奖励。';cancel.textContent='放弃道具并退出';return}
+    pendingReward={...pendingReward,claim};desc.textContent=`${reason}。观看完整广告并通过服务端校验，可保留本关拾取的 ${rewardText(lostResources)}，另得金币 +50；不看广告将失去本关全部拾取道具。`;
+    confirm.hidden=false;confirm.disabled=false;confirm.textContent='看广告保留道具 + 50金币';cancel.textContent='不看广告，放弃道具'
   }
   function returnToStart(){
     clearPendingGrowth();running=false;testRunMode=false;activeStageRun=null;document.body.classList.add('menu-mode');window.TieJieAudio?.pause();rewardResumeRunning=false;battleMenuResumeRunning=false;pendingGrowthAdvance=false;failureHandled=false;failurePopupT=0;partyDefeatPending=false;stageSettlementOpen=false;stageRewardDoubled=false;stageRewardTotals={gold:0,chicken:0,fruit:0};pendingReward=null;
@@ -1020,8 +1049,8 @@
     enemies=[];companions=[];projectiles=[];hitFx=[];blastFx=[];resourceFx=[];eliteArmorFx=[];starAbsorbFx=[];player.starAbsorbHits=0;player.launchKickChargeHits=0;message='';messageT=0;refreshStartStageLabel()
   }
   function handleRunFailure(){
-    if(failureHandled)return;failureHandled=true;lostResources={gold:progress.gold,chicken:progress.chicken,fruit:progress.fruit};progress.gold=0;progress.chicken=0;progress.fruit=0;saveProgress();
-    const growthPanel=document.querySelector('#growth-panel'),battleMenu=document.querySelector('#battle-menu');if(growthPanel)growthPanel.hidden=true;if(battleMenu)battleMenu.hidden=true;openRewardModal('gold','', 'defeat')
+    if(failureHandled)return;failureHandled=true;
+    const growthPanel=document.querySelector('#growth-panel'),battleMenu=document.querySelector('#battle-menu');if(growthPanel)growthPanel.hidden=true;if(battleMenu)battleMenu.hidden=true;openRunLoss('闯关失败')
   }
   function queueRunFailure(){player.starAbsorbHits=0;player.launchKickChargeHits=0;starAbsorbFx=[];const growthPanel=document.querySelector('#growth-panel');if(growthPanel)growthPanel.hidden=true}
   function updatePartyFailure(dt){
@@ -1384,7 +1413,7 @@
     resetLaunchKickChain();player.risingQueued=false;player.inputQueue.length=0;player.launchKick=true;player.launchKickTime=.5;player.launchKickSpeed=1000;player.launchKickFace=player.face;player.state='airBackKick';player.timer=.5;player.vz=300;player.knockVx=0;
     combatAttack(legAttackRange(136),15,640,200*playerAttackSpeedMul(),0,{knockdown:true,launchVz:420,zReach:128,launchKickCarry:780});message='蹬地弹射——飞踢！';messageT=.95
   }
-  function startRisingPunch(mode='ground'){player.risingQueued=false;player.risingCooldown=1;player.risingAirInv=true;player.risingInvT=.34;player.airOrigin='risingPunch';player.state='risingPunch';player.timer=.56;player.vz=560;player.inv=Math.max(player.inv,.34);combatAttack(122,30,0,95,12,{knockdown:true,launchVz:760});message=mode==='down'?'倒地也能还这一拳！':mode==='absorb'?'聚势收拳——升龙！':'就是现在，冲上去！';messageT=.7}
+  function startRisingPunch(mode='ground'){player.risingQueued=false;player.risingCooldown=1;player.risingAirInv=true;player.risingInvT=.34;player.airOrigin='risingPunch';player.state='risingPunch';player.timer=.56;player.vz=560;player.inv=Math.max(player.inv,.34);combatAttack(122,30,0,95,12,{knockdown:true,launchVz:760,resetNextFollowupLift:true});message=mode==='down'?'倒地也能还这一拳！':mode==='absorb'?'聚势收拳——升龙！':'就是现在，冲上去！';messageT=.7}
   const counterGrabTypes=new Set(['heavy','grappler']);
   const axeArmorStates=new Set(['axeWindup','axeSlash']);
   const defeatedReviveStates=new Set(['barbarianDown','barbarianRevive']);
@@ -1395,7 +1424,7 @@
     const gravity=enemies.includes(actor)?baseGravity:baseGravity*(1+Math.min(1.25,(actor.airFallTime||0)*1.15));
     actor.vz=(actor.vz||0)-gravity*dt
   }
-  function clearAirFall(actor){actor.airFallTime=0;actor.airJuggleTime=0;actor.overChestFollowupAir=false}
+  function clearAirFall(actor){actor.airFallTime=0;actor.airJuggleTime=0;actor.overChestFollowupAir=false;actor.followupLiftResetPending=false}
   function updateEnemyAirJuggle(actor,dt){
     if(actor.overChestThrow)return;
     actor.airJuggleTime=(actor.airJuggleTime||0)+dt
@@ -1445,7 +1474,7 @@
   }
   function nearest(range){let best=null,d=range;for(const e of enemies){if(!enemyGrabWindowState(e,range))continue;const q=dist(player,e);if(q<d){d=q;best=e}}return best}
   function nearestUngrabbable(range){let best=null,d=range;for(const e of enemies){if(canGrabEnemy(e)||e.dead||e.state==='down'||e.state==='slamAir'||e.state==='thrown'||e.level!==player.level||!zReach(player,e,108))continue;const q=dist(player,e);if(q<d){d=q;best=e}}return best}
-  function combatAttack(range,damage,force,delay,lunge,options={}){const intent=(keys.right?1:0)-(keys.left?1:0),directed=intent!==0,attackSequence=player.attackSequence=(player.attackSequence||0)+1;if(directed)player.face=Math.sign(intent);const step=directed?lunge*1.75:lunge;player.x+=player.face*step;attack(range+(directed?22:0),damage,force*(directed?1.28:1),delay,{...options,attackSequence,hitSlot:0})}
+  function combatAttack(range,damage,force,delay,lunge,options={}){reduceGrabCooldownFromStrike();const intent=(keys.right?1:0)-(keys.left?1:0),directed=intent!==0,attackSequence=player.attackSequence=(player.attackSequence||0)+1;if(directed)player.face=Math.sign(intent);const step=directed?lunge*1.75:lunge;player.x+=player.face*step;attack(range+(directed?22:0),damage,force*(directed?1.28:1),delay,{...options,attackSequence,hitSlot:0})}
   function strikeForestTree(range){if(currentStageTheme!=='森林'||player.level!==0)return;for(const o of currentBlockers()){if(!o.forestProp||o.hiveDropped)continue;const dx=(o.x-player.x)*player.face;if(dx>-38&&dx<range+28&&Math.abs(o.y-player.y)<105){o.hiveDropped=true;forestHives.push({x:o.x+player.face*24,y:o.y,z:150,vz:30,t:8,stingT:.35,level:0});impact(o.x,o.y-125,null,false,player.face*90);message='蜂巢掉下来了——蜂群会攻击附近所有人！';messageT=1.4;break}}}
   function attack(range,damage,force,delay=105,options={}){
     const attackEpoch=player.attackEpoch||0,hitKey=(options.attackSequence||0)*8+(options.hitSlot||0);
@@ -1493,14 +1522,16 @@
     if((e.airLaunch||e.state==='thrown'||e.state==='grappleThrown')&&e.hp>0){
       e.state='knockdown';e.airLaunch=true;e.timer=Math.max(e.timer,.48);e.knockdownDuration=Math.max(e.knockdownDuration||0,.9);
       e.knockVx=kneeChain?e.knockVx:options.launchKickCarry?Math.sign(kx||player.face)*Math.max(Math.abs(e.knockVx||0),options.launchKickCarry):(e.knockVx||0)+kx*.18;e.throwVx=0;
-      refreshEnemyAirJuggle(e,options.airJuggleVz||260);message='空中追打！';messageT=.35
+      const followupLift=options.airJuggleVz??options.launchVz??options.liftVz??260;
+      if(e.followupLiftResetPending){e.airJuggleTime=0;e.airFallTime=0;e.vz=Math.max(0,e.vz||0);e.followupLiftResetPending=false}
+      refreshEnemyAirJuggle(e,followupLift);if(options.resetNextFollowupLift)e.followupLiftResetPending=true;message='空中追打！';messageT=.35
     }else if(options.knockdown){
       const launchVz=Math.max(0,Number(options.launchVz)||0);
       if(launchVz&&!wasAirborne)clearAirFall(e);
       e.state='knockdown';e.timer=.9;e.knockdownDuration=.9;e.knockVx=kneeChain?e.knockVx:options.launchKickCarry?Math.sign(kx||player.face)*options.launchKickCarry:kx*.5;
       e.z=launchVz?Math.max(e.z||0,18):0;
       if(launchVz){if(wasAirborne)refreshEnemyAirJuggle(e,launchVz);else e.vz=Math.max(e.vz||0,launchVz)}else e.vz=0;
-      e.airLaunch=!!launchVz
+      e.airLaunch=!!launchVz;if(launchVz&&options.resetNextFollowupLift)e.followupLiftResetPending=true
     }else{
       e.state=e.hp<=0?'down':'hurt';e.timer=e.hp<=0?1.5:.38;
       if(e.hp>0){
@@ -1530,8 +1561,8 @@
     },contactMs);
     setTimeout(()=>{
       if(!running||player.state!=='overChestThrow'||player.grab!==e)return;
-      e.airJuggleTime=0;e.overChestThrow=false;e.overChestContact=false;e.overChestAngle=0;e.grabbed=false;e.throwHits=new Set();e.x=player.x-player.face*58;e.y=player.y-2;e.grabbedAirVz=null;
-      if(!beginBarbarianRevive(e)){e.state='thrown';e.playerThrown=true;e.overChestFollowupAir=true;e.timer=.82;e.throwVx=-player.face*OVER_CHEST_THROW_SPEED;e.z=30;e.vz=0;refreshEnemyAirJuggle(e,OVER_CHEST_THROW_LIFT);if(e.hp<=0){e.dead=true;player.kills++}}
+      clearAirFall(e);e.overChestThrow=false;e.overChestContact=false;e.overChestAngle=0;e.grabbed=false;e.throwHits=new Set();e.x=player.x-player.face*58;e.y=player.y-2;e.grabbedAirVz=null;
+      if(!beginBarbarianRevive(e)){e.state='thrown';e.playerThrown=true;e.overChestFollowupAir=true;e.followupLiftResetPending=true;e.timer=.82;e.throwVx=-player.face*OVER_CHEST_THROW_SPEED;e.z=30;e.vz=OVER_CHEST_THROW_LIFT;if(e.hp<=0){e.dead=true;player.kills++}}
       clearGrab();player.state='idle';player.timer=0
     },durationMs)
   }
@@ -3302,9 +3333,9 @@
       const p=clamp(1-a.timer/.6,0,.9999),start=8,end=13,frame=start+Math.min(5,Math.floor(p*6));paintN(heroGroundKickComboSheet,GROUND_KICK_FRAME_COUNT,frame,1,0,0,1,'none');paintLegFlame(heroGroundKickComboSheet,GROUND_KICK_FRAME_COUNT,frame,GROUND_KICK_FLAME_ANCHORS,0,0,{prev:Math.max(start,frame-1),next:Math.min(end,frame+1)});
     }else if(state==='airBackKick'&&(heroJumpKickSheet.complete||heroJumpKickChainSheet.complete)){
       const chainActive=!a.launchKick&&(a.launchKickChainCount||0)>0&&heroJumpKickChainSheet.complete,airKickSheet=chainActive?heroJumpKickChainSheet:heroJumpKickSheet,normalFrames=chainActive?[0,1,2,3]:[1,3,4],launchFrames=[0,1,3,5],elapsed=clamp(.5-a.timer,0,.4999),chainDuration=Math.max(.001,a.launchKickChainDuration||LAUNCH_KICK_CHAIN_DURATION*playerAttackSpeedMul()),chainElapsed=clamp((chainDuration-a.timer)/playerAttackSpeedMul(),0,LAUNCH_KICK_CHAIN_DURATION-.0001),frame=chainActive?launchKickChainFrameAt(chainElapsed):a.launchKick?(elapsed<.1?0:elapsed<.2?1:elapsed<.4?3:5):normalFrames[Math.min(normalFrames.length-1,Math.floor(clamp(1-a.timer/.62,0,.9999)*normalFrames.length))],flowFrames=chainActive?normalFrames:(a.launchKick?launchFrames:normalFrames),flowIndex=Math.max(0,flowFrames.indexOf(frame)),flowPrev=flowFrames[Math.max(0,flowIndex-1)],flowNext=chainActive&&frame===1?frame:flowFrames[Math.min(flowFrames.length-1,flowIndex+1)],airKickFrameY=chainActive?[0,0,0,0]:[0,-82,-62,-46,-76,0],normalAnchors=[[205,295,-1.85,.75],[232,284,-1.68,.86],[229,273,-1.6,.9],[282,262,-1.45,1.25],[229,286,-1.7,.86],[212,295,-1.82,.76]],launchAnchors=[[164,325,-1.85,.75],[203,326,-1.68,.86],[229,273,-1.6,.9],[279,274,-1.45,1.25],[229,286,-1.7,.86],[216,324,-1.82,.76]],chainMotionAnchors=[[194,292,-.35,.92],[286,224,-1.34,1.38],[193,304,-2.15,.9],[292,274,-1.48,1.34]],chainAnchors=[[193,300,-.35,.92],[302,128,-1.34,1.38],[207,292,-2.15,.9],[322,201,-1.48,1.34]],anchors=chainActive?chainAnchors:a.launchKick?launchAnchors:normalAnchors,frameCount=chainActive?4:6,kickOutFrame=!chainActive&&frame===3,kickOutFlameRotation=kickOutFrame?-LEG_FLAME_SOURCE_HEAD_ANGLE:null,kickOutFlameY=airKickFrameY[frame]+(kickOutFrame?10:0);paintN(airKickSheet,frameCount,frame,.41,0,airKickFrameY[frame],1,'none');paintLegFlame(airKickSheet,frameCount,frame,anchors,0,kickOutFlameY,{prev:flowPrev,next:flowNext,rotation:kickOutFlameRotation,motionAnchors:chainActive?chainMotionAnchors:a.launchKick?normalAnchors:null},chainActive);
-    }else if(state==='backHop'&&heroJumpKickSheet.complete){
-      const p=clamp((a.backHopElapsed||0)/BACK_HOP_DURATION,0,.9999),frames=[1,4,4,1],frame=frames[Math.min(frames.length-1,Math.floor(p*frames.length))],jumpFrameY=[0,-58,0,0,-50,0];
-      paintN(heroJumpKickSheet,6,frame,.41,0,5+jumpFrameY[frame],1,'none');
+    }else if(state==='backHop'&&heroJumpTransitionSheet.complete){
+      const p=clamp((a.backHopElapsed||0)/BACK_HOP_DURATION,0,.9999),frames=[1,0,0,1],frame=frames[Math.min(frames.length-1,Math.floor(p*frames.length))];
+      paintN(heroJumpTransitionSheet,2,frame,.25,0,0,1,'none');
     }else if(state==='jumpCrouch'&&heroJumpTransitionSheet.complete){
       paintN(heroJumpTransitionSheet,2,0,.25,0,0,1,'none');
     }else if(state==='jumpLand'&&heroJumpTransitionSheet.complete){
@@ -3968,27 +3999,37 @@
   doorActionButton?.addEventListener('pointerdown',event=>{event.preventDefault();event.stopPropagation();if(tryPushBunkerDoor())haptic(20)});
   flameActionButton?.addEventListener('pointerdown',event=>{event.preventDefault();event.stopPropagation();if(useFlameBoost())haptic(28)});
   let battleStarting=false;
+  const battleLoading=document.querySelector('#battle-loading'),battleLoadingStatus=document.querySelector('#battle-loading-status');
+  function showBattleLoading(status){if(battleLoadingStatus)battleLoadingStatus.textContent=status;if(battleLoading)battleLoading.hidden=false}
+  function updateBattleLoading(status){if(battleLoadingStatus)battleLoadingStatus.textContent=status}
+  function hideBattleLoading(){if(battleLoading)battleLoading.hidden=true}
   async function beginFromMenu(starter,allowFreeTour=true,rankedRun=true,testMode=false){
     if(battleStarting)return;
-    battleStarting=true;
-    let progressReady=await progressHydrationPromise;if(!progressReady){progressHydrationPromise=hydrateProgressFromServer();progressReady=await progressHydrationPromise}if(!progressReady){message='无法读取服务器进度，请检查网络后重试';messageT=3;battleStarting=false;return}
-    const loadResult=await window.TieJieAssets?.whenReady;
-    if(loadResult&&(loadResult.failed||loadResult.loading)){
-      const detail=`人物资源加载失败（成功 ${loadResult.loaded}/${loadResult.total}）`;
-      message=detail;messageT=4;
-      try{window.tt?.showToast?.({title:detail,icon:'none',duration:4000})}catch{}
-      battleStarting=false;
-      return
-    }
-    if(!prepareRecruitment()){battleStarting=false;return}
-    window.TieJieAudio?.unlock();clearPendingGrowth();testRunMode=isTestBuild&&testMode;freeTourMode=allowFreeTour&&isTestBuild&&!!document.querySelector('#free-tour')?.checked;rankedRunEligible=rankedRun&&!freeTourMode&&!testRunMode;document.body.classList.remove('menu-mode');document.querySelector('#start-card').style.display='none';document.querySelectorAll('.menu-page').forEach(page=>page.hidden=true);document.querySelector('#skill-panel').hidden=true;document.querySelector('#growth-panel').hidden=true;document.querySelector('#growth-toggle').hidden=true;document.querySelector('#touch-ui').classList.add('active');document.querySelector('#battle-menu-toggle').hidden=false;document.querySelector('#battle-menu').hidden=true;starter();if(!await beginServerStageRun(currentStageNumber())){returnToStart();battleStarting=false;return}running=true;battleStarting=false
+    battleStarting=true;showBattleLoading('正在同步服务器进度……');
+    try{
+      await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
+      let progressReady=await progressHydrationPromise;if(!progressReady){updateBattleLoading('正在重新连接进度服务器……');progressHydrationPromise=hydrateProgressFromServer();progressReady=await progressHydrationPromise}if(!progressReady){message='无法读取服务器进度，请检查网络后重试';messageT=3;return}
+      updateBattleLoading('正在检查人物与场景资源……');
+      const loadResult=await window.TieJieAssets?.whenReady;
+      if(loadResult&&(loadResult.failed||loadResult.loading)){
+        const detail=`人物资源加载失败（成功 ${loadResult.loaded}/${loadResult.total}）`;
+        message=detail;messageT=4;
+        try{window.tt?.showToast?.({title:detail,icon:'none',duration:4000})}catch{}
+        return
+      }
+      updateBattleLoading('正在准备队友和关卡……');
+      if(!prepareRecruitment())return;
+      window.TieJieAudio?.unlock();clearPendingGrowth();testRunMode=isTestBuild&&testMode;freeTourMode=allowFreeTour&&isTestBuild&&!!document.querySelector('#free-tour')?.checked;rankedRunEligible=rankedRun&&!freeTourMode&&!testRunMode;document.body.classList.remove('menu-mode');document.querySelector('#start-card').style.display='none';document.querySelectorAll('.menu-page').forEach(page=>page.hidden=true);document.querySelector('#skill-panel').hidden=true;document.querySelector('#growth-panel').hidden=true;document.querySelector('#growth-toggle').hidden=true;document.querySelector('#touch-ui').classList.add('active');document.querySelector('#battle-menu-toggle').hidden=false;document.querySelector('#battle-menu').hidden=true;starter();updateBattleLoading('正在向服务器登记本次挑战……');if(!await beginServerStageRun(currentStageNumber())){returnToStart();return}updateBattleLoading('准备完成');running=true
+    }finally{battleStarting=false;hideBattleLoading()}
   }
   const tr=(key,vars)=>window.TieJieI18n?.t?.(key,vars)||key;
   function refreshStartStageLabel(){const start=document.querySelector('#start');if(start)start.textContent=tr('continueStage',{stage:progress.currentStage})}
   refreshStartStageLabel();
   document.querySelector('#start').onclick=()=>beginFromMenu(reset,true);
-  const testTools=document.querySelector('#test-tools'),gauntletButton=document.querySelector('#gauntlet-btn'),quickStageInput=document.querySelector('#quick-stage-number');
+  const testTools=document.querySelector('#test-tools'),gauntletButton=document.querySelector('#gauntlet-btn'),quickStageInput=document.querySelector('#quick-stage-number'),adTestToggle=document.querySelector('#ad-test-toggle');
   if(testTools)testTools.hidden=!isTestBuild;if(gauntletButton)gauntletButton.hidden=!isTestBuild;if(quickStageInput)quickStageInput.value=String(progress.currentStage);
+  function refreshAdTestToggle(){if(!adTestToggle)return;adTestToggle.hidden=!isTestBuild;adTestToggle.classList.toggle('active',adTestMode);adTestToggle.setAttribute('aria-pressed',String(adTestMode));adTestToggle.textContent=adTestMode?'广告模式：测试广告（奖励规则不变）':'广告模式：正式广告'}
+  adTestToggle?.addEventListener('click',()=>{if(!isTestBuild)return;adTestMode=!adTestMode;refreshAdTestToggle();try{window.TieJieAdMobNative?.startAndPreload?.(adTestMode)}catch{}});refreshAdTestToggle();
   function normalizeQuickStage(){const requested=Math.max(1,Math.floor(Number(quickStageInput?.value)||1)),stage=isTestBuild?requested:Math.min(requested,maxSelectableStage());if(quickStageInput)quickStageInput.value=String(stage);return stage}
   quickStageInput?.addEventListener('change',normalizeQuickStage);
   document.querySelector('#quick-stage-prev')?.addEventListener('click',()=>{if(quickStageInput)quickStageInput.value=String(Math.max(1,normalizeQuickStage()-1))});
@@ -4068,9 +4109,9 @@
   document.querySelector('#feedback-btn').onclick=()=>{closeMenuPages();document.querySelector('#feedback-panel').hidden=false;document.querySelector('#feedback-status').textContent='';window.TieJieI18n?.apply?.(document.querySelector('#feedback-panel'))};
   document.querySelector('#feedback-back').onclick=()=>{document.querySelector('#feedback-panel').hidden=true};
   document.querySelector('#feedback-form').addEventListener('submit',async event=>{event.preventDefault();const content=String(document.querySelector('#feedback-content').value||'').trim(),status=document.querySelector('#feedback-status'),submit=document.querySelector('#feedback-submit');if([...content].length<10){status.textContent=tr('feedbackTooShort');return}submit.disabled=true;status.textContent=tr('feedbackSending');const result=await authorization.api?.post?.('/v1/feedback',{category:document.querySelector('#feedback-category').value,content,stage:currentStageNumber(),language:window.TieJieI18n?.language||'',clientVersion:window.TieJieAuthConfig?.clientVersion||''});submit.disabled=false;if(result?.ok){document.querySelector('#feedback-content').value='';status.textContent=tr('feedbackSent')}else status.textContent=tr('feedbackFailed')});
-  document.querySelector('#reward-confirm').addEventListener('click',showSettlementTestRewarded);
-  document.querySelector('#reward-cancel').addEventListener('click',()=>{if(pendingReward?.mode==='stage-settlement')continueAfterStageSettlement();else if(pendingReward?.mode==='stage-validation-failed')returnToStart();else if(pendingReward?.mode==='defeat')revivePartyFull();else closeRewardModal()});
-  document.querySelector('#reward-exit').addEventListener('click',abandonDropsAndReturn);
+  document.querySelectorAll('[data-reward-ad]').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();if(failurePopupT<=0)openResourceAd(button.dataset.rewardAd)}));
+  document.querySelector('#reward-confirm').addEventListener('click',showRewardedClaim);
+  document.querySelector('#reward-cancel').addEventListener('click',()=>{if(pendingReward?.mode==='stage-settlement')continueAfterStageSettlement();else if(pendingReward?.mode==='stage-validation-failed')returnToStart();else if(pendingReward?.mode==='run-loss')discardRunDropsAndReturn();else closeRewardModal()});
   let vibrationEnabled=true,lastHapticAt=0;
   try{vibrationEnabled=localStorage.getItem('tiejie-vibration-enabled')!=='0'}catch{}
   function haptic(duration=14){const now=performance.now();if(!vibrationEnabled||now-lastHapticAt<45||typeof navigator.vibrate!=='function')return;lastHapticAt=now;navigator.vibrate(Math.max(8,Math.min(45,duration)))}
@@ -4081,7 +4122,7 @@
   document.querySelector('#battle-menu-toggle').addEventListener('click',()=>{const panel=document.querySelector('#battle-menu'),resetGauntlet=document.querySelector('#battle-menu-reset-gauntlet');if(panel.hidden){battleMenuResumeRunning=running;running=false;window.TieJieAudio?.pause();if(resetGauntlet)resetGauntlet.hidden=!gauntletMode;panel.hidden=false}else{panel.hidden=true;running=battleMenuResumeRunning;battleMenuResumeRunning=false;if(running)window.TieJieAudio?.resume()}});
   document.querySelector('#battle-menu-resume').addEventListener('click',()=>{document.querySelector('#battle-menu').hidden=true;running=battleMenuResumeRunning;battleMenuResumeRunning=false;if(running)window.TieJieAudio?.resume()});
   document.querySelector('#battle-menu-reset-gauntlet').addEventListener('click',()=>{if(!gauntletMode)return;document.querySelector('#battle-menu').hidden=true;battleMenuResumeRunning=false;startGauntlet();running=true;window.TieJieAudio?.resume();message='轮番战已重置，从第一名对手重新开始';messageT=1.4});
-  document.querySelector('#battle-menu-end').addEventListener('click',()=>returnToStart());
+  document.querySelector('#battle-menu-end').addEventListener('click',()=>openRunLoss('你选择了中途退出'));
   document.querySelector('#growth-toggle').addEventListener('click',()=>{if(failurePopupT>0||!canAllocateStats())return;const panel=document.querySelector('#growth-panel');if(panel.hidden)panel.hidden=false;else closeGrowthPanel()});
   document.querySelector('#growth-confirm').addEventListener('click',confirmGrowthUpgrades);
   document.querySelector('#growth-close').addEventListener('click',closeGrowthPanel);
@@ -4109,7 +4150,7 @@
   document.querySelectorAll('[data-downgrade]').forEach(button=>button.addEventListener('click',()=>undoPendingUpgrade(button.dataset.downgrade)));
   async function startAdMobAfterMenuReady(){
     try{await window.TieJieAssets?.whenReady}catch{}
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{try{window.TieJieAdMobTestNative?.startAndPreload?.()}catch{}}))
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{try{window.TieJieAdMobNative?.startAndPreload?.(adTestMode)}catch{}}))
   }
   refreshSkillControls();refreshSkillPanel();refreshGrowthConfirmation();reset();requestAnimationFrame(loop);startAdMobAfterMenuReady();progressHydrationPromise.then(ok=>{if(!ok)return;player.maxHp=playerMaxHp();player.hp=player.maxHp;refreshStartStageLabel();if(playerNameInput)playerNameInput.value=progress.displayName;refreshSkillControls();refreshSkillPanel();refreshGrowthConfirmation()});
 })();

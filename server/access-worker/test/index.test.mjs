@@ -41,6 +41,12 @@ class MemoryStatement {
     if (this.sql.includes('FROM stage_completions WHERE user_id')) {
       return this.db.stageCompletions.get(`${this.values[0]}:${this.values[1]}`) || null;
     }
+    if (this.sql.includes('FROM ad_reward_claims WHERE user_id = ? AND token_hash')) {
+      return [...this.db.adRewardClaims.values()].find(claim => claim.user_id === this.values[0] && claim.token_hash === this.values[1]) || null;
+    }
+    if (this.sql.includes('FROM ad_reward_claims WHERE token_hash')) {
+      return [...this.db.adRewardClaims.values()].find(claim => claim.token_hash === this.values[0]) || null;
+    }
     if (this.sql.includes('FROM feedback WHERE user_id')) {
       return null;
     }
@@ -86,6 +92,11 @@ class MemoryStatement {
     } else if (this.sql.startsWith('UPDATE users SET skill_mask =')) {
       const [skill_mask, progress_updated_at, updated_at, id] = this.values;
       Object.assign(this.db.users.find(user => user.id === id), { skill_mask, progress_updated_at, updated_at });
+    } else if (this.sql.startsWith('UPDATE users SET gold = gold +')) {
+      const [gold, chicken, fruit, progress_updated_at, updated_at, id, claimId] = this.values;
+      const user = this.db.users.find(item => item.id === id), claim = this.db.adRewardClaims.get(claimId);
+      if (!user || !claim || claim.status !== 'pending') changes = 0;
+      else Object.assign(user, { gold: user.gold + gold, chicken: user.chicken + chicken, fruit: user.fruit + fruit, progress_updated_at, updated_at });
     } else if (this.sql.startsWith('UPDATE users SET gold')) {
       const [price, bit, progress_updated_at, updated_at, id, requiredGold] = this.values;
       const user = this.db.users.find(item => item.id === id);
@@ -118,6 +129,13 @@ class MemoryStatement {
       this.db.stageRuns.delete(this.values[0]);
     } else if (this.sql.startsWith('DELETE FROM stage_completions')) {
       for (const key of this.db.stageCompletions.keys()) if (key.startsWith(`${this.values[0]}:`)) this.db.stageCompletions.delete(key);
+    } else if (this.sql.startsWith('INSERT INTO ad_reward_claims')) {
+      const [id, user_id, token_hash, grant_key, placement, reward_gold, reward_chicken, reward_fruit, test_mode, created_at, expires_at] = this.values;
+      this.db.adRewardClaims.set(id, { id, user_id, token_hash, grant_key, placement, reward_gold, reward_chicken, reward_fruit, test_mode, status: 'pending', transaction_id: null, created_at, expires_at, granted_at: null });
+    } else if (this.sql.startsWith('UPDATE ad_reward_claims SET status')) {
+      const [transaction_id, granted_at, id] = this.values, claim = this.db.adRewardClaims.get(id);
+      if (!claim || claim.status !== 'pending') changes = 0;
+      else Object.assign(claim, { status: 'granted', transaction_id, granted_at });
     }
     return { success: true, meta: { changes } };
   }
@@ -130,6 +148,7 @@ class MemoryD1 {
   throttles = new Map();
   stageRuns = new Map();
   stageCompletions = new Map();
+  adRewardClaims = new Map();
 
   prepare(sql) {
     return new MemoryStatement(this, sql);
@@ -266,6 +285,19 @@ test('client saves cannot overwrite authoritative progression and a timed run aw
   assert.equal(retriedData.replayedReceipt, true);
   assert.equal(retriedData.gold, completion.gold, 'retry must not duplicate stage rewards');
 
+  const doubleStart = await worker.fetch(new Request('https://example.test/v1/ad/reward/start', {
+    method: 'POST', headers, body: JSON.stringify({ placement: 'stageDouble', stage: 1, testMode: true }),
+  }), env);
+  const doubleClaim = await doubleStart.json();
+  assert.equal(doubleStart.status, 200);
+  const doubled = await worker.fetch(new Request('https://example.test/v1/ad/reward/test-complete', {
+    method: 'POST', headers, body: JSON.stringify({ claimToken: doubleClaim.claimToken }),
+  }), env);
+  const doubledData = await doubled.json();
+  assert.equal(doubledData.gold, completion.gold + completion.rewards.gold);
+  assert.equal(doubledData.chicken, completion.chicken + completion.rewards.chicken);
+  assert.equal(doubledData.fruit, completion.fruit + completion.rewards.fruit);
+
   const ranking = await worker.fetch(new Request('https://example.test/v1/leaderboard', { method: 'POST', headers }), env);
   const rankData = await ranking.json();
   assert.equal(rankData.entries.length, 1);
@@ -276,6 +308,54 @@ test('client saves cannot overwrite authoritative progression and a timed run aw
   }), env);
   assert.equal(feedback.status, 201);
   assert.equal(DB.feedback.length, 1);
+});
+
+test('test ads use the same server claim and idempotent reward grant path', async () => {
+  const DB = new MemoryD1();
+  const env = { DB, PASSWORD_PEPPER: 'test-only-pepper-with-at-least-32-characters' };
+  const registration = await worker.fetch(new Request('https://example.test/v1/register', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ username: 'ad_probe', password: 'safe-test-password' }),
+  }), env);
+  const { token } = await registration.json();
+  const headers = { 'content-type': 'application/json', authorization: `Bearer ${token}` };
+  const started = await worker.fetch(new Request('https://example.test/v1/ad/reward/start', {
+    method: 'POST', headers, body: JSON.stringify({ placement: 'resource', kind: 'gold', testMode: true }),
+  }), env);
+  const claim = await started.json();
+  assert.equal(started.status, 200);
+  assert.match(claim.claimToken, /^[0-9a-f]{64}$/);
+  assert.ok(claim.rewards.gold >= 100);
+
+  const complete = () => worker.fetch(new Request('https://example.test/v1/ad/reward/test-complete', {
+    method: 'POST', headers, body: JSON.stringify({ claimToken: claim.claimToken }),
+  }), env);
+  const first = await complete(); const firstResult = await first.json();
+  assert.equal(firstResult.granted, true);
+  assert.equal(firstResult.gold, claim.rewards.gold);
+  const second = await complete(); const secondResult = await second.json();
+  assert.equal(secondResult.gold, claim.rewards.gold, 'replaying a claim must not duplicate rewards');
+});
+
+test('run recovery is capped by the server run budget and includes the 50 gold bonus', async () => {
+  const DB = new MemoryD1();
+  const env = { DB, PASSWORD_PEPPER: 'test-only-pepper-with-at-least-32-characters' };
+  const registration = await worker.fetch(new Request('https://example.test/v1/register', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username: 'recovery_probe', password: 'safe-test-password' }),
+  }), env);
+  const { token } = await registration.json(), headers = { 'content-type': 'application/json', authorization: `Bearer ${token}` };
+  const started = await worker.fetch(new Request('https://example.test/v1/stage/start', { method: 'POST', headers, body: JSON.stringify({ stage: 1 }) }), env);
+  const run = await started.json(), budget = DB.stageRuns.get(DB.users[0].id);
+  const claimStart = await worker.fetch(new Request('https://example.test/v1/ad/reward/start', {
+    method: 'POST', headers, body: JSON.stringify({ placement: 'runRecovery', stage: 1, runToken: run.runToken, gold: 999999, chicken: 999999, fruit: 999999, testMode: true }),
+  }), env);
+  const claim = await claimStart.json();
+  assert.deepEqual(claim.rewards, { gold: budget.reward_gold + 50, chicken: budget.reward_chicken, fruit: budget.reward_fruit });
+  const granted = await worker.fetch(new Request('https://example.test/v1/ad/reward/test-complete', {
+    method: 'POST', headers, body: JSON.stringify({ claimToken: claim.claimToken }),
+  }), env);
+  const result = await granted.json();
+  assert.equal(result.gold, budget.reward_gold + 50);
 });
 
 test('upgrades, skills, and recruits are validated and spent atomically by the server', async () => {

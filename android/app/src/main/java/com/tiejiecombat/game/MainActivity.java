@@ -25,7 +25,7 @@ import com.google.android.play.core.install.model.InstallStatus;
 import com.google.android.play.core.install.model.UpdateAvailability;
 
 public class MainActivity extends BridgeActivity {
-    private AdMobInitializationTestBridge adMobTestBridge;
+    private AdMobBridge adMobBridge;
     private AppUpdateManager appUpdateManager;
     private InstallStateUpdatedListener updateInstallStateListener;
     private boolean updateFlowRequested;
@@ -52,12 +52,9 @@ public class MainActivity extends BridgeActivity {
         boolean isDebuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         android.webkit.WebView.setWebContentsDebuggingEnabled(isDebuggable);
         android.webkit.WebView webView = bridge != null ? bridge.getWebView() : null;
-        if (isDebuggable && webView != null) {
-            adMobTestBridge = new AdMobInitializationTestBridge(this);
-            webView.addJavascriptInterface(
-                adMobTestBridge,
-                "TieJieAdMobTestNative"
-            );
+        if (webView != null) {
+            adMobBridge = new AdMobBridge(this);
+            webView.addJavascriptInterface(adMobBridge, "TieJieAdMobNative");
         }
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -95,8 +92,8 @@ public class MainActivity extends BridgeActivity {
         if (appUpdateManager != null && updateInstallStateListener != null) {
             appUpdateManager.unregisterListener(updateInstallStateListener);
         }
-        if (adMobTestBridge != null) {
-            adMobTestBridge.destroy();
+        if (adMobBridge != null) {
+            adMobBridge.destroy();
         }
         super.onDestroy();
     }
