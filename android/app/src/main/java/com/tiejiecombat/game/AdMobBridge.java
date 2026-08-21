@@ -26,6 +26,7 @@ public final class AdMobBridge {
 
     private final MainActivity activity;
     private final AtomicBoolean startupStarted = new AtomicBoolean(false);
+    private final AtomicBoolean showInProgress = new AtomicBoolean(false);
     private final Set<String> startedPreloaders = ConcurrentHashMap.newKeySet();
     private volatile String state = "idle";
     private volatile String rewardedState = "idle";
@@ -51,6 +52,7 @@ public final class AdMobBridge {
                     });
                 } catch (Throwable error) {
                     state = "failed:" + error.getClass().getSimpleName();
+                    rewardedState = state;
                 }
             }, "admob-rewarded-initialization").start();
         } else if ("initialized".equals(state)) {
@@ -66,48 +68,69 @@ public final class AdMobBridge {
             .setBufferSize(PRELOAD_BUFFER_SIZE).build();
         RewardedAdPreloader.start(adUnitId, configuration, new PreloadCallbackV2() {
             @Override public void onAdPreloaded(@NonNull String preloadId, ResponseInfo info) {
-                if (!destroyed) rewardedState = "loaded";
+                if (!destroyed && !showInProgress.get()) rewardedState = "loaded";
             }
             @Override public void onAdsExhausted(@NonNull String preloadId) {
-                if (!destroyed) rewardedState = "loading";
+                if (!destroyed && !showInProgress.get()) rewardedState = "loading";
             }
             @Override public void onAdFailedToPreload(@NonNull String preloadId, @NonNull AdError error) {
-                if (!destroyed) rewardedState = "retrying:load-" + error.getCode();
+                if (!destroyed && !showInProgress.get()) rewardedState = "retrying:load-" + error.getCode();
             }
         });
     }
 
     @JavascriptInterface
     public String showRewarded(String customData, boolean testMode) {
-        if (!"initialized".equals(state)) return rewardedState = "failed:not-initialized";
+        if (destroyed) return rewardedState = "failed:destroyed";
+        if (!"initialized".equals(state)) {
+            String startupState = startAndPreload(testMode);
+            return rewardedState = startupState.startsWith("failed:") ? startupState : "loading";
+        }
         String adUnitId = rewardedId(testMode);
         if (adUnitId.isEmpty()) return rewardedState = "failed:missing-ad-unit";
-        startPreloader(adUnitId);
-        RewardedAd ad = RewardedAdPreloader.pollAd(adUnitId);
-        if (ad == null) return rewardedState = "loading";
         String safeCustomData = customData == null ? "" : customData.trim();
-        if (!safeCustomData.isEmpty()) {
-            ad.setServerSideVerificationOptions(new ServerSideVerificationOptions.Builder()
-                .setCustomData(safeCustomData).build());
-        }
-        rewardedState = "showing";
-        activity.runOnUiThread(() -> {
+        activity.runOnUiThread(() -> showRewardedOnMainThread(adUnitId, safeCustomData));
+        return rewardedState;
+    }
+
+    private void showRewardedOnMainThread(String adUnitId, String customData) {
+        if (destroyed || !showInProgress.compareAndSet(false, true)) return;
+        try {
+            startPreloader(adUnitId);
+            RewardedAd ad = RewardedAdPreloader.pollAd(adUnitId);
+            if (ad == null) {
+                showInProgress.set(false);
+                rewardedState = "loading";
+                return;
+            }
+            if (!customData.isEmpty()) {
+                ad.setServerSideVerificationOptions(new ServerSideVerificationOptions.Builder()
+                    .setCustomData(customData).build());
+            }
+            rewardedState = "showing";
             final boolean[] earned = {false};
             ad.setFullScreenContentCallback(new FullScreenContentCallback() {
                 @Override public void onAdShowedFullScreenContent() { rewardedState = "showing"; }
-                @Override public void onAdDismissedFullScreenContent() { rewardedState = earned[0] ? "earned" : "closed"; }
-                @Override public void onAdFailedToShowFullScreenContent(@NonNull AdError error) { rewardedState = "failed:show-" + error.getCode(); }
+                @Override public void onAdDismissedFullScreenContent() {
+                    showInProgress.set(false);
+                    rewardedState = earned[0] ? "earned" : "closed";
+                }
+                @Override public void onAdFailedToShowFullScreenContent(@NonNull AdError error) {
+                    showInProgress.set(false);
+                    rewardedState = "failed:show-" + error.getCode();
+                }
             });
             ad.show(activity, (@NonNull RewardItem reward) -> earned[0] = true);
-        });
-        return rewardedState;
+        } catch (Throwable error) {
+            showInProgress.set(false);
+            rewardedState = "failed:native-" + error.getClass().getSimpleName();
+        }
     }
 
     @JavascriptInterface public String getState() { return state; }
     @JavascriptInterface public String getRewardedState() { return rewardedState; }
     @JavascriptInterface public int getRewardedReadyCount(boolean testMode) {
-        String id = rewardedId(testMode);
-        return !id.isEmpty() && RewardedAdPreloader.isAdAvailable(id) ? 1 : 0;
+        return "loaded".equals(rewardedState) ? 1 : 0;
     }
 
     public void destroy() {

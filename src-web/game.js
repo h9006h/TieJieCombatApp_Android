@@ -10,7 +10,7 @@
     skinnySlideSheet,heroGrabSheet,heroGrabKneeSheet,heroOverChestThrowSheet,heroBackThrowFrames,heroJumpTransitionSheet,heroClimbOutSheet,heroRisingPunchSheet,heroRisingFlameSheet,
     spinnerSpinSheet,suitDaggerSheet,suitBackflipSheet,grapplerWrestlingSheet,heavyCounterGrabSheet,grapplerCounterGrabSheet,assassinRunSheet,enemyMoveSheets,barbarianReviveSheet,barbarianSprintSheet,barbarianQiAuraSheet,barbarianSwingFxSheet,grenadeItemSprite,warHammerItemSprite,
     materialAtlas,greatWallBrickTile,greatWallGroundTile,greatWallPitSprite,greatWallPitEdgeSprite,greatWallCollapseSprite,greatWallMountainLayer,greatWallPitFloorTile,
-    oldAlleyRoadCollapseSprite,oldAlleyHouseWallWindows,oldAlleyHouseWallBalcony,oldAlleyBackground,oldAlleyStreetGround,oldAlleyRooftopGround,desertYardangBackground,desertYardangTerrainAtlas,desertYardangArchitectureAtlas,desertYardangCaveClimbTexture,
+    oldAlleyRoadCollapseSprite,oldAlleyHouseWallWindows,oldAlleyHouseWallBalcony,oldAlleyBackground,oldAlleyStreetGround,oldAlleyRooftopGround,desertYardangBackground,desertYardangTerrainAtlas,desertStairCutout,desertYardangArchitectureAtlas,desertYardangCaveClimbTexture,
     highriseBackground,highriseRooftopGround,highriseStructure,skyShelterBackground,skyShelterRooftopGround,skyShelterStructureAtlas,skyShelterBoundariesAtlas,skyShelterOuterPitWallsAtlas,
     waterShelterOceanBackground,waterShelterSurfaceAtlas,waterShelterStructureAtlas,waterShelterFloodedRoomAtlas,
     forestBackdropTile,forestTreeRootSprite,forestTerrainAtlas,forestArchitectureAtlas,environmentBoundaryAtlas,bunkerStructureAtlas,bunkerCavePlainTexture,bunkerCaveClimbTexture,bunkerRoomAtlas,bunkerSideDoorAtlas,bunkerCivilDefenseDoorAtlas,bunkerLoungeGymAtlas,bunkerModernRoomStrips,generatedEnemySheets,fighterShadows
@@ -607,6 +607,8 @@
     return{topY:s.topY,bottomY:s.bottomY};
   }
   const FIXED_STAIR_STEP_SPACING=24;
+  const DESERT_STAIR_TEXTURE_TILE_HEIGHT=150;
+  const DESERT_STAIR_CUTOUT_TOP_FILL=.591,DESERT_STAIR_CUTOUT_BOTTOM_FILL=.795;
   function fixedStairStepCount(top,bottom){return Math.max(2,Math.round(Math.abs(bottom-top)/FIXED_STAIR_STEP_SPACING))}
   function stairBoundsAtY(s,y,pad=0){const e=stairEnds(s),t=clamp((e.bottomY-y)/(e.bottomY-e.topY),0,1),w=s.bottomW+(s.topW-s.bottomW)*t,c=s.x+s.bottomW*.5;return{left:c-w*.5-pad,right:c+w*.5+pad,t,topY:e.topY,bottomY:e.bottomY}}
   function insideStair(s,x,y,pad=0){const e=stairEnds(s);if(y<e.topY-pad||y>e.bottomY+pad)return false;const b=stairBoundsAtY(s,y,pad);return x>=b.left&&x<=b.right}
@@ -2567,9 +2569,26 @@
     g.restore()
   }
   function drawDesertStoneStairs(s){
-    const e=stairEnds(s),c=s.x+s.bottomW*.5,top=e.topY,bot=e.bottomY,tl=c-s.topW*.5,tr=c+s.topW*.5,bl=c-s.bottomW*.5,br=c+s.bottomW*.5;
-    g.save();g.beginPath();g.moveTo(tl,top);g.lineTo(tr,top);g.lineTo(br,bot+2);g.lineTo(bl,bot+2);g.closePath();g.clip();
-    if(!drawDesertAtlasCell(desertYardangTerrainAtlas,1,1,bl,top,s.bottomW,bot-top+3)){g.fillStyle='#d7a65f';g.fillRect(bl,top,s.bottomW,bot-top+3)}
+    const e=stairEnds(s),top=e.topY,bot=e.bottomY,topEdge=stairBoundsAtY(s,top),bottomEdge=stairBoundsAtY(s,bot),c=(bottomEdge.left+bottomEdge.right)*.5,targetW=bottomEdge.right-bottomEdge.left,targetH=bot-top+3;
+    g.save();g.beginPath();g.moveTo(topEdge.left,top);g.lineTo(topEdge.right,top);g.lineTo(bottomEdge.right,bot+2);g.lineTo(bottomEdge.left,bot+2);g.closePath();g.clip();
+    if(atlasReady(desertStairCutout)){
+      const sourceW=desertStairCutout.naturalWidth||desertStairCutout.width,sourceH=desertStairCutout.naturalHeight||desertStairCutout.height,tileH=DESERT_STAIR_TEXTURE_TILE_HEIGHT,overlap=10,advance=tileH-overlap,tileCount=Math.max(1,Math.ceil(Math.max(1,targetH-overlap)/advance));
+      g.filter='brightness(.86) saturate(.84)';
+      for(let i=tileCount-1;i>=0;i--){
+        const y=top+i*advance,h=Math.min(tileH,bot+3-y);if(h<=0)continue;const sourceDrawH=sourceH*(h/tileH),tileTop=stairBoundsAtY(s,y),tileBottom=stairBoundsAtY(s,y+h),sourceBottomFill=DESERT_STAIR_CUTOUT_TOP_FILL+(DESERT_STAIR_CUTOUT_BOTTOM_FILL-DESERT_STAIR_CUTOUT_TOP_FILL)*(h/tileH),drawW=Math.max((tileTop.right-tileTop.left)/DESERT_STAIR_CUTOUT_TOP_FILL,(tileBottom.right-tileBottom.left)/sourceBottomFill);
+        g.drawImage(desertStairCutout,0,0,sourceW,sourceDrawH,c-drawW*.5,y,drawW,h)
+      }
+      g.filter='none'
+    }else if(atlasReady(desertYardangTerrainAtlas)){
+      const cellW=(desertYardangTerrainAtlas.naturalWidth||desertYardangTerrainAtlas.width)/2,cellH=(desertYardangTerrainAtlas.naturalHeight||desertYardangTerrainAtlas.height)/2,inset=5,sourceW=cellW-inset*2,sourceH=cellH-inset*2,tileH=DESERT_STAIR_TEXTURE_TILE_HEIGHT,tileCount=Math.ceil(targetH/tileH);
+      for(let i=0;i<tileCount;i++){const y=top+i*tileH,h=Math.min(tileH,bot+3-y),sourceDrawH=sourceH*(h/tileH);g.drawImage(desertYardangTerrainAtlas,cellW+inset,cellH+inset,sourceW,sourceDrawH,c-targetW*.5,y,targetW,h)}
+      g.globalCompositeOperation='multiply';g.fillStyle='rgba(137,96,57,.18)';g.fillRect(bottomEdge.left,top,targetW,targetH);g.globalCompositeOperation='source-over'
+    }else{g.fillStyle='#d7a65f';g.fillRect(bottomEdge.left,top,targetW,targetH)}
+    if(atlasReady(desertYardangTerrainAtlas)){
+      const cellW=(desertYardangTerrainAtlas.naturalWidth||desertYardangTerrainAtlas.width)/2,cellH=(desertYardangTerrainAtlas.naturalHeight||desertYardangTerrainAtlas.height)/2,inset=5,sourceW=cellW-inset*2,sourceH=cellH-inset*2;
+      const joinH=Math.min(14,Math.max(8,targetH*.045)),joinW=topEdge.right-topEdge.left;
+      g.drawImage(desertYardangTerrainAtlas,cellW+inset,inset+sourceH-joinH,sourceW,joinH,topEdge.left,top-1,joinW,joinH)
+    }
     g.restore()
   }
   function drawGreatWallBricks(l,r,top,bottom,seed=0,alpha=1){

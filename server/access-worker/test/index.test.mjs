@@ -168,6 +168,44 @@ async function testPasswordHash(password, saltHex, pepper, iterations) {
   return [...new Uint8Array(bits)].map(value => value.toString(16).padStart(2, '0')).join('');
 }
 
+function rawEcdsaToDer(signature) {
+  const integer = value => {
+    let start = 0;
+    while (start < value.length - 1 && value[start] === 0) start += 1;
+    let bytes = value.slice(start);
+    if (bytes[0] & 0x80) bytes = Uint8Array.from([0, ...bytes]);
+    return Uint8Array.from([0x02, bytes.length, ...bytes]);
+  };
+  const r = integer(signature.slice(0, 32)), s = integer(signature.slice(32));
+  return Uint8Array.from([0x30, r.length + s.length, ...r, ...s]);
+}
+
+function base64Url(value) {
+  return Buffer.from(value).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+test('AdMob dashboard verification accepts a signed probe without granting rewards', async () => {
+  const keyPair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+  const publicKey = new Uint8Array(await crypto.subtle.exportKey('spki', keyPair.publicKey));
+  const signedContent = 'ad_network=1953547073528090325&ad_unit=2747237135&reward_amount=1&reward_item=reward&timestamp=1507770365237823&transaction_id=18fa792de1bca816048293fc71035638';
+  const rawSignature = new Uint8Array(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, keyPair.privateKey, new TextEncoder().encode(signedContent)));
+  const callback = `https://example.test/v1/admob/ssv?${signedContent}&signature=${base64Url(rawEcdsaToDer(rawSignature))}&key_id=1234567890`;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async input => String(input) === 'https://www.gstatic.com/admob/reward/verifier-keys.json'
+    ? new Response(JSON.stringify({ keys: [{ keyId: 1234567890, base64: Buffer.from(publicKey).toString('base64') }] }))
+    : originalFetch(input);
+  try {
+    const DB = new MemoryD1();
+    const response = await worker.fetch(new Request(callback), { DB, ADMOB_REWARDED_AD_UNIT_ID: 'ca-app-pub-example/9866779514' });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { ok: true, verification: true });
+    assert.equal(DB.adRewardClaims.size, 0);
+    assert.equal(DB.users.length, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('register creates a verifiable session using the production schema', async () => {
   const DB = new MemoryD1();
   const PASSWORD_PEPPER = 'test-only-pepper-with-at-least-32-characters';

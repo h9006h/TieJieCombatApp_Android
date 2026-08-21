@@ -731,6 +731,10 @@ async function completeTestAdReward(request, env) {
 async function admobSsvCallback(request, env) {
   if (!await verifyAdMobSsv(request)) return json({ ok: false, reason: 'invalid-signature' }, 403);
   const url = new URL(request.url), token = url.searchParams.get('custom_data') || '', transactionId = url.searchParams.get('transaction_id') || '';
+  // AdMob's dashboard verification tool sends a signed callback without
+  // custom_data when that optional test field is left blank. Acknowledge the
+  // probe only after its Google signature is valid, but never grant a reward.
+  if (!token) return json({ ok: true, verification: true });
   const expectedAdUnit = String(env.ADMOB_REWARDED_AD_UNIT_ID || '').trim().split('/').pop();
   const receivedAdUnit = String(url.searchParams.get('ad_unit') || '').trim().split('/').pop();
   if (!expectedAdUnit || receivedAdUnit !== expectedAdUnit) return json({ ok: false, reason: 'invalid-ad-unit' }, 403);

@@ -87,6 +87,7 @@
     oldAlleyRooftopGround:image('assets/environment/old-alley-rooftop-ground-v1.jpg?v=1.0'),
     desertYardangBackground:image('assets/environment/desert-yardang-oasis-background-v1.jpg?v=1.0'),
     desertYardangTerrainAtlas:image('assets/environment/desert-yardang-terrain-2x2-v1.jpg?v=1.0'),
+    desertStairCutout:image('assets/environment/desert-stair-cutout-v1.png?v=1.0'),
     desertYardangArchitectureAtlas:image('assets/environment/desert-yardang-architecture-2x2-v3.jpg?v=3.0'),
     desertYardangCaveClimbTexture:image('assets/environment/desert-yardang-cave-climb-v1.png?v=1.0'),
     highriseBackground:image('assets/environment/highrise-background-v1.jpg?v=1.0'),
