@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Combat du Refuge</string>
+    <string name="title_activity_main">Combat du Refuge</string>
+    <string name="update_ready_title">Mise à jour téléchargée</string>
+    <string name="update_ready_message">Une nouvelle version est prête. Redémarrez le jeu pour terminer l’installation.</string>
+    <string name="update_restart">Redémarrer maintenant</string>
+    <string name="update_later">Plus tard</string>
+</resources>

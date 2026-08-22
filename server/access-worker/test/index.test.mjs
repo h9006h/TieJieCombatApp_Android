@@ -92,6 +92,11 @@ class MemoryStatement {
     } else if (this.sql.startsWith('UPDATE users SET skill_mask =')) {
       const [skill_mask, progress_updated_at, updated_at, id] = this.values;
       Object.assign(this.db.users.find(user => user.id === id), { skill_mask, progress_updated_at, updated_at });
+    } else if (this.sql.startsWith('UPDATE users SET gold = gold +') && this.sql.includes('best_stage >= ?')) {
+      const [gold, chicken, progress_updated_at, updated_at, id, completedStage] = this.values;
+      const user = this.db.users.find(item => item.id === id);
+      if (!user || user.best_stage < completedStage) changes = 0;
+      else Object.assign(user, { gold: user.gold + gold, chicken: user.chicken + chicken, progress_updated_at, updated_at });
     } else if (this.sql.startsWith('UPDATE users SET gold = gold +')) {
       const [gold, chicken, fruit, progress_updated_at, updated_at, id, claimId] = this.values;
       const user = this.db.users.find(item => item.id === id), claim = this.db.adRewardClaims.get(claimId);
@@ -323,6 +328,26 @@ test('client saves cannot overwrite authoritative progression and a timed run aw
   assert.equal(retriedData.replayedReceipt, true);
   assert.equal(retriedData.gold, completion.gold, 'retry must not duplicate stage rewards');
 
+  const replayStarted = await worker.fetch(new Request('https://example.test/v1/stage/start', {
+    method: 'POST', headers, body: JSON.stringify({ stage: 1 }),
+  }), env);
+  const replayRun = await replayStarted.json();
+  assert.equal(replayRun.ok, true);
+  assert.equal(replayRun.replay, true);
+  assert.equal(DB.stageRuns.get(DB.users[0].id).reward_fruit, 0, 'cleared stages must not award fruit');
+  DB.stageRuns.get(DB.users[0].id).started_at -= 46;
+  const replayCompleted = await worker.fetch(new Request('https://example.test/v1/stage/complete', {
+    method: 'POST', headers, body: JSON.stringify({ stage: 1, runToken: replayRun.runToken }),
+  }), env);
+  const replayCompletion = await replayCompleted.json();
+  assert.equal(replayCompleted.status, 200);
+  assert.equal(replayCompletion.replay, true);
+  assert.equal(replayCompletion.bestStage, 1);
+  assert.equal(replayCompletion.rewards.fruit, 0);
+  assert.equal(replayCompletion.gold, completion.gold + replayCompletion.rewards.gold);
+  assert.equal(replayCompletion.chicken, completion.chicken + replayCompletion.rewards.chicken);
+  assert.equal(replayCompletion.fruit, completion.fruit);
+
   const doubleStart = await worker.fetch(new Request('https://example.test/v1/ad/reward/start', {
     method: 'POST', headers, body: JSON.stringify({ placement: 'stageDouble', stage: 1, testMode: true }),
   }), env);
@@ -332,9 +357,9 @@ test('client saves cannot overwrite authoritative progression and a timed run aw
     method: 'POST', headers, body: JSON.stringify({ claimToken: doubleClaim.claimToken }),
   }), env);
   const doubledData = await doubled.json();
-  assert.equal(doubledData.gold, completion.gold + completion.rewards.gold);
-  assert.equal(doubledData.chicken, completion.chicken + completion.rewards.chicken);
-  assert.equal(doubledData.fruit, completion.fruit + completion.rewards.fruit);
+  assert.equal(doubledData.gold, replayCompletion.gold + replayCompletion.rewards.gold);
+  assert.equal(doubledData.chicken, replayCompletion.chicken + replayCompletion.rewards.chicken);
+  assert.equal(doubledData.fruit, replayCompletion.fruit);
 
   const ranking = await worker.fetch(new Request('https://example.test/v1/leaderboard', { method: 'POST', headers }), env);
   const rankData = await ranking.json();

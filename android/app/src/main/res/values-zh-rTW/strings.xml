@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">避難所格鬥</string>
+    <string name="title_activity_main">避難所格鬥</string>
+    <string name="update_ready_title">更新已下載</string>
+    <string name="update_ready_message">新版本已準備好，重新啟動遊戲即可完成安裝。</string>
+    <string name="update_restart">立即重啟更新</string>
+    <string name="update_later">稍後</string>
+</resources>

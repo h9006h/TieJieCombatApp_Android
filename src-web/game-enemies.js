@@ -4,10 +4,10 @@
   const enemyCatalog={
     skinny:{name:'长发小瘦子',hp:72,spd:108,dmg:16,grab:true,tag:'滑铲'},
     heavy:{name:'胖打手',hp:120,spd:62,dmg:26,grab:true,tag:'千斤坠·反擒拿'},
-    spinner:{name:'旋风腿客',hp:94,spd:112,dmg:23,grab:true,tag:'空中旋转'},
+    spinner:{name:'旋风腿客',hp:94,spd:150,dmg:23,grab:true,tag:'空中旋转'},
     grappler:{name:'擒拿手',hp:110,spd:92,dmg:24,grab:true,tag:'反抓投'},
     axe:{name:'斧头帮',hp:116,spd:78,dmg:31,grab:true,tag:'重斧'},
-    assassin:{name:'刺客',hp:82,spd:128,dmg:28,grab:true,tag:'瞬移捅刀'},
+    assassin:{name:'刺客',hp:82,spd:104,dmg:28,grab:true,tag:'瞬移捅刀'},
     suit:{name:'西装打手',hp:105,spd:96,dmg:24,grab:true,tag:'三连斩'},
     breaker:{name:'断电工',hp:76,spd:74,dmg:14,grab:true,tag:'关灯'},
     whip:{name:'金发鞭女',hp:96,spd:106,dmg:24,grab:true,tag:'长鞭直线压制'},
@@ -28,10 +28,10 @@
     barbarian:['荒铁·赫山','双辫蛮士·砾牙','铸肩客·乌岩']
   };
   const enemyAnimationProfiles={
-    spinner:{walk:[0,1,0,1],walkRate:2.35},
+    spinner:{walk:[0,1,2,3],walkRate:1.25},
     grappler:{walk:[0,1,0,1],walkRate:2.6},
     axe:{walk:[0,1,0,1],walkRate:2.8},
-    assassin:{walk:[0,1,0,1],walkRate:2.05,runRate:1.35},
+    assassin:{walk:[0,1,0,1],walkRate:2.35,runRate:1.7},
     suit:{walk:[0,1,0,1],walkRate:2.35},
     breaker:{walk:[0,1,0,1],walkRate:2.75},
     whip:{walk:[0,1,0,1],walkRate:2.45},

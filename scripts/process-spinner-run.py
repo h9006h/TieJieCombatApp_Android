@@ -7,46 +7,22 @@ from PIL import Image, ImageChops, ImageFilter
 ROOT = Path(__file__).resolve().parents[1]
 REFERENCE_DIR = ROOT / "docs/references/enemy-run-regeneration"
 NORMALIZED_DIR = ROOT / "src-web/assets/fighter/normalized"
-MASTER = REFERENCE_DIR / "assassin-run-four-frame-master-v1.png"
-OUTPUT = NORMALIZED_DIR / "enemy-assassin-run-4-strip-v4.webp"
-SHADOW_OUTPUT = NORMALIZED_DIR / "shadows" / OUTPUT.name
-PREVIEW = REFERENCE_DIR / "assassin-run-four-frame-normalized-preview-v4.png"
-FRAME_SIZE, BASELINE_Y, TARGET_HEIGHT, CELL_INSET = 384, 344, 177, 12
+SHADOW_DIR = NORMALIZED_DIR / "shadows"
 
+MASTER = REFERENCE_DIR / "spinner-run-four-frame-master-v1.png"
+APPROVED_FRAME_2 = REFERENCE_DIR / "spinner-run-frame-2-approved-v1.png"
+OUTPUT = NORMALIZED_DIR / "enemy-spinner-move-4-strip-v2.webp"
+SHADOW_OUTPUT = SHADOW_DIR / OUTPUT.name
+PREVIEW = REFERENCE_DIR / "spinner-run-four-frame-normalized-preview-v2.png"
 
-def keep_largest_component(image: Image.Image) -> Image.Image:
-    width, height = image.size
-    source_alpha = list(image.getchannel("A").getdata())
-    occupied = bytearray(1 if value > 12 else 0 for value in source_alpha)
-    visited = bytearray(width * height)
-    largest: list[int] = []
-    for start in range(width * height):
-        if not occupied[start] or visited[start]:
-            continue
-        visited[start] = 1
-        queue = deque([start])
-        component: list[int] = []
-        while queue:
-            index = queue.popleft()
-            component.append(index)
-            x, y = index % width, index // width
-            for ny in range(max(0, y - 1), min(height, y + 2)):
-                for nx in range(max(0, x - 1), min(width, x + 2)):
-                    neighbor = ny * width + nx
-                    if occupied[neighbor] and not visited[neighbor]:
-                        visited[neighbor] = 1
-                        queue.append(neighbor)
-        if len(component) > len(largest):
-            largest = component
-    retained = bytearray(width * height)
-    for index in largest:
-        retained[index] = source_alpha[index]
-    image.putalpha(Image.frombytes("L", (width, height), bytes(retained)))
-    image.putdata([(red, green, blue, alpha) if alpha else (0, 0, 0, 0) for red, green, blue, alpha in image.getdata()])
-    return image
+FRAME_SIZE = 384
+BASELINE_Y = 344
+TARGET_HEIGHT = 184
+CELL_INSET = 12
 
 
 def remove_checkerboard(image: Image.Image) -> Image.Image:
+    """Remove the light checkerboard baked into generated preview images."""
     rgb = image.convert("RGB")
     width, height = rgb.size
     pixels = list(rgb.getdata())
@@ -56,6 +32,7 @@ def remove_checkerboard(image: Image.Image) -> Image.Image:
         saturation = max(red, green, blue) - min(red, green, blue)
         if brightness >= 205 and saturation <= 18:
             background_like[index] = 1
+
     flooded = bytearray(width * height)
     visited = bytearray(width * height)
     for start in range(width * height):
@@ -78,6 +55,7 @@ def remove_checkerboard(image: Image.Image) -> Image.Image:
         if touches_edge or len(component) >= 80:
             for index in component:
                 flooded[index] = 1
+
     output = []
     matte = 250
     for index, (red, green, blue) in enumerate(pixels):
@@ -94,6 +72,39 @@ def remove_checkerboard(image: Image.Image) -> Image.Image:
     rgba = Image.new("RGBA", rgb.size)
     rgba.putdata(output)
     return keep_largest_component(rgba)
+
+
+def keep_largest_component(image: Image.Image) -> Image.Image:
+    width, height = image.size
+    source_alpha = image.getchannel("A")
+    source_values = list(source_alpha.getdata())
+    occupied = bytearray(1 if value > 12 else 0 for value in source_values)
+    visited = bytearray(width * height)
+    largest: list[int] = []
+    for start in range(width * height):
+        if not occupied[start] or visited[start]:
+            continue
+        visited[start] = 1
+        queue = deque([start])
+        component: list[int] = []
+        while queue:
+            index = queue.popleft()
+            component.append(index)
+            x, y = index % width, index // width
+            for ny in range(max(0, y - 1), min(height, y + 2)):
+                for nx in range(max(0, x - 1), min(width, x + 2)):
+                    neighbor = ny * width + nx
+                    if occupied[neighbor] and not visited[neighbor]:
+                        visited[neighbor] = 1
+                        queue.append(neighbor)
+        if len(component) > len(largest):
+            largest = component
+    retained = bytearray(width * height)
+    for index in largest:
+        retained[index] = source_values[index]
+    image.putalpha(Image.frombytes("L", (width, height), bytes(retained)))
+    image.putdata([(red, green, blue, alpha) if alpha else (0, 0, 0, 0) for red, green, blue, alpha in image.getdata()])
+    return image
 
 
 def resize_rgba(image: Image.Image, size: tuple[int, int]) -> Image.Image:
@@ -123,13 +134,15 @@ def normalize_frame(source: Image.Image) -> Image.Image:
     extracted = remove_checkerboard(source)
     bbox = extracted.getchannel("A").getbbox()
     if not bbox:
-        raise RuntimeError("Assassin run frame contains no visible character")
+        raise RuntimeError("Spinner run frame contains no visible character")
     character = extracted.crop(bbox)
     scale = TARGET_HEIGHT / character.height
-    target_width, target_height = round(character.width * scale), TARGET_HEIGHT
+    target_width = round(character.width * scale)
+    target_height = TARGET_HEIGHT
     if target_width > FRAME_SIZE - 32:
         scale = (FRAME_SIZE - 32) / character.width
-        target_width, target_height = FRAME_SIZE - 32, round(character.height * scale)
+        target_width = FRAME_SIZE - 32
+        target_height = round(character.height * scale)
     character = resize_rgba(character, (target_width, target_height))
     frame = Image.new("RGBA", (FRAME_SIZE, FRAME_SIZE))
     frame.alpha_composite(character, ((FRAME_SIZE - target_width) // 2, BASELINE_Y - target_height))
@@ -138,7 +151,8 @@ def normalize_frame(source: Image.Image) -> Image.Image:
 
 def make_shadow(frame: Image.Image) -> Image.Image:
     alpha = frame.getchannel("A")
-    silhouette = alpha.crop(alpha.getbbox())
+    bbox = alpha.getbbox()
+    silhouette = alpha.crop(bbox)
     shadow_height = max(14, round(silhouette.height * 0.12))
     silhouette = silhouette.resize((silhouette.width, shadow_height), Image.Resampling.LANCZOS)
     silhouette = silhouette.filter(ImageFilter.GaussianBlur(1.4)).point(lambda value: round(value * 0.43))
@@ -159,7 +173,9 @@ def save_strip(frames: list[Image.Image], path: Path) -> None:
 
 def main() -> None:
     master = Image.open(MASTER)
-    frames = [normalize_frame(grid_cell(master, row, column)) for row, column in ((0, 0), (0, 1), (1, 0), (1, 1))]
+    sources = [grid_cell(master, 0, 0), Image.open(APPROVED_FRAME_2),
+               grid_cell(master, 1, 0), grid_cell(master, 1, 1)]
+    frames = [normalize_frame(source) for source in sources]
     save_strip(frames, OUTPUT)
     save_strip([make_shadow(frame) for frame in frames], SHADOW_OUTPUT)
     preview = Image.new("RGBA", (FRAME_SIZE * 4, FRAME_SIZE), (34, 36, 38, 255))
@@ -169,7 +185,7 @@ def main() -> None:
     for path in (OUTPUT, SHADOW_OUTPUT):
         image = Image.open(path)
         if image.size != (FRAME_SIZE * 4, FRAME_SIZE) or image.mode != "RGBA":
-            raise RuntimeError(f"Invalid assassin strip: {path} {image.mode} {image.size}")
+            raise RuntimeError(f"Invalid spinner strip: {path} {image.mode} {image.size}")
     print(OUTPUT.relative_to(ROOT))
     print(SHADOW_OUTPUT.relative_to(ROOT))
     print(PREVIEW.relative_to(ROOT))

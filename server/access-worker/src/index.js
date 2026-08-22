@@ -6,7 +6,7 @@ const LOGIN_WINDOW_SECONDS = 15 * 60;
 const LOGIN_MAX_FAILURES = 5;
 const STAGE_RUN_LIFETIME_SECONDS = 6 * 60 * 60;
 const MAX_UPGRADES_PER_REQUEST = 100;
-const AD_REWARD_LIFETIME_SECONDS = 15 * 60;
+const AD_REWARD_LIFETIME_SECONDS = 30 * 60;
 const ADMOB_VERIFIER_KEYS_URL = 'https://www.gstatic.com/admob/reward/verifier-keys.json';
 let admobVerifierKeysCache = { expiresAt: 0, keys: new Map() };
 const SKILLS = [
@@ -65,6 +65,15 @@ function accountDeletionPage() {
   return new Response(html, { headers: {
     'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store',
     'content-security-policy': `default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'`,
+    'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer',
+  } });
+}
+
+function privacyPolicyPage() {
+  const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>避难所格斗隐私政策 / Shelter Combat Privacy Policy</title></head><body><main style="max-width:920px;margin:0 auto;padding:24px;font-family:system-ui,'Microsoft YaHei',sans-serif;line-height:1.7;color:#1f2933"><h1>避难所格斗隐私政策</h1><p>生效日期：2026 年 8 月 22 日<br>应用包名：com.tiejiecombat.game</p><p>本隐私政策说明《避难所格斗》如何收集、使用、保存和删除用户数据。本应用是一款横版动作格斗游戏，包含账号登录、游戏进度同步、排行榜、反馈提交和 Google AdMob 激励广告功能。</p><h2>我们收集的信息</h2><ul><li>账号信息：用户名、密码凭据的加密摘要、登录会话令牌。</li><li>游戏进度：关卡进度、资源数量、角色属性、已解锁技能、已解锁队友、排行榜成绩。</li><li>反馈内容：用户在游戏内提交的问题描述、反馈类型、所在关卡、客户端版本和语言。</li><li>广告相关数据：本应用使用 Google AdMob 激励广告。Google 和其广告合作方可能会根据其政策收集广告标识符、设备信息、广告互动数据和粗略位置信息。</li><li>技术数据：为保障账号安全和防止滥用，服务器可能处理请求时间、网络请求来源和安全校验信息。</li></ul><h2>数据用途</h2><ul><li>创建、验证和维护用户账号。</li><li>保存和同步游戏进度、角色成长、技能和队友状态。</li><li>提供排行榜、关卡校验、激励广告奖励发放和反馈处理。</li><li>维护服务安全，防止作弊、滥用、重复领取奖励和异常登录。</li><li>改进游戏体验、修复问题和处理用户反馈。</li></ul><h2>第三方服务</h2><p>本应用使用 Google AdMob 提供激励广告。AdMob 可能按照 Google 的隐私政策和广告政策处理广告相关数据。Google 隐私政策：<a href="https://policies.google.com/privacy">https://policies.google.com/privacy</a></p><h2>数据共享</h2><p>除提供应用功能、广告服务、安全校验、法律合规或用户明确请求外，我们不会出售用户个人信息。广告相关数据可能由 Google AdMob 按其服务条款处理。</p><h2>数据安全</h2><p>本应用通过 HTTPS 与服务器通信。密码不会以明文保存，服务器保存的是密码凭据的加密摘要。我们会采取合理措施保护用户数据，但互联网传输和电子存储无法保证绝对安全。</p><h2>数据保留与删除</h2><p>账号和游戏进度会在账号存在期间保存。用户可以在应用内使用“删除账号”功能，也可以访问账号删除页面永久删除账号及相关服务器数据：<a href="https://tiejie-access.access-worker.workers.dev/account-deletion">https://tiejie-access.access-worker.workers.dev/account-deletion</a></p><p>删除后，将删除用户名、密码凭据、登录会话、游戏进度、排行榜记录、反馈记录和关卡校验记录。删除操作无法恢复。</p><h2>儿童隐私</h2><p>本应用不是面向儿童设计的应用。我们不主动面向 13 岁以下儿童推广本应用。</p><h2>权限说明</h2><ul><li>网络权限：用于账号登录、进度同步、排行榜、反馈和广告。</li><li>震动权限：用于战斗操作反馈。</li></ul><h2>联系我们</h2><p>如需咨询隐私或数据删除问题，请通过 Google Play 商品详情页显示的开发者联系邮箱，或通过游戏内反馈功能联系我们。</p><hr><h1>Shelter Combat Privacy Policy</h1><p>Effective date: August 22, 2026<br>Package name: com.tiejiecombat.game</p><p>This Privacy Policy explains how Shelter Combat collects, uses, stores, and deletes user data. The App is a side-scrolling action fighting game with account login, game progress sync, leaderboard, feedback submission, and Google AdMob rewarded ads.</p><h2>Information we collect</h2><ul><li>Account information: username, encrypted password credential hash, and login session tokens.</li><li>Game progress: stage progress, resources, character stats, unlocked skills, unlocked allies, and leaderboard scores.</li><li>Feedback content: issue descriptions, feedback category, stage number, client version, and language submitted in the in-game feedback form.</li><li>Advertising data: the App uses Google AdMob rewarded ads. Google and its advertising partners may collect advertising identifiers, device information, ad interaction data, and approximate location under their own policies.</li><li>Technical data: to protect accounts and prevent abuse, the server may process request time, request source, and security verification information.</li></ul><h2>How we use information</h2><ul><li>To create, verify, and maintain user accounts.</li><li>To save and sync game progress, character growth, skills, and ally status.</li><li>To provide leaderboard, stage validation, rewarded ad reward delivery, and feedback handling.</li><li>To maintain service security and prevent cheating, abuse, duplicate reward claims, and abnormal login behavior.</li><li>To improve gameplay, fix issues, and respond to user feedback.</li></ul><h2>Third-party services</h2><p>The App uses Google AdMob for rewarded ads. AdMob may process advertising-related data according to Google’s privacy policy and advertising policies: <a href="https://policies.google.com/privacy">https://policies.google.com/privacy</a></p><h2>Data sharing</h2><p>We do not sell personal information. Data may be processed when required to provide app features, advertising services, security verification, legal compliance, or user-requested actions. Advertising-related data may be processed by Google AdMob under its service terms.</p><h2>Data security</h2><p>The App communicates with the server over HTTPS. Passwords are not stored in plaintext; the server stores encrypted credential hashes. We use reasonable measures to protect user data, but no internet transmission or electronic storage method can be guaranteed to be absolutely secure.</p><h2>Data retention and deletion</h2><p>Account and game progress data are retained while the account exists. Users can delete their account in the App or visit the account deletion page: <a href="https://tiejie-access.access-worker.workers.dev/account-deletion">https://tiejie-access.access-worker.workers.dev/account-deletion</a></p><p>Deletion removes the username, password credential, login sessions, game progress, leaderboard entry, feedback records, and stage validation records. Deletion cannot be undone.</p><h2>Children’s privacy</h2><p>The App is not designed for children and is not directed to children under 13.</p><h2>Permissions</h2><ul><li>Internet: used for account login, progress sync, leaderboard, feedback, and ads.</li><li>Vibration: used for combat feedback.</li></ul><h2>Contact us</h2><p>For privacy or data deletion questions, contact us through the developer email shown on the Google Play store listing or through the in-game feedback feature.</p></main></body></html>`;
+  return new Response(html, { headers: {
+    'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=3600',
+    'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; img-src 'none'; script-src 'none'; connect-src 'none'; frame-ancestors 'none'; base-uri 'none'",
     'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer',
   } });
 }
@@ -568,13 +577,15 @@ async function startStage(request, env) {
   const body = await readBody(request);
   const stage = boundedInteger(body?.stage, 100000);
   const expectedStage = boundedInteger(user.best_stage, 99999) + 1;
-  if (stage !== expectedStage) {
+  if (stage < 1 || stage > expectedStage) {
     return json({ ok: false, reason: 'stage-not-next', expectedStage }, 409);
   }
   const token = randomHex(32);
   const tokenHash = await sha256(token);
   const now = Math.floor(Date.now() / 1000);
+  const replay = stage < expectedStage;
   const rewards = stageRewards(user, stage);
+  if (replay) rewards.fruit = 0;
   await env.DB.prepare(`
     INSERT INTO stage_runs (user_id, stage, token_hash, started_at, expires_at, reward_gold, reward_chicken, reward_fruit)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -582,7 +593,7 @@ async function startStage(request, env) {
       started_at = excluded.started_at, expires_at = excluded.expires_at,
       reward_gold = excluded.reward_gold, reward_chicken = excluded.reward_chicken, reward_fruit = excluded.reward_fruit
   `).bind(user.id, stage, tokenHash, now, now + STAGE_RUN_LIFETIME_SECONDS, rewards.gold, rewards.chicken, rewards.fruit).run();
-  return json({ ok: true, stage, runToken: token, minimumSeconds: minimumStageSeconds(stage, env) });
+  return json({ ok: true, stage, replay, runToken: token, minimumSeconds: minimumStageSeconds(stage, env) });
 }
 
 async function completeStage(request, env) {
@@ -617,20 +628,31 @@ async function completeStage(request, env) {
   if (elapsedSeconds < minimumSeconds) {
     return json({ ok: false, reason: 'stage-too-fast', retryAfter: minimumSeconds - elapsedSeconds }, 429);
   }
-  if (stage !== boundedInteger(user.best_stage, 99999) + 1) {
-    return json({ ok: false, reason: 'stage-not-next', expectedStage: boundedInteger(user.best_stage, 99999) + 1 }, 409);
-  }
+  const bestStage = boundedInteger(user.best_stage, 99999);
+  const replay = stage <= bestStage;
+  if (stage > bestStage + 1) return json({ ok: false, reason: 'stage-not-next', expectedStage: bestStage + 1 }, 409);
   const updatedAt = new Date().toISOString();
-  const results = await env.DB.batch([
-    env.DB.prepare(`
+  const rewardGold = boundedInteger(run.reward_gold), rewardChicken = boundedInteger(run.reward_chicken);
+  const rewardFruit = replay ? 0 : boundedInteger(run.reward_fruit);
+  const progressUpdate = replay
+    ? env.DB.prepare(`
+      UPDATE users SET gold = gold + ?, chicken = chicken + ?, progress_updated_at = ?, updated_at = ?
+      WHERE id = ? AND best_stage >= ?
+    `).bind(rewardGold, rewardChicken, updatedAt, updatedAt, user.id, stage)
+    : env.DB.prepare(`
       UPDATE users SET best_stage = ?, gold = gold + ?, chicken = chicken + ?, fruit = fruit + ?,
         progress_updated_at = ?, updated_at = ? WHERE id = ? AND best_stage = ?
-    `).bind(stage, boundedInteger(run.reward_gold), boundedInteger(run.reward_chicken), boundedInteger(run.reward_fruit), updatedAt, updatedAt, user.id, stage - 1),
+    `).bind(stage, rewardGold, rewardChicken, rewardFruit, updatedAt, updatedAt, user.id, stage - 1);
+  const results = await env.DB.batch([
+    progressUpdate,
     env.DB.prepare(`
       INSERT INTO stage_completions (
         user_id, stage, token_hash, reward_gold, reward_chicken, reward_fruit, completed_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).bind(user.id, stage, tokenHash, boundedInteger(run.reward_gold), boundedInteger(run.reward_chicken), boundedInteger(run.reward_fruit), updatedAt),
+      ON CONFLICT(user_id, stage) DO UPDATE SET token_hash = excluded.token_hash,
+        reward_gold = excluded.reward_gold, reward_chicken = excluded.reward_chicken,
+        reward_fruit = excluded.reward_fruit, completed_at = excluded.completed_at
+    `).bind(user.id, stage, tokenHash, rewardGold, rewardChicken, rewardFruit, updatedAt),
     env.DB.prepare('DELETE FROM stage_runs WHERE user_id = ?').bind(user.id),
   ]);
   if (Number(results?.[0]?.meta?.changes) !== 1) {
@@ -638,8 +660,9 @@ async function completeStage(request, env) {
   }
   return json({
     ...publicPlayer(await readPlayer(env, user.id)),
-    nextStage: stage + 1,
-    rewards: { gold: boundedInteger(run.reward_gold), chicken: boundedInteger(run.reward_chicken), fruit: boundedInteger(run.reward_fruit) },
+    nextStage: replay ? bestStage + 1 : stage + 1,
+    replay,
+    rewards: { gold: rewardGold, chicken: rewardChicken, fruit: rewardFruit },
   });
 }
 
@@ -677,10 +700,10 @@ async function startAdReward(request, env) {
     grantKey = `resource:${kind}:${claimId}`;
   } else if (placement === 'stageDouble') {
     const stage = boundedInteger(body?.stage, 100000);
-    const receipt = await env.DB.prepare('SELECT reward_gold, reward_chicken, reward_fruit FROM stage_completions WHERE user_id = ? AND stage = ?').bind(user.id, stage).first();
+    const receipt = await env.DB.prepare('SELECT token_hash, reward_gold, reward_chicken, reward_fruit FROM stage_completions WHERE user_id = ? AND stage = ?').bind(user.id, stage).first();
     if (!receipt) return json({ ok: false, reason: 'stage-not-completed' }, 409);
     gold = boundedInteger(receipt.reward_gold); chicken = boundedInteger(receipt.reward_chicken); fruit = boundedInteger(receipt.reward_fruit);
-    grantKey = `stage-double:${stage}`;
+    grantKey = `stage-double:${stage}:${receipt.token_hash}`;
   } else if (placement === 'runRecovery') {
     const stage = boundedInteger(body?.stage, 100000), runToken = String(body?.runToken || '');
     if (!/^[0-9a-f]{64}$/.test(runToken)) return json({ ok: false, reason: 'invalid-stage-run' }, 400);
@@ -819,6 +842,7 @@ export default {
   async fetch(request, env) {
     const path = new URL(request.url).pathname;
     if (request.method === 'GET' && path === '/account-deletion') return accountDeletionPage();
+    if (request.method === 'GET' && path === '/privacy-policy') return privacyPolicyPage();
     if (request.method === 'GET' && path === '/v1/admob/ssv') {
       try { return await admobSsvCallback(request, env); }
       catch (error) { console.error(error); return json({ ok: false, reason: 'server-error' }, 500); }

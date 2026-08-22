@@ -56,14 +56,14 @@
     grapplerWrestlingSheet:image('assets/fighter/normalized/enemy-grappler-wrestling-4-strip-v1.webp?v=1.0'),
     heavyCounterGrabSheet:image('assets/fighter/normalized/enemy-heavy-countergrab.webp?v=1.0'),
     grapplerCounterGrabSheet:image('assets/fighter/normalized/enemy-grappler-countergrab.webp?v=1.0'),
-    assassinRunSheet:image('assets/fighter/normalized/enemy-assassin-run-2-strip-v3.webp?v=3.0'),
+    assassinRunSheet:image('assets/fighter/normalized/enemy-assassin-run-4-strip-v4.webp?v=4.0'),
     enemyMoveSheets:{
-      spinner:image('assets/fighter/normalized/enemy-spinner-move-2-strip-v1.webp?v=1.0'),
+      spinner:image('assets/fighter/normalized/enemy-spinner-move-4-strip-v2.webp?v=2.0'),
       grappler:image('assets/fighter/normalized/enemy-grappler-move-2-strip-v1.webp?v=1.0'),
       axe:image('assets/fighter/normalized/enemy-axe-move-2-strip-v1.webp?v=1.0'),
       suit:image('assets/fighter/normalized/enemy-suit-move-3-strip-v1.webp?v=1.0'),
-      breaker:image('assets/fighter/normalized/enemy-breaker-move-2-strip-v1.webp?v=1.0'),
-      whip:image('assets/fighter/normalized/enemy-whip-move-2-strip-v1.webp?v=1.0')
+      breaker:image('assets/fighter/normalized/enemy-breaker-move-2-strip-v1.webp?v=2.0'),
+      whip:image('assets/fighter/normalized/enemy-whip-move-2-strip-v1.webp?v=2.0')
     },
     barbarianReviveSheet:image('assets/fighter/normalized/enemy-barbarian-revive-4-strip.webp?v=1.0'),
     barbarianSprintSheet:image('assets/fighter/normalized/enemy-barbarian-sprint-2-strip-v2.webp?v=2.0'),
@@ -154,14 +154,14 @@
     grapplerWrestlingSheet:image('assets/fighter/normalized/shadows/enemy-grappler-wrestling-4-strip-v1.webp?v=1.0'),
     heavyCounterGrabSheet:image('assets/fighter/normalized/shadows/enemy-heavy-countergrab.webp?v=1.0'),
     grapplerCounterGrabSheet:image('assets/fighter/normalized/shadows/enemy-grappler-countergrab.webp?v=1.0'),
-    assassinRunSheet:image('assets/fighter/normalized/shadows/enemy-assassin-run-2-strip-v3.webp?v=3.0'),
+    assassinRunSheet:image('assets/fighter/normalized/shadows/enemy-assassin-run-4-strip-v4.webp?v=4.0'),
     enemyMoveSheets:{
-      spinner:image('assets/fighter/normalized/shadows/enemy-spinner-move-2-strip-v1.webp?v=1.0'),
+      spinner:image('assets/fighter/normalized/shadows/enemy-spinner-move-4-strip-v2.webp?v=2.0'),
       grappler:image('assets/fighter/normalized/shadows/enemy-grappler-move-2-strip-v1.webp?v=1.0'),
       axe:image('assets/fighter/normalized/shadows/enemy-axe-move-2-strip-v1.webp?v=1.0'),
       suit:image('assets/fighter/normalized/shadows/enemy-suit-move-3-strip-v1.webp?v=1.0'),
-      breaker:image('assets/fighter/normalized/shadows/enemy-breaker-move-2-strip-v1.webp?v=1.0'),
-      whip:image('assets/fighter/normalized/shadows/enemy-whip-move-2-strip-v1.webp?v=1.0')
+      breaker:image('assets/fighter/normalized/shadows/enemy-breaker-move-2-strip-v1.webp?v=2.0'),
+      whip:image('assets/fighter/normalized/shadows/enemy-whip-move-2-strip-v1.webp?v=2.0')
     },
     barbarianReviveSheet:image('assets/fighter/normalized/shadows/enemy-barbarian-revive-4-strip.webp?v=1.0'),
     barbarianSprintSheet:image('assets/fighter/normalized/shadows/enemy-barbarian-sprint-2-strip-v2.webp?v=2.0'),

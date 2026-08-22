@@ -36,16 +36,17 @@
     register: document.querySelector('#auth-register'),
     retry: document.querySelector('#auth-retry'),
   });
-  const reasonMessages = {
-    disabled: '此账号已被停用',
-    'invalid-session': '登录已失效，请重新登录',
-    'invalid-credentials': '用户名需要3–24位，密码至少8位',
-    'login-failed': '用户名或密码错误',
-    'username-taken': '这个用户名已经被注册',
-    'registration-closed': '服务器当前已关闭注册',
-    'too-many-attempts': '登录失败次数过多，请15分钟后重试',
-    'server-error': '账号服务器暂时不可用',
+  const reasonMessageKeys = {
+    disabled: 'authDisabled',
+    'invalid-session': 'authInvalidSession',
+    'invalid-credentials': 'authInvalidCredentials',
+    'login-failed': 'authLoginFailed',
+    'username-taken': 'authUsernameTaken',
+    'registration-closed': 'authRegistrationClosed',
+    'too-many-attempts': 'authTooManyAttempts',
+    'server-error': 'authServerError',
   };
+  const reasonMessage = reason => tr(reasonMessageKeys[reason] || 'operationFailed', reason || 'operationFailed');
 
   function showGate(message, { form = false, retry = false } = {}) {
     const view = elements();
@@ -134,7 +135,7 @@
         removeStored(TOKEN_KEY);
         removeStored(GRANT_KEY);
       }
-      showGate(reasonMessages[result.reason] || '账号授权无效，请重新登录', { form: true });
+      showGate(result.reason ? reasonMessage(result.reason) : tr('authInvalid', '账号授权无效，请重新登录'), { form: true });
       return false;
     } catch {
       showGate(tr('authNetwork', '无法连接账号服务器，请检查网络后重试'), { retry: true });
@@ -156,7 +157,7 @@
     try {
       const { response, result } = await request(path, { username, password });
       if (!response.ok || !result.allowed || !result.token) {
-        showGate(reasonMessages[result.reason] || '操作失败，请稍后重试', { form: true });
+        showGate(result.reason ? reasonMessage(result.reason) : tr('operationFailed', '操作失败，请稍后重试'), { form: true });
         return;
       }
       setStored(TOKEN_KEY, result.token);

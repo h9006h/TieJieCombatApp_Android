@@ -120,7 +120,11 @@ public final class AdMobBridge {
                     rewardedState = "failed:show-" + error.getCode();
                 }
             });
-            ad.show(activity, (@NonNull RewardItem reward) -> earned[0] = true);
+            ad.show(activity, (@NonNull RewardItem reward) -> {
+                earned[0] = true;
+                // Reward callbacks can arrive before a long ad pod or end card closes.
+                rewardedState = "rewarded";
+            });
         } catch (Throwable error) {
             showInProgress.set(false);
             rewardedState = "failed:native-" + error.getClass().getSimpleName();

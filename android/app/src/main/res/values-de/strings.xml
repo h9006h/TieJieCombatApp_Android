@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Bunkerkampf</string>
+    <string name="title_activity_main">Bunkerkampf</string>
+    <string name="update_ready_title">Update heruntergeladen</string>
+    <string name="update_ready_message">Eine neue Version ist bereit. Starte das Spiel neu, um die Installation abzuschließen.</string>
+    <string name="update_restart">Jetzt neu starten</string>
+    <string name="update_later">Später</string>
+</resources>

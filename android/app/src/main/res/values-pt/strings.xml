@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Combate do Abrigo</string>
+    <string name="title_activity_main">Combate do Abrigo</string>
+    <string name="update_ready_title">Atualização baixada</string>
+    <string name="update_ready_message">Uma nova versão está pronta. Reinicie o jogo para concluir a instalação.</string>
+    <string name="update_restart">Reiniciar agora</string>
+    <string name="update_later">Depois</string>
+</resources>

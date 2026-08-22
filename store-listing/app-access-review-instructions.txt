@@ -1,0 +1,11 @@
+Open the app and log in with the provided test account.
+
+Username: google_test
+Password: GpReview_9vK72!TieJie
+
+After login, the reviewer can access the main menu, start a stage, select stages, view the skill tree, recruit allies, open the leaderboard, submit feedback, and use rewarded ad entry points. The app does not require any paid purchase to review core gameplay.
+
+If the test account is not found, use the Register button with the same username and password. Registration is open for the test build.
+
+Account deletion is available inside the app from Settings > Delete account. A public account deletion page is also available at:
+https://tiejie-access.access-worker.workers.dev/account-deletion

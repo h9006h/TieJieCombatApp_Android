@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">シェルター格闘</string>
+    <string name="title_activity_main">シェルター格闘</string>
+    <string name="update_ready_title">更新をダウンロードしました</string>
+    <string name="update_ready_message">新しいバージョンの準備ができました。ゲームを再起動するとインストールが完了します。</string>
+    <string name="update_restart">今すぐ再起動</string>
+    <string name="update_later">後で</string>
+</resources>

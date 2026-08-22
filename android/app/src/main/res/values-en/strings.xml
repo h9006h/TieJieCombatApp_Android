@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Shelter Combat</string>
+    <string name="title_activity_main">Shelter Combat</string>
+    <string name="update_ready_title">Update downloaded</string>
+    <string name="update_ready_message">A new version is ready. Restart the game to finish installing it.</string>
+    <string name="update_restart">Restart now</string>
+    <string name="update_later">Later</string>
+</resources>

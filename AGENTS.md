@@ -8,6 +8,7 @@
 - Release builds must load bundled local assets and must not download executable JavaScript.
 - Preserve character color, scale, frame timing, world coordinates and collision behavior unless the user explicitly requests a gameplay change.
 - Do not add or restore a browser-based character frame adjuster in this App project. Character frame adjustment is maintained only by the macOS tool at `../TieJieCombat/dist/tools/TieJieFrameAdjuster.app` and its source files in `../TieJieCombat/tools/`.
+- 每次生成或接入新的人物动作组，都必须同步登记到上述 macOS 人物帧调节器，至少提供该动作组逐帧的缩放、X/Y 偏移和左右翻转调节；替换已有动作帧时复用并核对原登记项。未完成调节器登记和帧数核对，不得把人物动作任务标记为完成。
 
 ## Collaboration preferences
 

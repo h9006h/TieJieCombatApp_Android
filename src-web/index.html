@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <title>避难所格斗 · 战斗试玩</title>
+  <title data-i18n="appTitle">避难所格斗 · 战斗试玩</title>
   <link rel="stylesheet" href="style.css?v=3.1">
 </head>
 <body>
-  <section id="auth-gate" aria-label="测试授权">
+  <section id="auth-gate" aria-label="测试授权" data-i18n-aria="authGateLabel">
     <div class="auth-card">
       <strong data-i18n="authTitle">铁街测试通行证</strong>
       <p id="auth-status" data-i18n="authChecking">正在验证测试资格……</p>
       <form id="auth-form" hidden autocomplete="off">
-        <input id="auth-username" type="text" inputmode="text" autocapitalize="none" spellcheck="false" minlength="3" maxlength="24" placeholder="用户名（3–24位）" aria-label="用户名" data-i18n-placeholder="username">
-        <input id="auth-password" type="password" minlength="8" maxlength="64" placeholder="密码（至少8位）" aria-label="密码" data-i18n-placeholder="password">
+        <input id="auth-username" type="text" inputmode="text" autocapitalize="none" spellcheck="false" minlength="3" maxlength="24" placeholder="用户名（3–24位）" aria-label="用户名" data-i18n-placeholder="username" data-i18n-aria="username">
+        <input id="auth-password" type="password" minlength="8" maxlength="64" placeholder="密码（至少8位）" aria-label="密码" data-i18n-placeholder="password" data-i18n-aria="password">
         <div class="auth-actions">
           <button id="auth-login" type="button">登录</button>
           <button id="auth-register" type="submit">注册并进入</button>
@@ -24,86 +24,86 @@
     </div>
   </section>
   <main id="game-wrap">
-    <canvas id="game" width="1280" height="720" tabindex="0" aria-label="避难所格斗战斗试玩"></canvas>
-    <div id="resource-ad-bar" aria-label="资源栏">
-      <div class="resource-chip" data-resource="gold" title="金币">
+    <canvas id="game" width="1280" height="720" tabindex="0" aria-label="避难所格斗战斗试玩" data-i18n-aria="gameCanvasLabel"></canvas>
+    <div id="resource-ad-bar" aria-label="资源栏" data-i18n-aria="resourceBar">
+      <div class="resource-chip" data-resource="gold" title="金币" data-i18n-title="gold">
         <svg class="resource-icon" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12"/><circle class="icon-detail" cx="16" cy="16" r="7"/><path class="icon-cut" d="M13 13h6v6h-6z"/></svg>
-        <b id="top-gold">0</b><button type="button" data-reward-ad="gold" aria-label="看广告获取金币补给"></button>
+        <b id="top-gold">0</b><button type="button" data-reward-ad="gold" aria-label="看广告获取金币补给" data-i18n-aria="rewardAdGold"></button>
       </div>
-      <div class="resource-chip" data-resource="chicken" title="鸡腿">
+      <div class="resource-chip" data-resource="chicken" title="鸡腿" data-i18n-title="chicken">
         <svg class="resource-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M21.8 5.7c4.4 3.3 4.4 9.8.6 13.6-3.5 3.5-8.9 3.8-12.4.5-3.3-3.2-2.8-8.5.8-12 3.1-3 7.7-4.4 11-2.1Z"/><path class="icon-bone" d="m10.3 19.2-4.1 4.1m.5-.5-2.3-.2-1.2 1.2 2.3 2.3 1.2-1.2-.2-2.3m1.1.7 1.6 1.6 1.2-1.2-.2-2.3"/></svg>
-        <b id="top-chicken">0</b><button type="button" data-reward-ad="chicken" aria-label="看广告获取鸡腿补给"></button>
+        <b id="top-chicken">0</b><button type="button" data-reward-ad="chicken" aria-label="看广告获取鸡腿补给" data-i18n-aria="rewardAdChicken"></button>
       </div>
-      <div class="resource-chip" data-resource="fruit" title="果实">
+      <div class="resource-chip" data-resource="fruit" title="果实" data-i18n-title="fruit">
         <svg class="resource-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 10.2c-2.6-3.3-8-1.7-9.4 2.4-2.3 6.8 3.2 14.3 9.4 14.3s11.7-7.5 9.4-14.3c-1.4-4.1-6.8-5.7-9.4-2.4Z"/><path class="icon-leaf" d="M16.2 10.5C18 5.6 21.7 3.7 26.3 5c-1.7 4.4-5.6 6.1-10.1 5.5Z"/><path class="icon-stem" d="M16 10.4c-.1-2.8-.8-4.8-2.2-6.2"/></svg>
-        <b id="top-fruit">0</b><button type="button" data-reward-ad="fruit" aria-label="看广告获取果实补给"></button>
+        <b id="top-fruit">0</b><button type="button" data-reward-ad="fruit" aria-label="看广告获取果实补给" data-i18n-aria="rewardAdFruit"></button>
       </div>
-      <button id="growth-toggle" type="button"><span aria-hidden="true">◆</span>强化</button>
+      <button id="growth-toggle" type="button"><span aria-hidden="true">◆</span><span data-i18n="growth">强化</span></button>
     </div>
-    <button id="battle-menu-toggle" type="button" hidden aria-label="打开战斗菜单">
+    <button id="battle-menu-toggle" type="button" hidden aria-label="打开战斗菜单" data-i18n-aria="openBattleMenu">
       <span class="menu-lines" aria-hidden="true"><i></i><i></i><i></i></span>
     </button>
-    <section id="battle-menu" hidden aria-label="战斗菜单">
+    <section id="battle-menu" hidden aria-label="战斗菜单" data-i18n-aria="battleMenu">
       <div class="battle-menu-card">
-        <header><small>PAUSED</small><strong>战斗菜单</strong></header>
+        <header><small>PAUSED</small><strong data-i18n="battleMenu">战斗菜单</strong></header>
         <button id="battle-menu-resume" type="button">继续战斗</button>
-        <div class="battle-menu-settings" aria-label="声音与震动设置">
-          <button id="audio-toggle" type="button" aria-label="关闭音乐和音效"><span>音乐与音效</span><b>开</b></button>
-          <button id="vibration-toggle" type="button" aria-label="关闭震动"><span>震动反馈</span><b>开</b></button>
+        <div class="battle-menu-settings" aria-label="声音与震动设置" data-i18n-aria="battleMenuSettings">
+          <button id="audio-toggle" type="button" aria-label="关闭音乐和音效" data-i18n-aria="audioOffLabel"><span data-i18n="audio">音乐与音效</span><b data-i18n="on">开</b></button>
+          <button id="vibration-toggle" type="button" aria-label="关闭震动" data-i18n-aria="vibrationOffLabel"><span data-i18n="vibration">震动反馈</span><b data-i18n="on">开</b></button>
         </div>
         <button id="battle-menu-reset-gauntlet" type="button" hidden data-i18n="resetGauntlet">重置关卡</button>
         <button id="battle-menu-end" type="button">结束本局</button>
       </div>
     </section>
-    <section id="growth-panel" hidden aria-label="人物成长">
-      <header><strong>人物成长</strong><button id="growth-close" type="button" aria-label="关闭">×</button></header>
-      <div class="growth-row"><span>血量 <b id="growth-hp">0</b></span><div class="growth-stepper"><button data-downgrade="hp" disabled>撤回 −1</button><button data-upgrade="hp">加点 +1</button></div></div>
-      <div class="growth-row"><span>力量 <b id="growth-atk">0</b></span><div class="growth-stepper"><button data-downgrade="atk" disabled>撤回 −1</button><button data-upgrade="atk">加点 +1</button></div></div>
-      <div class="growth-row"><span>防御 <b id="growth-def">0</b></span><div class="growth-stepper"><button data-downgrade="def" disabled>撤回 −1</button><button data-upgrade="def">加点 +1</button></div></div>
-      <button id="growth-confirm" type="button" disabled>保存强化</button>
-      <small id="growth-tip">加点会先进入预览；撤回只能减少本次未保存的点数，已保存属性不能降低。</small>
+    <section id="growth-panel" hidden aria-label="人物成长" data-i18n-aria="characterGrowth">
+      <header><strong data-i18n="characterGrowth">人物成长</strong><button id="growth-close" type="button" aria-label="关闭" data-i18n-aria="close">×</button></header>
+      <div class="growth-row"><span><span data-i18n="upgradeHp">血量</span> <b id="growth-hp">0</b></span><div class="growth-stepper"><button data-downgrade="hp" disabled data-i18n="undoPoint">撤回 −1</button><button data-upgrade="hp" data-i18n="addPoint">加点 +1</button></div></div>
+      <div class="growth-row"><span><span data-i18n="upgradeAtk">力量</span> <b id="growth-atk">0</b></span><div class="growth-stepper"><button data-downgrade="atk" disabled data-i18n="undoPoint">撤回 −1</button><button data-upgrade="atk" data-i18n="addPoint">加点 +1</button></div></div>
+      <div class="growth-row"><span><span data-i18n="upgradeDef">防御</span> <b id="growth-def">0</b></span><div class="growth-stepper"><button data-downgrade="def" disabled data-i18n="undoPoint">撤回 −1</button><button data-upgrade="def" data-i18n="addPoint">加点 +1</button></div></div>
+      <button id="growth-confirm" type="button" disabled data-i18n="saveGrowth">保存强化</button>
+      <small id="growth-tip" data-i18n="growthTip">加点会先进入预览；撤回只能减少本次未保存的点数，已保存属性不能降低。</small>
     </section>
     <div id="reward-modal" hidden role="dialog" aria-modal="true" aria-labelledby="reward-modal-title">
       <div class="modal-card">
-        <h2 id="reward-modal-title">资源补给</h2>
+        <h2 id="reward-modal-title" data-i18n="rewardSupply">资源补给</h2>
         <p id="reward-modal-desc"></p>
         <div id="stage-settlement-summary" hidden>
-          <span>金币<strong id="settlement-gold">0</strong></span>
-          <span>鸡腿<strong id="settlement-chicken">0</strong></span>
-          <span>果实<strong id="settlement-fruit">0</strong></span>
+          <span><span data-i18n="gold">金币</span><strong id="settlement-gold">0</strong></span>
+          <span><span data-i18n="chicken">鸡腿</span><strong id="settlement-chicken">0</strong></span>
+          <span><span data-i18n="fruit">果实</span><strong id="settlement-fruit">0</strong></span>
         </div>
         <div class="modal-actions">
-          <button id="reward-confirm" type="button" hidden>确认</button>
-          <button id="reward-cancel" type="button">取消</button>
-          <button id="reward-exit" type="button" hidden>放弃掉落并返回初始页</button>
+          <button id="reward-confirm" type="button" hidden data-i18n="confirm">确认</button>
+          <button id="reward-cancel" type="button" data-i18n="cancel">取消</button>
+          <button id="reward-exit" type="button" hidden data-i18n="giveUpLootExit">放弃掉落并返回初始页</button>
         </div>
       </div>
     </div>
-    <div id="battle-loading" hidden role="status" aria-live="polite" aria-label="正在加载关卡">
+    <div id="battle-loading" hidden role="status" aria-live="polite" aria-label="正在加载关卡" data-i18n-aria="loadingStage">
       <div class="loading-card">
         <span class="loading-spinner" aria-hidden="true"></span>
-        <strong>正在进入关卡</strong>
-        <p id="battle-loading-status">正在准备游戏资源……</p>
+        <strong data-i18n="enteringStage">正在进入关卡</strong>
+        <p id="battle-loading-status" data-i18n="preparingAssets">正在准备游戏资源……</p>
       </div>
     </div>
     <section id="start-card">
       <img class="brand-icon" src="assets/ui/tiejie-app-icon.png" alt="" aria-hidden="true">
-      <div class="badge">位图敌人与经典镜头锁定 7.7</div>
-      <h1>避难所格斗</h1>
-      <p>先试手感，再决定长线内容。</p>
+      <div class="badge" data-i18n="versionBadge">位图敌人与经典镜头锁定 7.7</div>
+      <h1 data-i18n="gameTitle">避难所格斗</h1>
+      <p data-i18n="tagline">先试手感，再决定长线内容。</p>
       <div class="menu-actions">
         <button id="start">进入黑钢城</button>
         <button id="level-select">选择关卡</button>
-        <button id="gauntlet-btn" hidden>轮番战</button>
+        <button id="gauntlet-btn" hidden data-i18n="gauntlet">轮番战</button>
         <button id="recruit-btn">招募队友</button>
         <button id="skill-btn">技能</button>
         <button id="rank-btn">闯关排行榜</button>
         <button id="feedback-btn">意见反馈</button>
         <button id="settings-btn">设置</button>
-        <button id="ad-test-toggle" type="button" hidden aria-pressed="false">广告模式：正式</button>
+        <button id="ad-test-toggle" type="button" hidden aria-pressed="false" data-i18n="adModeLive">广告模式：正式</button>
       </div>
     </section>
-    <section id="settings-panel" class="menu-page" hidden aria-label="游戏设置">
+    <section id="settings-panel" class="menu-page" hidden aria-label="游戏设置" data-i18n-aria="settingsTitle">
       <div class="menu-page-shell compact-page-shell">
         <header class="menu-page-head"><button id="settings-back" type="button" data-i18n="back">← 返回</button><div><strong data-i18n="settingsTitle">游戏设置</strong><small data-i18n="settingsSub">语言、角色名与本机选项</small></div><span>SETTINGS</span></header>
         <div class="settings-form">
@@ -132,13 +132,13 @@
         </div>
       </form>
     </div>
-    <section id="rank-panel" class="menu-page" hidden aria-label="闯关排行榜">
+    <section id="rank-panel" class="menu-page" hidden aria-label="闯关排行榜" data-i18n-aria="rankTitle">
       <div class="menu-page-shell">
         <header class="menu-page-head"><button id="rank-back" type="button" data-i18n="back">← 返回</button><div><strong data-i18n="rankTitle">闯关排行榜</strong><small data-i18n="rankSub">服务器最高通关前十名</small></div><span>TOP 10</span></header>
         <div id="rank-list" class="rank-list"><p data-i18n="rankLoading">正在读取排行榜……</p></div>
       </div>
     </section>
-    <section id="feedback-panel" class="menu-page" hidden aria-label="意见反馈">
+    <section id="feedback-panel" class="menu-page" hidden aria-label="意见反馈" data-i18n-aria="feedbackTitle">
       <div class="menu-page-shell compact-page-shell">
         <header class="menu-page-head"><button id="feedback-back" type="button" data-i18n="back">← 返回</button><div><strong data-i18n="feedbackTitle">意见反馈</strong><small data-i18n="feedbackSub">问题会提交到测试服务器</small></div><span>SUPPORT</span></header>
         <form id="feedback-form" class="feedback-form">
@@ -149,76 +149,76 @@
         </form>
       </div>
     </section>
-    <section id="level-panel" class="menu-page" hidden aria-label="选择关卡">
+    <section id="level-panel" class="menu-page" hidden aria-label="选择关卡" data-i18n-aria="levelSelect">
       <div class="menu-page-shell">
-        <header class="menu-page-head"><button id="level-back" type="button">← 返回</button><div><strong>选择关卡</strong><small>选择区域或直接输入关卡</small></div><span>STAGE</span></header>
+        <header class="menu-page-head"><button id="level-back" type="button" data-i18n="back">← 返回</button><div><strong data-i18n="levelSelect">选择关卡</strong><small data-i18n="levelSelectSub">选择区域或直接输入关卡</small></div><span>STAGE</span></header>
         <div class="map-grid">
-          <button data-map="0">1 街区</button>
-          <button data-map="1">2 沙漠</button>
-          <button data-map="2">3 长城</button>
-          <button data-map="3">4 高楼</button>
-          <button data-map="4">5 室内</button>
-          <button data-map="5">6 古战场</button>
+          <button data-map="0" data-i18n="stage1">1 街区</button>
+          <button data-map="1" data-i18n="stage2">2 沙漠</button>
+          <button data-map="2" data-i18n="stage3">3 长城</button>
+          <button data-map="3" data-i18n="stage4">4 高楼</button>
+          <button data-map="4" data-i18n="stage5">5 室内</button>
+          <button data-map="5" data-i18n="stage6">6 古战场</button>
         </div>
         <div id="stage-page-controls">
-          <button id="stage-prev-page" type="button">上一组</button>
+          <button id="stage-prev-page" type="button" data-i18n="prevGroup">上一组</button>
           <span id="stage-page-label">第 1–6 关</span>
-          <button id="stage-current" type="button">回到当前关</button>
-          <button id="stage-next-page" type="button">下一组</button>
+          <button id="stage-current" type="button" data-i18n="currentStage">回到当前关</button>
+          <button id="stage-next-page" type="button" data-i18n="nextGroup">下一组</button>
         </div>
-        <section id="quick-stage-select" aria-label="数字选关">
-          <button id="quick-stage-prev" type="button">前一关</button>
-          <label><span>第</span><input id="quick-stage-number" type="number" min="1" step="1" inputmode="numeric" value="1"><span>关</span></label>
-          <button id="quick-stage-next" type="button">后一关</button>
-          <button id="quick-stage-start" type="button">进入此关</button>
+        <section id="quick-stage-select" aria-label="数字选关" data-i18n-aria="numericStage">
+          <button id="quick-stage-prev" type="button" data-i18n="prevStage">前一关</button>
+          <label><span data-i18n="stagePrefix">第</span><input id="quick-stage-number" type="number" min="1" step="1" inputmode="numeric" value="1"><span data-i18n="stageSuffix">关</span></label>
+          <button id="quick-stage-next" type="button" data-i18n="nextStage">后一关</button>
+          <button id="quick-stage-start" type="button" data-i18n="enterThisStage">进入此关</button>
         </section>
-        <section id="test-tools" hidden aria-label="测试包工具">
-          <label class="test-toggle"><input id="free-tour" type="checkbox"><span>无敌人干扰</span></label>
+        <section id="test-tools" hidden aria-label="测试包工具" data-i18n-aria="testTools">
+          <label class="test-toggle"><input id="free-tour" type="checkbox"><span data-i18n="freeTour">无敌人干扰</span></label>
         </section>
       </div>
     </section>
-    <section id="gauntlet-panel" class="menu-page" hidden aria-label="轮番战">
+    <section id="gauntlet-panel" class="menu-page" hidden aria-label="轮番战" data-i18n-aria="gauntlet">
       <div class="menu-page-shell">
-        <header class="menu-page-head"><button id="gauntlet-back" type="button">← 返回</button><div><strong>轮番战</strong><small>选择本轮出战对手</small></div><span>GAUNTLET</span></header>
-        <div class="gauntlet-title">选择出战对手（点击切换）</div>
+        <header class="menu-page-head"><button id="gauntlet-back" type="button" data-i18n="back">← 返回</button><div><strong data-i18n="gauntlet">轮番战</strong><small data-i18n="gauntletSub">选择本轮出战对手</small></div><span>GAUNTLET</span></header>
+        <div class="gauntlet-title" data-i18n="gauntletTitle">选择出战对手（点击切换）</div>
         <div id="gauntlet-enemies"></div>
-        <label class="gauntlet-difficulty"><span>敌人难度倍率</span><input id="gauntlet-difficulty" type="number" min="0.5" max="5" step="0.1" value="1.0"><small>同时调整敌人的生命、攻击与速度成长，范围 ×0.5–×5.0</small></label>
-        <label class="gauntlet-elite-toggle"><input id="gauntlet-elite" type="checkbox"><span>精英敌人</span><small>全部对手获得精英体型、生命和攻击强化</small></label>
-        <button id="gauntlet-start" disabled>至少选一个对手</button>
+        <label class="gauntlet-difficulty"><span data-i18n="enemyDifficulty">敌人难度倍率</span><input id="gauntlet-difficulty" type="number" min="0.5" max="5" step="0.1" value="1.0"><small data-i18n="enemyDifficultyHint">同时调整敌人的生命、攻击与速度成长，范围 ×0.5–×5.0</small></label>
+        <label class="gauntlet-elite-toggle"><input id="gauntlet-elite" type="checkbox"><span data-i18n="eliteEnemy">精英敌人</span><small data-i18n="eliteEnemyHint">全部对手获得精英体型、生命和攻击强化</small></label>
+        <button id="gauntlet-start" disabled data-i18n="selectAtLeastOne">至少选一个对手</button>
       </div>
     </section>
-    <section id="recruit-panel" class="menu-page" hidden aria-label="招募队友">
+    <section id="recruit-panel" class="menu-page" hidden aria-label="招募队友" data-i18n-aria="recruit">
       <div class="menu-page-shell">
-        <header class="menu-page-head"><button id="recruit-back" type="button">← 返回</button><div><strong>招募队友</strong><small>永久解锁或广告临时招募</small></div><span id="recruit-gold">金币 0</span></header>
-        <div class="recruit-head"><span>一次只能带一名队友进入战斗</span></div>
+        <header class="menu-page-head"><button id="recruit-back" type="button" data-i18n="back">← 返回</button><div><strong data-i18n="recruit">招募队友</strong><small data-i18n="recruitSub">永久解锁或广告临时招募</small></div><span id="recruit-gold">金币 0</span></header>
+        <div class="recruit-head"><span data-i18n="recruitOne">一次只能带一名队友进入战斗</span></div>
         <div id="recruit-enemies"></div>
-        <div id="recruit-status">尚未选择队友</div>
-        <button id="recruit-action" type="button" hidden>解锁队友</button>
+        <div id="recruit-status" data-i18n="noRecruitSelected">尚未选择队友</div>
+        <button id="recruit-action" type="button" hidden data-i18n="unlockRecruit">解锁队友</button>
       </div>
     </section>
-    <section id="skill-panel" hidden aria-label="主角技能页">
+    <section id="skill-panel" hidden aria-label="主角技能页" data-i18n-aria="skillPage">
       <header class="skill-page-head">
-        <button id="skill-back" type="button" aria-label="返回主菜单">← 返回</button>
-        <div><strong>神奇果实技能树</strong><small>只能在关卡外点亮技能</small></div>
+        <button id="skill-back" type="button" aria-label="返回主菜单" data-i18n-aria="backToMain" data-i18n="back">← 返回</button>
+        <div><strong data-i18n="skillTreeTitle">神奇果实技能树</strong><small data-i18n="skillTreeSub">只能在关卡外点亮技能</small></div>
         <span id="skill-fruit">果实 0</span>
       </header>
       <div class="skill-page-body">
-        <div id="skill-tree" aria-label="树状技能分支"></div>
+        <div id="skill-tree" aria-label="树状技能分支" data-i18n-aria="skillTreeLabel"></div>
         <article id="skill-detail">
           <div id="skill-detail-icon" aria-hidden="true">拳</div>
           <p id="skill-detail-path">拳击分支</p>
           <h2 id="skill-detail-name">普通三段拳</h2>
-          <section><h3>技能说明</h3><p id="skill-detail-desc"></p></section>
-          <section><h3>释放方式</h3><p id="skill-detail-release"></p></section>
-          <section><h3>相关故事</h3><p id="skill-detail-story"></p></section>
+          <section><h3 data-i18n="skillDescription">技能说明</h3><p id="skill-detail-desc"></p></section>
+          <section><h3 data-i18n="skillRelease">释放方式</h3><p id="skill-detail-release"></p></section>
+          <section><h3 data-i18n="skillStory">相关故事</h3><p id="skill-detail-story"></p></section>
           <div id="skill-detail-requirement"></div>
-          <button id="skill-unlock" type="button">初始拥有</button>
+          <button id="skill-unlock" type="button" data-i18n="initialOwned">初始拥有</button>
         </article>
       </div>
-      <div id="skill-status" role="status">技能只能在关卡外点亮</div>
+      <div id="skill-status" role="status" data-i18n="skillOutsideOnly">技能只能在关卡外点亮</div>
     </section>
     <div id="touch-ui" aria-hidden="true">
-      <div class="dpad" aria-label="滑动摇杆">
+      <div class="dpad" aria-label="滑动摇杆" data-i18n-aria="joystick">
         <span class="joystick-knob" aria-hidden="true"></span>
         <button data-hold="up" tabindex="-1" aria-hidden="true"></button>
         <button data-hold="left" tabindex="-1" aria-hidden="true"></button>
@@ -229,9 +229,9 @@
         <button class="hand" data-action="punch">拳</button><button data-action="grab">抓</button>
         <button data-action="jump">跳</button><button class="leg" data-action="kick">腿</button>
       </div>
-      <button id="flame-action" type="button" hidden>拳焰</button>
-      <button id="item-action" type="button" hidden>拾取</button>
-      <button id="open-door-action" type="button" hidden>开门</button>
+      <button id="flame-action" type="button" hidden data-i18n="flameBoost">拳焰</button>
+      <button id="item-action" type="button" hidden data-i18n="pickup">拾取</button>
+      <button id="open-door-action" type="button" hidden data-i18n="openDoor">开门</button>
     </div>
   </main>
   <script src="app-bootstrap.js?v=2.0"></script>
